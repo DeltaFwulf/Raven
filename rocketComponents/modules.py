@@ -1,3 +1,6 @@
+import numpy as np
+
+
 # define all module types that can be added to the rocket
 
 # OPEN PROBLEMS
@@ -21,3 +24,12 @@ class Module():
     def getMass(self):
         print(f"method getMass() has not been written for module of type {self.modType}")
         return 0
+    
+
+    def getCoM(self):
+        print(f"method 'getCoM' has not been defined for module of type {self.modType}")
+        return np.zeros((3))
+
+
+    def getMoI(self, offset):
+        print(f"method 'getMoI' has not been defined for module of type {self.modType}")
