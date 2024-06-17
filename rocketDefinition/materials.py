@@ -1,7 +1,7 @@
 # definitions of all materials
 # materials have (for now) only densities, but we can work in melting points, strengths, etc. 
 
-class Material():
+class Materials():
 
     densities = {
         "generic":1000,
