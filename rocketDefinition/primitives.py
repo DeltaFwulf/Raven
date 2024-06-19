@@ -12,6 +12,9 @@ from materials import Materials
 # - nosecone spline or point array
 
 
+# TODO: validate or correct the inertia tensor for conic full
+# TODO: except invalid values when instantiating shapes with useful error messages
+
 
 class Shape():
 
@@ -53,7 +56,7 @@ class ConicFull(Shape): # we define a full cone by its length, its top diameter 
 
         self.mass = self.calcMass()
         self.CoM = self.calcCoM()
-        self.MoI = self.calcInertiaTensor(self.CoM)
+        self.MoI = self.calcInertiaTensor()
 
 
     def calcMass(self):
@@ -66,8 +69,8 @@ class ConicFull(Shape): # we define a full cone by its length, its top diameter 
         CoM[0] = (self.length / 4) * (self.rootRadius**2 + (2 * self.rootRadius * self.endRadius) + (3 * self.endRadius**2)) / (self.rootRadius**2 + (self.rootRadius * self.endRadius) + self.endRadius**2)
         return CoM
     
-
-    # XXX: maybe we should explicitly pass in values to this method to ensure determinism?
+    
+    # TODO: catch null values
     def calcInertiaTensor(self):
 
         MoI = np.zeros((3,3), dtype=float)
@@ -76,13 +79,10 @@ class ConicFull(Shape): # we define a full cone by its length, its top diameter 
             MoI[0,0] = (pi * Materials.densities[self.material] * self.length / 10) * (self.endRadius**5 - self.rootRadius**5) / (self.endRadius - self.rootRadius)
         
             k = (self.endRadius - self.rootRadius) / (self.length)
-            xf = self.length - self.CoM
-            x0 = -self.CoM
+            x0 = -self.CoM[0]
+            xf = self.length - self.CoM[0]
 
-            # compacting original equation with u = (rootRadius - k*x0)
-            u = self.rootRadius - (k * x0)
-
-            # warning: whopper alert (NOTE: this has not been independently verified)
+            # warning: whopper alert (NOTE: this has not been independently verified) (we should rederive and attempt to find the same answer)
             MoI[1,1] = (pi * Materials.densities[self.material] / 2) *(\
                 0.5 * (self.rootRadius - k * x0)**4 * (xf - x0) +\
                 k * (self.rootRadius - k * x0)**3 * (xf**2 - x0**2) +\
@@ -92,11 +92,58 @@ class ConicFull(Shape): # we define a full cone by its length, its top diameter 
                 
         else:
             MoI[0,0] = (pi * Materials.densities[self.material] * self.length / 2) * self.rootRadius**4
-
-            # TODO: add cylindrical MoI here
+            MoI[1,1] = (pi * self.rootRadius**2 * self.length * Materials.densities[self.material] / 12) * (3 * self.rootRadius**2 + self.length**2)
       
         # Izz = Iyy due to axisymmetry
         MoI[2,2] = MoI[1,1]
         
         return MoI
+    
+
+
+class RectangularPrism(Shape):
+
+    def __init__(self, x, y, z, name="unnamed", material="generic"):
+
+        self.name = name
+
+        self.x = x
+        self.y = y
+        self.z = z
+
+        self.material = material
+
+
+    def calcMass(self):
+        return Materials.densities[self.material] * self.x * self.y * self.z
+    
+
+    def calcCoM(self):
+        
+        CoM = np.zeros((3), dtype=float)
+        CoM[0] = self.x / 2
+        return CoM
+    
+
+    def calcMoI(self):
+
+        MoI = np.zeros((3,3), dtype=float)
+
+        #TODO: input inertia tensor calculations
+
+        return MoI
          
+
+
+def shapeTester():
+
+    testPrimitive = ConicFull(dRoot=0, dEnd=0.1, length=2, name="test_primitive", material="aluminium")
+    
+    # get some information about this primitive
+    print(f"the mass of {testPrimitive.__str__()} is {testPrimitive.mass} kg")
+    print(f"the centre of mass of {testPrimitive.__str__()} is\n{testPrimitive.CoM}")
+    print(f"the inertia tensor for {testPrimitive.name} is:\n{testPrimitive.MoI}")
+
+
+
+shapeTester()

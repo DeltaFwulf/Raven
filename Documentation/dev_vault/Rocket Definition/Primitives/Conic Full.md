@@ -404,3 +404,10 @@ $k = \frac{R_f - R_0}{x_f - x_0} = 1$
 we find that the CoM of the cone is at $x = [\frac{3}{4}, 0, 0]$
 
 setting this to be the origin point and 
+
+
+$$
+
+I = \frac{m}{12}\left(3r^2 + h^2\right)
+
+$$
