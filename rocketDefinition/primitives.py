@@ -71,29 +71,28 @@ class ConicFull(Shape): # we define a full cone by its length, its top diameter 
     
     
     # TODO: catch null values
+    # TODO: refactor A in terms of length, to stop having to add A and B at the final step (more integration by parts innit)
     def calcInertiaTensor(self):
 
         MoI = np.zeros((3,3), dtype=float)
 
         if(self.rootRadius != self.endRadius):
-            MoI[0,0] = (pi * Materials.densities[self.material] * self.length / 10) * (self.endRadius**5 - self.rootRadius**5) / (self.endRadius - self.rootRadius)
-        
-            k = (self.endRadius - self.rootRadius) / (self.length)
-            x0 = -self.CoM[0]
-            xf = self.length - self.CoM[0]
-
-            # warning: whopper alert (NOTE: this has not been independently verified) (we should rederive and attempt to find the same answer)
-            MoI[1,1] = (pi * Materials.densities[self.material] / 2) *(\
-                0.5 * (self.rootRadius - k * x0)**4 * (xf - x0) +\
-                k * (self.rootRadius - k * x0)**3 * (xf**2 - x0**2) +\
-                ((2 + 3*(k**2)) / 3) * (self.rootRadius - k * x0)**2 * (xf**3 - x0**3) +\
-                (k * (2 + k) / 2) * (self.rootRadius - k * x0) * (xf**4 - x0**4) +\
-                (k**2 * (4 + k**2) / 10) * (xf**5 - x0**5))
-                
+            MoI[0,0] = (pi * Materials.densities[self.material] * self.length / 10) * (self.endRadius**5 - self.rootRadius**5) / (self.endRadius - self.rootRadius)    
         else:
             MoI[0,0] = (pi * Materials.densities[self.material] * self.length / 2) * self.rootRadius**4
-            MoI[1,1] = (pi * self.rootRadius**2 * self.length * Materials.densities[self.material] / 12) * (3 * self.rootRadius**2 + self.length**2)
-      
+            
+        # Iyy:
+        x0 = -self.CoM[0]
+        xf = self.length - self.CoM[0]
+
+        dR = self.endRadius - self.rootRadius
+        k = dR / self.length
+
+        A = ((k**2 / 5) * (xf**5 - x0**5) + (k/2) * (self.rootRadius - k*x0) * (xf**4 - x0**4) + (1/3) * (self.rootRadius - k*x0)**2 * (xf**3 - x0**3))
+        B = (self.length / 20) * ((5 * self.rootRadius**4) + (10 * dR * self.rootRadius**3) + (10 * dR**2 * self.rootRadius**2) + (5 * dR**3 * self.rootRadius) + (dR**4))
+
+        MoI[1,1] = pi * Materials.densities[self.material] * (A + B) # this has been verified for cylindrical case as well, with errors on the order of 1e-13
+    
         # Izz = Iyy due to axisymmetry
         MoI[2,2] = MoI[1,1]
         
@@ -137,7 +136,7 @@ class RectangularPrism(Shape):
 
 def shapeTester():
 
-    testPrimitive = ConicFull(dRoot=0, dEnd=0.1, length=2, name="test_primitive", material="aluminium")
+    testPrimitive = ConicFull(dRoot=1, dEnd=1, length=2, name="test_primitive", material="aluminium")
     
     # get some information about this primitive
     print(f"the mass of {testPrimitive.__str__()} is {testPrimitive.mass} kg")

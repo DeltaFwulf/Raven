@@ -66,6 +66,7 @@ $$
 
 **Method 1: Integration by Parts**
 
+==NOTE: we can further split into integrals to potentially remove the $x_f^n - x_0^n$ terms and get in terms of $x_f - x_0$. If we validate the system of equations, I'll try to do this to make the expression more consistent and potentially more understandable compared to the equations for cones and cylinders.==
 $$
 \int_a^b u \frac{dv}{dx} = \left[uv\right]_a^b - \int_a^b v \frac{du}{dx}
 $$
@@ -203,9 +204,9 @@ $$
 
 **Method 2: Expanding then Evaluating**
 
+This gave the same result as integration by parts :)))))
 
-
-(Are these the same answer?)
+(Are these the same answer?) YES BESTIE SLAYY
 ### Finding B
 
 $B = \int_{x_0}^{x_f}\int_{0}^{2\pi}\int_{0}^{R(x)}r^3\cos^2(\theta) \ dr \ d\theta \ dx$
@@ -239,7 +240,6 @@ R_0^5 + 5R_0^4k(x-x_0) + 10R_0^3k^2(x-x_0)^2 + 10R_0^2k^3(x-x_0)^3 + 5R_0k^4(x-x
 
 \right]_{x_0}^{x_f}
 $$
-
 
 
 Splitting each term out so we can more easily combine for coefficients as $B = \frac{\pi}{20k}\left[B_0 + B_1 + B_2 + B_3 + B_4 + B_5\right]_{x_0}^{x_f}$ :
@@ -336,6 +336,35 @@ B = \pi\left(
 \right)
 $$
 
+
+**Alternative: taking limits at this point**
+
+$R_0$ terms cancel, the rest of $x_0$ limit terms are just 0
+
+$$
+B = \frac{\pi}{20k}\left[
+5R_0^4k(x_f-x_0) + 10R_0^3k^2(x_f-x_0)^2 + 10R_0^2k^3(x_f-x_0)^3 + 5R_0k^4(x_f-x_0)^4 + k^5(x_f-x_0)^5
+\right]
+$$
+
+we can remove the k terms here:
+
+$$
+B = \frac{\pi}{20}\left[
+5R_0^4(x_f-x_0) + 10R_0^3k(x_f-x_0)^2 + 10R_0^2k^2(x_f-x_0)^3 + 5R_0k^3(x_f-x_0)^4 + k^4(x_f-x_0)^5
+\right]
+$$
+
+$$
+B = \frac{\pi(x_f-x_0)}{20}\left[
+
+5R_0^4 + 10R_0^3(R_f-R_0) + 10R_0^2(R_f-R_0)^2+5R_0(R_f-R_0)^3 + (R_f-R_0)^4
+
+\right]
+$$
+
+Both of these expressions are equivalent (WHAT THE FUCK?!)
+
 ### Combining for $I_{xx}$
 
 Combining A and B by power of x:
@@ -391,23 +420,7 @@ I_{yy} = \frac{\pi\rho}{2}\left(
 \right)
 $$
 
-let's roll with this for now until someone finds a glaring mistake
+WRONG EEHH AAWWWHHH *Steve Harvey stare*
 
-**Checking for a Cone**
+This combination has gone wrong somewhere, as both A and B have been verified and by simply summing the terms we arrive at the correct moment of inertia.
 
-Assuming that:
-$R_0 = 0, \ R_f = 1$
-$x_f - x_0 = 1$
-
-$k = \frac{R_f - R_0}{x_f - x_0} = 1$
-
-we find that the CoM of the cone is at $x = [\frac{3}{4}, 0, 0]$
-
-setting this to be the origin point and 
-
-
-$$
-
-I = \frac{m}{12}\left(3r^2 + h^2\right)
-
-$$
