@@ -8,18 +8,6 @@
         "type": "tabs",
         "children": [
           {
-            "id": "72b342dd24bbaba1",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Rocket Definition/Primitives/Conic Full.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
             "id": "3eef728164964e76",
             "type": "leaf",
             "state": {
@@ -37,7 +25,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Rocket Definition/Coordinate Systems.md",
+                "file": "Rocket Definition/Primitives/Transforming Inertia Tensors to New Reference Frames.md",
                 "mode": "source",
                 "source": false
               }
@@ -110,7 +98,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Rocket Definition/Primitives/Conic Full.md",
+                "file": "Rocket Definition/Primitives/Transforming Inertia Tensors to New Reference Frames.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -127,7 +115,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Rocket Definition/Primitives/Conic Full.md",
+                "file": "Rocket Definition/Primitives/Transforming Inertia Tensors to New Reference Frames.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -150,7 +138,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Rocket Definition/Primitives/Conic Full.md"
+                "file": "Rocket Definition/Primitives/Transforming Inertia Tensors to New Reference Frames.md"
               }
             }
           }
@@ -171,12 +159,13 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "3eef728164964e76",
+  "active": "5835845d3593f788",
   "lastOpenFiles": [
-    "Rocket Definition/Primitives/Placeholder.md",
-    "Rocket Definition/Primitives/Conic Full.md",
-    "Rocket Definition/Primitives/Rectangular Prism.md",
     "Rocket Definition/Coordinate Systems.md",
+    "Rocket Definition/Primitives/Transforming Inertia Tensors to New Reference Frames.md",
+    "Rocket Definition/Primitives/Conic Full.md",
+    "Rocket Definition/Primitives/Placeholder.md",
+    "Rocket Definition/Primitives/Rectangular Prism.md",
     "Rocket Definition",
     "Kinematics",
     "Welcome.md",

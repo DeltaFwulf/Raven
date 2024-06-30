@@ -27,13 +27,16 @@ class Shape():
         return f"{self.name}({self.shape})"
 
     def calcMass(self):
-        print(f"method 'calcMass' has not been defined for shape with type {self.type}")
+        print(f"method 'calcMass' has not been defined for shape with type {self.shape}")
+        return 0
 
     def calcCoM(self): # returns the centre of mass of the part as a 3-vector relative to the part origin
-        print(f"method 'calcCoM' has not been defined for shape with type {self.type}")
+        print(f"method 'calcCoM' has not been defined for shape with type {self.shape}")
+        return np.zeros((3),float)
 
     def calcInertiaTensor(self): # returns the 3x3 inertia tensor of the shape about its principle axes aligned to its root coordinate system
-        print(f"method 'calcMoI' has not been defined for shape with type {self.type}")
+        print(f"method 'calcMoI' has not been defined for shape with type {self.shape}")
+        return np.zeros((3,3),float)
 
 
 
@@ -65,7 +68,7 @@ class ConicFull(Shape): # we define a full cone by its length, its top diameter 
 
     def calcCoM(self): 
 
-        CoM = np.zeros((3), dtype=float)
+        CoM = np.zeros((3), float)
         CoM[0] = (self.length / 4) * (self.rootRadius**2 + (2 * self.rootRadius * self.endRadius) + (3 * self.endRadius**2)) / (self.rootRadius**2 + (self.rootRadius * self.endRadius) + self.endRadius**2)
         return CoM
     
@@ -74,7 +77,7 @@ class ConicFull(Shape): # we define a full cone by its length, its top diameter 
     # TODO: refactor A in terms of length, to stop having to add A and B at the final step (more integration by parts innit)
     def calcInertiaTensor(self):
 
-        MoI = np.zeros((3,3), dtype=float)
+        MoI = np.zeros((3,3), float)
 
         if(self.rootRadius != self.endRadius):
             MoI[0,0] = (pi * Materials.densities[self.material] * self.length / 10) * (self.endRadius**5 - self.rootRadius**5) / (self.endRadius - self.rootRadius)    
@@ -99,8 +102,56 @@ class ConicFull(Shape): # we define a full cone by its length, its top diameter 
         return MoI
     
 
+# This shape should include the conicFull shape as a subset of the conic shape (making the shape redundant if so)
+# TODO: give a simple argument to set constant thickness of the part (given the outer diameters are sufficiently large)
+class Conic(Shape):
+
+    shape = "conic"
+
+    def __init__(self, length, dOuterRoot, dOuterEnd, dInnerRoot=0, dInnerEnd=0, name="unnamed", material="generic"):
+
+        self.name = name
+        self.material = material
+
+        self.length = length
+
+        self.dOuterRoot = dOuterRoot
+        self.dOuterEnd = dOuterEnd
+        self.dInnerRoot = dInnerRoot
+        self.dInnerEnd = dInnerEnd
+
+        self.rOuterRoot = dOuterRoot / 2
+        self.rOuterEnd = dOuterEnd / 2
+        self.rInnerRoot = dInnerRoot / 2
+        self.rInnerEnd = dInnerEnd / 2
+
+        self.mass = self.calcMass()
+        self.CoM = self.calcCoM()
+        self.MoI = self.calcInertiaTensor()
+
+    
+    def calcMass(self):
+        return (pi * Materials.densities[self.material] * self.length / 3) * ((self.rOuterRoot**2 - self.rInnerRoot**2) + (self.rOuterRoot * self.rOuterEnd - self.rInnerRoot * self.rInnerEnd) + (self.rOuterEnd**2 - self.rInnerEnd**2))
+
+
+    def calcCoM(self):
+
+        CoM = np.zeros((3), float)
+        CoM[0] = (self.length / 4) * ((self.rOuterRoot**2 - self.rInnerRoot**2) + 2 * (self.rOuterRoot * self.rOuterEnd - self.rInnerRoot * self.rInnerEnd) + 3 * (self.rOuterEnd**2 - self.rInnerEnd**2)) / \
+                 ((self.rOuterRoot**2 - self.rInnerRoot**2) + (self.rOuterRoot * self.rOuterEnd - self.rInnerRoot * self.rInnerEnd) + (self.rOuterEnd**2 - self.rInnerEnd**2))
+        
+        return CoM
+    
+
+    def calcInertiaTensor(self):
+        return super().calcInertiaTensor()
+
+    
+
 
 class RectangularPrism(Shape):
+
+    shape = "rectangular_prism"
 
     def __init__(self, x, y, z, name="unnamed", material="generic"):
 
@@ -119,14 +170,14 @@ class RectangularPrism(Shape):
 
     def calcCoM(self):
         
-        CoM = np.zeros((3), dtype=float)
+        CoM = np.zeros((3), float)
         CoM[0] = self.x / 2
         return CoM
     
 
     def calcMoI(self):
 
-        MoI = np.zeros((3,3), dtype=float)
+        MoI = np.zeros((3,3), float)
 
         #TODO: input inertia tensor calculations
 
@@ -136,11 +187,12 @@ class RectangularPrism(Shape):
 
 def shapeTester():
 
-    testPrimitive = ConicFull(dRoot=1, dEnd=1, length=2, name="test_primitive", material="aluminium")
-    
+    #testPrimitive = ConicFull(dRoot=0, dEnd=1, length=1, name="test_primitive", material="generic")
+    testPrimitive = Conic(length=1, dOuterRoot=0.2, dOuterEnd=1, dInnerRoot=0, dInnerEnd=0.8, name="test_conic", material="generic")
+
     # get some information about this primitive
-    print(f"the mass of {testPrimitive.__str__()} is {testPrimitive.mass} kg")
-    print(f"the centre of mass of {testPrimitive.__str__()} is\n{testPrimitive.CoM}")
+    print(f"the mass of {testPrimitive.name} is {testPrimitive.mass} kg")
+    print(f"the centre of mass of {testPrimitive.name} is\n{testPrimitive.CoM}")
     print(f"the inertia tensor for {testPrimitive.name} is:\n{testPrimitive.MoI}")
 
 
