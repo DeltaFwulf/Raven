@@ -95,6 +95,9 @@ class ConicFull(Shape): # we define a full cone by its length, its top diameter 
         B = (self.length / 20) * ((5 * self.rootRadius**4) + (10 * dR * self.rootRadius**3) + (10 * dR**2 * self.rootRadius**2) + (5 * dR**3 * self.rootRadius) + (dR**4))
 
         MoI[1,1] = pi * Materials.densities[self.material] * (A + B) # this has been verified for cylindrical case as well, with errors on the order of 1e-13
+
+        # transform to part root location (in part reference axes):
+        MoI[1,1] += self.mass * self.CoM**2
     
         # Izz = Iyy due to axisymmetry
         MoI[2,2] = MoI[1,1]

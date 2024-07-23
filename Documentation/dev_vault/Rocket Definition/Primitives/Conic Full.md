@@ -1,6 +1,6 @@
 # Definition
 
-The conic full primitive is a generalised conic(?) form defined by its origin, material, root and end diameters, and its length.
+The conic full primitive is a general solid frustum whose outer radii can have radii in the range {0, ∞} at its limits of {x0, xf}. The shape is solid and has a constant density.  it is revolved about the x axis, with its root at x0 and its end at xf.
 
 ==DIAGRAM OF SHAPE WITH LABELS==
 

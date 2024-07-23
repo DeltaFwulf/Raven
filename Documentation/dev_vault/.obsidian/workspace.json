@@ -8,7 +8,7 @@
         "type": "tabs",
         "children": [
           {
-            "id": "3eef728164964e76",
+            "id": "421407ff6272a0b5",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -20,15 +20,11 @@
             }
           },
           {
-            "id": "5835845d3593f788",
+            "id": "3eef728164964e76",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Rocket Definition/Primitives/Transforming Inertia Tensors to New Reference Frames.md",
-                "mode": "source",
-                "source": false
-              }
+              "type": "graph",
+              "state": {}
             }
           }
         ],
@@ -98,7 +94,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Rocket Definition/Primitives/Transforming Inertia Tensors to New Reference Frames.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -115,7 +110,6 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Rocket Definition/Primitives/Transforming Inertia Tensors to New Reference Frames.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -137,9 +131,7 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {
-                "file": "Rocket Definition/Primitives/Transforming Inertia Tensors to New Reference Frames.md"
-              }
+              "state": {}
             }
           }
         ]
@@ -159,12 +151,13 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "5835845d3593f788",
+  "active": "3eef728164964e76",
   "lastOpenFiles": [
-    "Rocket Definition/Coordinate Systems.md",
-    "Rocket Definition/Primitives/Transforming Inertia Tensors to New Reference Frames.md",
+    "Rocket Definition/Primitives/Primitives.md",
     "Rocket Definition/Primitives/Conic Full.md",
-    "Rocket Definition/Primitives/Placeholder.md",
+    "Rocket Definition/Primitives/Conic Generalised.md",
+    "Rocket Definition/Primitives/Transforming Inertia Tensors to New Reference Frames.md",
+    "Rocket Definition/Coordinate Systems.md",
     "Rocket Definition/Primitives/Rectangular Prism.md",
     "Rocket Definition",
     "Kinematics",
