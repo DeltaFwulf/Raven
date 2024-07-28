@@ -4,31 +4,22 @@
     "type": "split",
     "children": [
       {
-        "id": "10c933224185464a",
+        "id": "3c364715a80c94d5",
         "type": "tabs",
         "children": [
           {
-            "id": "421407ff6272a0b5",
+            "id": "a35f1bb18377f481",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Rocket Definition/Primitives/Conic Full.md",
+                "file": "Rocket Definition/Primitives/Primitives.md",
                 "mode": "source",
                 "source": false
               }
             }
-          },
-          {
-            "id": "3eef728164964e76",
-            "type": "leaf",
-            "state": {
-              "type": "graph",
-              "state": {}
-            }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -94,6 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "Rocket Definition/Primitives/Primitives.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -110,6 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "Rocket Definition/Primitives/Primitives.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -131,7 +124,9 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {}
+              "state": {
+                "file": "Rocket Definition/Primitives/Primitives.md"
+              }
             }
           }
         ]
@@ -151,14 +146,15 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "3eef728164964e76",
+  "active": "a35f1bb18377f481",
   "lastOpenFiles": [
+    "Rocket Definition/Primitives/Rectangular Prism.md",
+    "Rocket Definition/Coordinate Systems.md",
     "Rocket Definition/Primitives/Primitives.md",
     "Rocket Definition/Primitives/Conic Full.md",
+    "Reference Frames.md",
     "Rocket Definition/Primitives/Conic Generalised.md",
-    "Rocket Definition/Primitives/Transforming Inertia Tensors to New Reference Frames.md",
-    "Rocket Definition/Coordinate Systems.md",
-    "Rocket Definition/Primitives/Rectangular Prism.md",
+    "Rocket Definition/Primitives/Custom Primitive.md",
     "Rocket Definition",
     "Kinematics",
     "Welcome.md",

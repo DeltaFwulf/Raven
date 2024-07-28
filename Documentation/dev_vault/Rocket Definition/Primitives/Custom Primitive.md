@@ -1,0 +1,1 @@
+If you desire a very specific shape to be included (complex geometry from a CAD model, etc), you can calculate the geometry's properties and create a new class by inheriting the Primitive class in Python.
