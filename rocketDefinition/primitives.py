@@ -106,7 +106,7 @@ class ConicFull(Primitive): # we define a full cone by its length, its top diame
 
         #return MoI
         # we must translate this tensor to be centered at the part origin, aligned with the part's principal axes (no rotation necessary)
-        return Primitive.translateReference(MoI, self.mass, self.CoM)
+        return Primitive.translateReference(MoI, self.mass, self.CoM) * np.array(([1, -1, -1], [-1, 1, -1], [-1, -1, 1]))
     
 
 # This shape should include the conicFull shape as a subset of the conic shape (making the shape redundant if so)
@@ -181,8 +181,7 @@ class Conic(Primitive):
         innerTensor = getSolidTensor(self.rInnerRoot, self.rInnerEnd, self.length, self.CoM, self.density)
         outerTensor = getSolidTensor(self.rOuterRoot, self.rOuterEnd, self.length, self.CoM, self.density)
 
-        #return outerTensor - innerTensor
-        return Primitive.translateReference(outerTensor - innerTensor, self.mass, self.CoM)
+        return Primitive.translateReference(outerTensor - innerTensor, self.mass, self.CoM) * np.array(([1, -1, -1], [-1, 1, -1], [-1, -1, 1]))
             
 
 
