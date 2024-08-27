@@ -86,14 +86,14 @@ def drawFrames(frames:tuple):
         z = frame.transformVector(np.array([0,0,1]))
         o = frame.transformVector(np.array([0,0,0]))
         
-        ax.plot([o[0], x[0]], [o[1], x[1]], [0[2], x[2]], '-r')
+        ax.plot([o[0], x[0]], [o[1], x[1]], [o[2], x[2]], '-r')
         ax.plot([o[0], y[0]], [o[1], y[1]], [o[2], y[2]], '-g')
         ax.plot([o[0], z[0]], [o[1], z[1]], [o[2], z[2]], '-b')
 
-    
+        ax.set_box_aspect([1,1,1])
+
     plt.show()
         
-
 
 
 def frameTest():
@@ -104,7 +104,7 @@ def frameTest():
 
     # let's rotate bodyFrame in its own reference system, getting the new transform to world frame after the rotation:
     # we'll assume we've computed the angular velocity vector and so can apply a quaternion transformation to the reference system:
-    omega = 2 * np.array([1, 0, 0])
+    omega = 2 * np.array([1, 1, 1])
     timestep = 1 # second
 
     # express the angular velocity as a quaternion:
@@ -118,7 +118,7 @@ def frameTest():
 
     print(f"transform after quaternion rotation:\n{bodyFrame.transform}")
     
-    #drawFrames((worldFrame, bodyFrame))
+    drawFrames((worldFrame, bodyFrame))
 
 frameTest()
 
