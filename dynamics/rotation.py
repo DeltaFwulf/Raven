@@ -3,14 +3,68 @@ from math import cos, sin, pi, sqrt
 import matplotlib.pyplot as plt
 
 
+
+class Frame():
+    # a frame stores its own translation between its parent frame and itself (rotation and translation)
+    # this allows transformations to be calculated relative to this coordinate system and then mapped into the parent frame
+
+    def __init__(self, transInit:np.array, angInit:float, axisInit:np.array):
+        """The frame is initially defined by it rotation and translation relative to the world centre"""
+
+        self.transform = np.identity(4, float)
+
+        q = cos(angInit/2) * np.ones((4), float)
+        q[1:] = sin(angInit / 2) * axisInit
+
+        rotInit = np.array(([2*(q[0]**2 + q[1]**2) - 1, 2*(q[1]*q[2] - q[0]*q[3]), 2*(q[1]*q[3] + q[0]*q[2])],
+                                  [2*(q[1]*q[2] + q[0]*q[3]), 2*(q[0]**2 + q[2]**2) - 1, 2*(q[2]*q[3] - q[0]*q[1])],
+                                  [2*(q[1]*q[2] - q[0]*q[3]), 2*(q[2]*q[3] + q[0]*q[1]), 2*(q[0]**2 + q[3]**2) - 1]), float)
+        
+        self.transform[:3,:3] = rotInit
+        self.transform[:3, 3] = transInit
+
+
+
+    def transform(self, transLocal:np.array, ang:float, axis:np.array) -> None:
+        """
+        this transformation is given in local coordinates. This must be performed before remapping into world coordinates.
+        this should be possible by first applying the local transformation to a trivial vector, then applying the old transformation (intrinic operation)
+        """
+
+        # quaternion-based rotation matrix
+        q = cos(ang / 2) * np.ones((4), float)
+        q[1:] = sin(ang / 2) * axis
+
+        rotMat = np.array(([2*(q[0]**2 + q[1]**2) - 1, 2*(q[1]*q[2] - q[0]*q[3]), 2*(q[1]*q[3] + q[0]*q[2])],
+                                  [2*(q[1]*q[2] + q[0]*q[3]), 2*(q[0]**2 + q[2]**2) - 1, 2*(q[2]*q[3] - q[0]*q[1])],
+                                  [2*(q[1]*q[2] - q[0]*q[3]), 2*(q[2]*q[3] + q[0]*q[1]), 2*(q[0]**2 + q[3]**2) - 1]), float)
+
+        affineLocal = np.identity(4, float)
+        affineLocal[:3,:3] = rotMat
+        affineLocal[:3, 3] = transLocal
+
+        self.transform = np.matmul(affineLocal, self.transform)
+
+        print(f"Local affine transformation matrix:\n{affineLocal}\n")
+        print(f"world affine transformation matrix:\n{self.transform}\n")
+
+        return
+    
+
+    def map(self, vecIn:np.array) -> np.array:
+        """Applies the affine transformation matrix to an existing vector to map it into the local reference frame"""
+
+        vecIn = np.vstack((vecIn, np.ones((1), float)))
+        mapped = np.matmul(self.transform, vecIn)
+
+        return mapped[:-1]
+    
+
+
 # There are two ways we can store the position of a frame:
 # 1) store the initial transform and a second, updating transform that accounts for all subsequent transforms (full history is preserved)
 # 2) store only the updating transform (less to store, but we don't know where we started or quickly see the effect of changing the initial position)
-
-
-
-# FIXME: make all functions consistent, the two rotation methods have different ideas of what they return
-class Frame():
+class Transform():
     """
     A set of ortholinear vectors used to describe 3d position.
 
@@ -27,11 +81,16 @@ class Frame():
     Applying translations and rotations:
     - what order do we do this in
     - how to map translations back to origin
+
+
+    Translations are applied at each timestep before the latest rotation; there are two methods that might work for this:
+    - translating via a 3d vector in body frame transformed into world frame
+    - making the spatial transformation matrix work to do this simultaneously
     """
 
     def __init__(self, alpha=0, beta=0, gamma=0, dx=0, dy=0, dz=0):
 
-        self.transform = Frame.rotateExtrinsic("xyz", alpha, beta, gamma)
+        self.transform = Transform.rotateExtrinsic("xyz", alpha, beta, gamma)
 
     def rotateExtrinsic(order, alpha, beta, gamma):
         """Returns the rotation matrix obtained when 3 successive extrinsic rotations are 
@@ -67,8 +126,7 @@ class Frame():
         self.transform = np.matmul(self.transform, rotationMatrix) # intrinsic rotation (we are rotating in the frame of reference of frame)
 
 
-    def transformVector(self, vector):
-        """maps a vector that is known relative to bodyFrame into worldFrame coordinates"""
+    def putInWorldFrame(self, vector):
         return np.matmul(self.transform, vector)
 
 
@@ -81,10 +139,10 @@ def drawFrames(frames:tuple):
 
     for frame in frames:
 
-        x = frame.transformVector(np.array([1,0,0]))
-        y = frame.transformVector(np.array([0,1,0]))
-        z = frame.transformVector(np.array([0,0,1]))
-        o = frame.transformVector(np.array([0,0,0]))
+        x = frame.putInWorldFrame(np.array([1,0,0]))
+        y = frame.putInWorldFrame(np.array([0,1,0]))
+        z = frame.putInWorldFrame(np.array([0,0,1]))
+        o = frame.putInWorldFrame(np.array([0,0,0]))
         
         ax.plot([o[0], x[0]], [o[1], x[1]], [o[2], x[2]], '-r')
         ax.plot([o[0], y[0]], [o[1], y[1]], [o[2], y[2]], '-g')
@@ -95,31 +153,19 @@ def drawFrames(frames:tuple):
     plt.show()
         
 
-
+# gather frame behaviour in this testbed, use findings to define a useful transformer class
 def frameTest():
 
-    # create a starting frame
-    worldFrame = Frame()
-    bodyFrame = Frame(alpha=0, beta=0, gamma=0)
+    # set up a world frame and local frame
 
-    # let's rotate bodyFrame in its own reference system, getting the new transform to world frame after the rotation:
-    # we'll assume we've computed the angular velocity vector and so can apply a quaternion transformation to the reference system:
-    omega = 2 * np.array([1, 1, 1])
-    timestep = 1 # second
+    # transform the local frame relative to the world frame
 
-    # express the angular velocity as a quaternion:
-    dTheta = sqrt(np.sum(omega**2)) * timestep
-    wOrientation = omega / sqrt(np.sum(omega**2))
-    
-    wQuaternion = cos(dTheta / 2) * np.ones((4), float)
-    wQuaternion[1:] = sin(dTheta / 2) * wOrientation
+    # attempt to map a set of axes into the local frame
 
-    bodyFrame.rotateQuaternion(wQuaternion)
+    # plot the two frames relative to the world frame
 
-    print(f"transform after quaternion rotation:\n{bodyFrame.transform}")
-    
-    drawFrames((worldFrame, bodyFrame))
-
+    pass
+        
 frameTest()
 
 

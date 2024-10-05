@@ -11,3 +11,5 @@ Since we want to rotate in vehicle axes, we can treat this as a two step intrins
 This should give the correct rotation of the point in world coordinates. It also gives us the new world -> body transform through the chained matrices.
 
 ## Applying Translations and Rotations
+
+The motion of the vehicle will be represented by a translation followed by a rotation. This can be encoded in a spatial transformation matrix, allowing both motions to be calculated simultaneously.
