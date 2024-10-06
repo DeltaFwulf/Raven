@@ -1,13 +1,7 @@
-from math import pi
+from math import pi, sqrt
 import numpy as np
 from materials import Materials
-
-# Valid shapes:
-# - ConicFull (solid frustum with limits at cone and its inverse, passing through cylinder at the midpoint)
-# - ConicHollow with constant thickness wall (from cylindrical to conical limit) to be used as tubes
-# - RectPrism (batteries etc)
-# - fin profile (of constant thickness for the time being)
-# - nosecone spline or point array
+from motion.frame import Frame
 
 
 
@@ -22,6 +16,16 @@ class Primitive():
 
     def __str__(self):
         return f"{self.name}({self.shape})"
+    
+
+    def moveReference(self, tensorIn:np.array, transform:Frame) -> np.array:
+        """Calculate the inertia tensor of the primitive with respect to a parent frame of reference, give the spatial transformation between the parent frame and the primitive frame"""
+
+        # step 1, rotate the reference frame
+
+        # step 2, translate the reference frame (this is a translation w.r.t. the parent frame, the now 'rotated' reference, conveniently)
+        
+        # step 3, return the transformed tensor
 
 
     def translateReference(tensorIn:np.array, mass:float, translation:np.array) -> np.array: 
@@ -41,6 +45,41 @@ class Primitive():
             correction[2,1] = correction[1,2]
 
             return tensorIn + (mass * correction)
+    
+
+    def rotateReference(tensorIn:np.array, transformation:Frame) -> np.array:
+
+        i = np.array([1, 0, 0])
+        j = np.array([0, 1, 0])
+        k = np.array([0, 0, 1])
+
+        iNew = transformation.align(i)
+        jNew = transformation.align(j)
+        kNew = transformation.align(k)
+
+        def dot(vec1, vec2):
+
+            sum = np.sum(vec1 * vec2)
+            mag = sqrt(np.sum(vec1**2)) * sqrt(np.sum(vec2**2))
+        
+            return sum/mag
+
+        T = np.array((3,3), float)
+    
+        T[0,0] = dot(iNew, i)
+        T[0,1] = dot(iNew, j)
+        T[0,2] = dot(iNew, k)
+
+        T[1,0] = dot(jNew, i)
+        T[1,1] = dot(jNew, j)
+        T[1,2] = dot(jNew, k)
+
+        T[2,0] = dot(kNew, i)
+        T[2,1] = dot(kNew, j)
+        T[2,2] = dot(kNew, k)
+
+        return np.matmul(T, np.matmul(tensorIn, np.transpose(T)))
+    
 
 
 

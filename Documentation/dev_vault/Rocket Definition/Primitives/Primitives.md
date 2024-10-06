@@ -7,8 +7,11 @@ Primitives are the building blocks of modules, and allow the vehicle's kinematic
 [[Custom Primitive]]
 
 ### To Be Defined:
-planar fins
-common nosecone profiles
+
+Laminar fins
+
+[Inertia Tensor MIT](https://ocw.mit.edu/courses/16-07-dynamics-fall-2009/dd277ec654440f4c2b5b07d6c286c3fd_MIT16_07F09_Lec26.pdf)
+[3D Kinematics MIT](https://ocw.mit.edu/courses/16-07-dynamics-fall-2009/419be4d742e628d70acfbc5496eab967_MIT16_07F09_Lec25.pdf)
 
 ## Spatial Position
 
@@ -24,4 +27,10 @@ There are two methods I'm considering to transform my vectors: spatial transform
 
 
 We should be able to find the angular momentum's axis of rotation by vectorially adding together all of the different angular momenta. 
+
+
+## Kinematics:
+
+- correcting inertia tensor using parallel axis theorem
+- correcting inertia tensor for rotated axes
 

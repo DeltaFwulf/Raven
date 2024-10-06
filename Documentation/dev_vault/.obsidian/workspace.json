@@ -13,7 +13,19 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Kinematics/Chapter 4. 3D Rotations.md",
+                "file": "Rocket Definition/Primitives/Conic Generalised.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "186b7845f08619ae",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Rocket Definition/Primitives/Conic Full.md",
                 "mode": "source",
                 "source": false
               }
@@ -25,7 +37,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Reference Frames.md",
+                "file": "Kinematics/Reference Frames.md",
                 "mode": "source",
                 "source": false
               }
@@ -42,7 +54,7 @@
             }
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -108,7 +120,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Reference Frames.md",
+                "file": "Kinematics/Reference Frames.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -125,7 +137,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Reference Frames.md",
+                "file": "Kinematics/Reference Frames.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -148,7 +160,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Reference Frames.md"
+                "file": "Kinematics/Reference Frames.md"
               }
             }
           }
@@ -171,16 +183,16 @@
   },
   "active": "c00fce086dce448c",
   "lastOpenFiles": [
+    "Kinematics/Frame Transformation.md",
+    "Kinematics/Reference Frames.md",
     "Rocket Definition/Primitives/Conic Generalised.md",
     "Rocket Definition/Primitives/Conic Full.md",
-    "Kinematics/Frame Transformation.md",
-    "Kinematics/Chapter 4. 3D Rotations.md",
+    "Rocket Definition/Primitives/Custom Primitive.md",
     "Rocket Definition/Primitives/Primitives.md",
+    "Kinematics/Chapter 4. 3D Rotations.md",
     "Rocket Definition/Primitives/Rectangular Prism.md",
     "Kinematics",
-    "Reference Frames.md",
     "Rocket Definition/Coordinate Systems.md",
-    "Rocket Definition/Primitives/Custom Primitive.md",
     "Rocket Definition",
     "Kinematics",
     "Welcome.md",
