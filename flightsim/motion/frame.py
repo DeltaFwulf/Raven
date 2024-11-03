@@ -16,11 +16,14 @@ class Frame():
         q = cos(angInit/2) * np.ones((4), float)
         q[1:] = sin(angInit / 2) * axisInit
         
-        self.transform[:3,:3] = Frame.getRotMatrix(q)
+        self.transform[:3,:3] = Frame.rotMatFromQ(q)
         self.transform[:3, 3] = transInit
 
+        self.rotMatrix = self.transform[:3,:3]
+        self.transVector = self.transform[:3, 3]
 
-    def getRotMatrix(q:np.array) -> np.array:
+
+    def rotMatFromQ(q:np.array) -> np.array:
         """Given a unit quaternion, outputs a 3x3 rotation matrix"""
 
         rotMatrix = np.zeros((3,3), float)
@@ -38,7 +41,7 @@ class Frame():
         rotMatrix[2,2] = 2 * (q[0]**2 + q[3]**2) - 1
 
         return rotMatrix
-
+    
 
     def transformLocal(self, transLocal:np.array, ang:float, axis:np.array) -> None:
         """Transforms the current frame within its own local coordinate system"""
@@ -51,10 +54,13 @@ class Frame():
         transGlobal = np.matmul(self.transform[:3,:3], transLocal)
 
         affineTransform = np.identity(4, float)
-        affineTransform[:3,:3] = Frame.getRotMatrix(q)
+        affineTransform[:3,:3] = Frame.rotMatFromQ(q)
         affineTransform[:3, 3] = transGlobal
 
         self.transform = np.matmul(affineTransform, self.transform)
+
+        self.rotMatrix = self.transform[:3, :3]
+        self.transVector = self.transform[:3, 3]
 
         return
     
@@ -126,9 +132,6 @@ def drawFrames(frames:list):
 # gather frame behaviour in this testbed, use findings to define a useful transformer class
 def frameTest():
 
-    # maybe we have to define the rocket frame by taking a vector perpendicular to the launch rail and the vertical, then rotate by the angle of tilt of the launch rail about this perpendicular axis?
-    # The vehicle should have x parallel to the launch rail vector, then some roll angle about this rail (subsequent rotation about the launch rail vector (apply first for intrinsic ordering))
-
     worldFrame = Frame(np.array([0,0,0]), 0, np.array([1,0,0]))
     
     # The launch rail is tilted at 5 degrees from the vertical, facing in the east direction (+x bias of z vector). Therefore, the base rotation is -5 degrees about the axis [0,1,0]
@@ -138,12 +141,10 @@ def frameTest():
     transInit = np.array([1,0,0])
 
     vehFrame = Frame(transInit, railTilt, railNorm)
-    vehFrame.transformLocal(np.array([5,0,0]), 0, np.array([1,0,0]))
+    vehFrame.transformLocal(np.array([5,5,0]), -30*pi/180, np.array([0,0.5,0.5]))
 
     print(f"vehicle frame transformation matrix:\n{vehFrame.transform}\n")
 
     # plot both frames:
     frames = [worldFrame, vehFrame]
     drawFrames(frames)
-        
-frameTest()

@@ -1,7 +1,7 @@
 # definitions of all materials
 # materials have (for now) only densities, but we can work in melting points, strengths, etc. 
 
-class Materials():
+class legacyMaterial():
 
     densities = {
         "generic":1000,
@@ -17,4 +17,14 @@ class Materials():
         "cfrp":0
     }
 
+
+
+class Material():
+
+    """
+    Materials refer to solid phase materials with the following properties:
+    - density
+    - colour? (for use in visualiser)
+
+    """
     
