@@ -37,9 +37,10 @@ def getConicVertices(height:float, r0_outer:float, r0_inner:float, r1_outer:floa
     v1_outer = []
     v1_inner = []
 
-    offset_inner0 = 2 * curvFaces
-    offset_inner1 = 3 * curvFaces if r0_inner > 0 else 2 * curvFaces + 1
+    offset_inner0 = 2 * curvFaces - 1
+    offset_inner1 = 3 * curvFaces if r0_inner > 0 else 2 * curvFaces
 
+    vertices = []
     edges = []
 
     ang = np.linspace(0, 2 * pi, curvFaces)
@@ -53,6 +54,9 @@ def getConicVertices(height:float, r0_outer:float, r0_inner:float, r1_outer:floa
         edges.append((i, i+1)) # ring 0
         edges.append((i + curvFaces, i + curvFaces + 1)) # ring 1
         edges.append((i, i + curvFaces)) # ring 0 to ring 1
+
+    vertices.extend(v0_outer)
+    vertices.extend(v1_outer)
 
     # we have 4 configurations of the inner surface:
     # 1): there is no inner hole (inners both equal 0) (no inner vertices)
@@ -69,6 +73,9 @@ def getConicVertices(height:float, r0_outer:float, r0_inner:float, r1_outer:floa
             edges.append((i + offset_inner0, i + offset_inner0 + 1)) # inner ring 0
             edges.append((i + offset_inner1, i + offset_inner1 + 1)) # inner ring 1
             edges.append((i + offset_inner0, i + offset_inner1)) # inner ring 0 -> inner ring 1
+
+        vertices.extend(v0_inner)
+        vertices.extend(v1_inner)
             
 
     elif(r0_inner == 0 and r1_inner > 0):
@@ -79,16 +86,23 @@ def getConicVertices(height:float, r0_outer:float, r0_inner:float, r1_outer:floa
             v1_inner.append((r1_inner * cos(ang[i]), r1_inner * sin(ang[i]), xf))
             edges.append((offset_inner0, i + offset_inner1))
 
+        vertices.extend(v0_inner)
+        vertices.extend(v1_inner)
+
     elif(r0_inner > 0 and r1_inner == 0):
 
         v1_inner.append([0, 0, xf])
 
         for i in range(0, curvFaces):
             v0_inner.append((r0_inner * cos(ang[i]), r0_inner * sin(ang[i]), x0))
+            edges.append((i + offset_inner0, i + offset_inner0 + 1))
             edges.append((i + offset_inner0, offset_inner1))
 
-    vertices = (v0_outer, v1_outer, v0_inner, v1_inner)
-    edges = tuple(edges)
+        vertices.extend(v0_inner)
+        vertices.extend(v1_inner)
+
+    #vertices = tuple(vertices) # XXX: this is probably not ideal if we have to transform relative to other parts later on
+    #edges = tuple(edges)
 
     return vertices, edges
 
@@ -134,10 +148,7 @@ def shape(vertices:tuple, edges:tuple):
 
 def main():
 
-    vertices, edges = getConicVertices(height=1, r0_outer=1, r0_inner=0.5, r1_outer=1, r1_inner=0.5, curvFaces=8)
-
-    print(vertices)
-    print(edges)
+    vertices, edges = getConicVertices(height=1, r0_outer=0.5, r0_inner=0, r1_outer=0.25, r1_inner=0.1, curvFaces=8)
 
     pg.init()
     display = (800, 600)
