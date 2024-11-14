@@ -1,7 +1,8 @@
-from math import pi, sqrt
+from math import pi, sqrt, sin, cos
 import numpy as np
-from materials import legacyMaterial
+from .materials import *
 from motion.frame import Frame
+
 
 
 class Primitive():
@@ -101,11 +102,11 @@ class Conic(Primitive):
 
     shape = "conic"
 
-    def __init__(self, length, transform:Frame, dOuterRoot, dOuterEnd, dInnerRoot=0, dInnerEnd=0, name="unnamed", material="generic"):
+    def __init__(self, length, transform:Frame, dOuterRoot, dOuterEnd, dInnerRoot=0, dInnerEnd=0, name="unnamed", material=Material):
 
         self.name = name
         self.material = material
-        self.density = legacyMaterial.densities[material]
+        self.density = material.density
 
         self.length = length
 
@@ -130,9 +131,11 @@ class Conic(Primitive):
         self.moi_root = self.translateReference(self.moi_com, self.com) # interia tensor about part root location
         self.moi_ref = self.moveReference(self.moi_com, self.transform, reference='root') # inertia tensor about module root
 
+        self.vertices, self.edges = self.wireframe()
+
     
     def calcMass(self):
-        return (pi * self.density * self.length / 3) * ((self.rOuterRoot**2 - self.rInnerRoot**2) + (self.rOuterRoot * self.rOuterEnd - self.rInnerRoot * self.rInnerEnd) + (self.rOuterEnd**2 - self.rInnerEnd**2))
+        return (pi * self.material.density * self.length / 3) * ((self.rOuterRoot**2 - self.rInnerRoot**2) + (self.rOuterRoot * self.rOuterEnd - self.rInnerRoot * self.rInnerEnd) + (self.rOuterEnd**2 - self.rInnerEnd**2))
 
 
     def calcCoM(self):
@@ -171,10 +174,138 @@ class Conic(Primitive):
             return tensor
 
         # To find the inertia tensor of the shape, we simply subtract the tensor of the inner cone from that of the outer cone:
-        innerTensor = getSolidTensor(self.rInnerRoot, self.rInnerEnd, self.length, self.com, self.density)
-        outerTensor = getSolidTensor(self.rOuterRoot, self.rOuterEnd, self.length, self.com, self.density)
+        innerTensor = getSolidTensor(self.rInnerRoot, self.rInnerEnd, self.length, self.com, self.material.density)
+        outerTensor = getSolidTensor(self.rOuterRoot, self.rOuterEnd, self.length, self.com, self.material.density)
 
         return outerTensor - innerTensor
+    
+
+    def wireframe(self):
+        """
+        Returns the correct vertices and edge connections to draw the specified conic shape.
+        
+        Vertex order: outer ring 0, outer ring 1, inner ring 0, inner ring 1
+
+        Rules:
+        either r0_outer or r1_outer MUST be > 0 (no trivial shape)
+
+        r0_inner must be less than r0_outer, r1_inner must be less than r1_outer
+
+        if these rules are violated, you will be YELLED AT >:(
+        """
+
+        # TODO: build in invalid shape handling (give some dumb shape to show they messed up like a 3 sided prism of 1 x 1)
+
+        nFace = 24 # resolution of the part
+        transform = self.transform
+
+        # from definiition of 'root location'
+        x0 = 0
+        xf = x0 + self.length
+
+        # prevent negative values
+        r0_inner = max(0, self.rInnerRoot)
+        r1_inner = max(0, self.rInnerEnd)
+        r0_outer = max(0, self.rOuterRoot)
+        r1_outer = max(0, self.rOuterEnd)
+
+        v0_outer = []
+        v0_inner = []
+
+        v1_outer = []
+        v1_inner = []
+
+        offOut1 = nFace if r0_outer > 0 else 1
+        offIn0 = offOut1 + (nFace if r1_outer > 0 else 1)
+        offIn1 = offIn0 + (nFace if r0_inner > 0 else 1)
+
+        vertices = []
+        edges = []
+
+        ang = np.linspace(0, 2*pi * (nFace - 1) / nFace, nFace)
+
+        # create outer conic vertices
+        if(r0_outer > 0 and r1_outer > 0):
+
+            for i in range(0, nFace):
+
+                v0_outer.append(transform.map((x0, r0_outer * cos(ang[i]), r0_outer * sin(ang[i]))))
+                v1_outer.append(transform.map((xf, r1_outer * cos(ang[i]), r1_outer * sin(ang[i]))))
+
+                edges.append((i, (i+1) % nFace)) # ring 0
+                edges.append((i + nFace, (i + 1) % nFace + offOut1)) # ring 1
+                edges.append((i, i + nFace)) # ring 0 to ring 1
+
+        elif(r0_outer > 0):
+
+            v1_outer.append(transform.map((xf, 0, 0)))
+
+            for i in range(0, nFace):
+                
+                v0_outer.append(transform.map((x0, r0_outer * cos(ang[i]), r0_outer * sin(ang[i]))))
+
+                edges.append((i, (i+1) % nFace)) # ring 0
+                edges.append((i, offOut1)) # conic point
+
+        elif(r1_outer > 0):
+
+            v0_outer.append(transform.map((x0, 0, 0)))
+
+            for i in range(0, nFace):
+
+                v1_outer.append(transform.map((xf, r1_outer * cos(ang[i]), r1_outer * sin(ang[i]))))
+
+                edges.append((i + offOut1, (i+1) % nFace + offOut1))
+                edges.append((i + offOut1, 0))
+
+        vertices.extend(v0_outer)
+        vertices.extend(v1_outer)
+
+        # we have 4 configurations of the inner surface:
+        # 1): there is no inner hole (inners both equal 0) (no inner vertices)
+        # 2): lower is 0, upper is non-zero (many to point)
+        # 3): upper is 0, lower is non-zero (many to point)
+        # 4): both are non-zero (many to many)
+
+        if(r0_inner > 0 and r1_inner > 0):
+            for i in range(0, nFace):
+                
+                v0_inner.append(transform.map((x0, r0_inner * cos(ang[i]), r0_inner * sin(ang[i]))))
+                v1_inner.append(transform.map((xf, r1_inner * cos(ang[i]), r1_inner * sin(ang[i]))))
+
+                edges.append((i + offIn0, (i+1) % nFace + offIn0)) # inner ring 0
+                edges.append((i + offIn1, (i+1) % nFace + offIn1)) # inner ring 1
+                edges.append((i + offIn0, i + offIn1)) # inner ring 0 -> inner ring 1
+
+            vertices.extend(v0_inner)
+            vertices.extend(v1_inner)
+                
+
+        elif(r0_inner == 0 and r1_inner > 0):
+            
+            v0_inner.append(transform.map((x0, 0, 0)))
+
+            for i in range(0, nFace):
+                v1_inner.append(transform.map((xf, r1_inner * cos(ang[i]), r1_inner * sin(ang[i]))))
+                edges.append((i + offIn1, (i+1) % nFace + offIn1)) # inner ring 1
+                edges.append((offIn0, i + offIn1)) # conic point
+
+            vertices.extend(v0_inner)
+            vertices.extend(v1_inner)
+
+        elif(r0_inner > 0 and r1_inner == 0):
+
+            v1_inner.append(transform.map((xf, 0, 0)))
+
+            for i in range(0, nFace):
+                v0_inner.append(transform.map((x0, r0_inner * cos(ang[i]), r0_inner * sin(ang[i]))))
+                edges.append((i + offIn0, (i+1) % nFace + offIn0)) # inner ring 0
+                edges.append((i + offIn0, offIn1)) # conic point
+
+            vertices.extend(v0_inner)
+            vertices.extend(v1_inner)
+
+        return vertices, edges
         
 
 
@@ -182,20 +313,30 @@ class RectangularPrism(Primitive):
 
     shape = "rectangular_prism"
 
-    def __init__(self, x, y, z, name="unnamed", material="generic"):
+    def __init__(self, x, y, z, transform:Frame, name="unnamed", material=Material):
 
         self.name = name
+        self.transform = transform
 
         self.x = x
         self.y = y
         self.z = z
 
         self.material = material
-        self.density = legacyMaterial.densities[material]
+        
+        self.mass = self.material.density * x * y * z
+        self.com = 0.5 * np.array((x, y, z), float) # centre of the part
+
+        # Inertia tensors
+        self.moi_com = self.calcMassTensor() # inertia tensor about centre of mass
+        self.moi_root = self.translateReference(self.moi_com, self.com) # interia tensor about part root location
+        self.moi_ref = self.moveReference(self.moi_com, self.transform, reference='root') # inertia tensor about module root
+
+        self.vertices, self.edges = self.wireframe()
 
 
     def calcMass(self):
-        return self.density * self.x * self.y * self.z
+        return self.material.density * self.x * self.y * self.z
     
 
     def calcCoM(self):
@@ -205,7 +346,7 @@ class RectangularPrism(Primitive):
         return CoM
     
 
-    def calcMoI(self):
+    def calcMassTensor(self):
 
         MoI = np.zeros((3,3), float)
 
@@ -214,16 +355,54 @@ class RectangularPrism(Primitive):
         return MoI
     
 
+    def wireframe(self):
+
+        transform = self.transform
+
+        # first face offset:
+        x0 = 0
+        xf = x0 + self.x
+        y0 = -0.5 * self.y
+        yf = 0.5 * self.y
+        z0 = -0.5 * self.z
+        zf = 0.5 * self.z
+
+        #cube vertices:
+        vertices = (transform.map((x0, y0, z0)),
+                    transform.map((x0, y0, zf)),
+                    transform.map((x0, yf, z0)),
+                    transform.map((x0, yf, zf)),
+                    transform.map((xf, y0, z0)),
+                    transform.map((xf, y0, zf)),
+                    transform.map((xf, yf, z0)),
+                    transform.map((xf, yf, zf)))
+
+        edges = ((0,1),
+                (0,2),
+                (0,4),
+                (1,3),
+                (1,5),
+                (2,3),
+                (2,6),
+                (3,7),
+                (4,5),
+                (4,6),
+                (5,7),
+                (6,7))
+
+        return vertices, edges
+    
+
 
 class customShape(Primitive):
 
     shape = "custom"
 
-    def __init__(self, mass, CoM, MoI, name="unnamed"):
+    def __init__(self, mass, CoM, MoI, name="unnamed", material=Material):
+
+        self.name = name
+        self.material = material
 
         self.mass = mass
         self.CoM = CoM
-        self.MoI_centre = MoI # this is wrt to the part origin
-
-        self.name = name
-        
+        self.MoI_centre = MoI # at principal axes (CoM)

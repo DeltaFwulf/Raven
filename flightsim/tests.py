@@ -18,6 +18,9 @@ def shapeTester():
     print(f"root inertia tensor:\n\n{testPrimitive.moi_root}\n")
     print(f"ref inertia tensor:\n\n{testPrimitive.moi_ref}\n")
 
+    # plot the world axes, the primitive, and its root frame
+    
+
 
 
 shapeTester()
