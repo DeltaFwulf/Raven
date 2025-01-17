@@ -1,6 +1,6 @@
-# Flight-Simulation
+# Raven Flight Simulator
 
- Full 3D modular spacecraft simulation.
+ A fully three-dimensional flight simulation and mission planner, based upon the principle of modular vehicle definition.
 
  **Key Features**
  - Modular spacecraft construction with hierarchy
