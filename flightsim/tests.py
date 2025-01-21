@@ -1,13 +1,13 @@
 """A script containing several testing functions"""
 
-from motion.frame import Frame
+from motion.frame import Transform
 from rocket.primitives import *
 
 
 
 def shapeTester():
 
-    transform = Frame(transInit=np.array([0,0,0], float), angInit=0, axisInit=np.array([0,1,0], float))
+    transform = Transform(transInit=np.array([0,0,0], float), angInit=0, axisInit=np.array([0,1,0], float))
     testPrimitive = Conic(length=1, transform=transform, dOuterRoot=1, dOuterEnd=0, dInnerRoot=0, dInnerEnd=0, name="conic", material="generic")
 
     # Primitive properties:

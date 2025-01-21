@@ -1,7 +1,7 @@
 from math import pi, sqrt, sin, cos
 import numpy as np
 from .materials import *
-from motion.frame import Frame
+from motion.frame import Transform
 
 
 
@@ -41,7 +41,7 @@ class Primitive():
             return (tensorIn + (self.mass * correction)) * np.array([[1, -1, 1],[-1, 1, -1], [1,-1, 1]], float) # XXX: check this pls
     
 
-    def rotateReference(self, tensorIn:np.array, transformation:Frame) -> np.array:
+    def rotateReference(self, tensorIn:np.array, transformation:Transform) -> np.array:
 
             i = np.array([1, 0, 0])
             j = np.array([0, 1, 0])
@@ -75,7 +75,7 @@ class Primitive():
             return np.matmul(T, np.matmul(tensorIn, np.transpose(T)))
     
 
-    def moveReference(self, tensorIn:np.array, transform:Frame, reference:str='com') -> np.array:
+    def moveReference(self, tensorIn:np.array, transform:Transform, reference:str='com') -> np.array:
         """
         This function calculates the inertia tensor of the primitive relative to a new frame of reference. 
 
@@ -86,6 +86,10 @@ class Primitive():
         Step 2: using parallel axis theorem, add a correction from translation to the inertia tensor
         Step 3: return the modified inertia tensor
         """
+
+        # TODO: incorporate both translation and rotation transforms into this generalised function so that we only pass in a transformation matrix
+        # TODO: check if either steps can be skipped by checking different parts of the transformation matrix
+
 
         rotated = self.rotateReference(tensorIn, transform)
 
@@ -102,7 +106,7 @@ class Conic(Primitive):
 
     shape = "conic"
 
-    def __init__(self, length, transform:Frame, dOuterRoot, dOuterEnd, dInnerRoot=0, dInnerEnd=0, name="unnamed", material=Material):
+    def __init__(self, length, transform:Transform, dOuterRoot, dOuterEnd, dInnerRoot=0, dInnerEnd=0, name="unnamed", material=Material):
 
         self.name = name
         self.material = material
@@ -313,7 +317,7 @@ class RectangularPrism(Primitive):
 
     shape = "rectangular_prism"
 
-    def __init__(self, x, y, z, transform:Frame, name="unnamed", material=Material):
+    def __init__(self, x, y, z, transform:Transform, name="unnamed", material=Material):
 
         self.name = name
         self.transform = transform

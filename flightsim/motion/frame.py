@@ -4,9 +4,14 @@ import matplotlib.pyplot as plt
 
 
 
-class Frame():
-    # a frame stores its own translation between its parent frame and itself (rotation and translation)
-    # this allows transformations to be calculated relative to this coordinate system and then mapped into the parent frame
+class Transform():
+    """
+    This class represents the transformation between two reference frames. Use this class to map vectors or points between different axis systems.
+    
+    Also contains functions that can be used to map inertia tensors between axis systems according to the frame transform.
+    """
+
+    # TODO: move inertia tensor reference move functions into this class, remove from Primitive class
 
     def __init__(self, transInit:np.array, angInit:float, axisInit:np.array):
         """The frame is initially defined by it rotation and translation relative to the world centre"""
@@ -16,14 +21,14 @@ class Frame():
         q = cos(angInit/2) * np.ones((4), float)
         q[1:] = sin(angInit / 2) * axisInit
         
-        self.transform[:3,:3] = Frame.rotMatFromQ(q)
+        self.transform[:3,:3] = Transform.rotationMatrixFromQuaternion(q)
         self.transform[:3, 3] = transInit
 
         self.rotMatrix = self.transform[:3,:3]
         self.transVector = self.transform[:3, 3]
 
 
-    def rotMatFromQ(q:np.array) -> np.array:
+    def rotationMatrixFromQuaternion(q:np.array) -> np.array:
         """Given a unit quaternion, outputs a 3x3 rotation matrix"""
 
         rotMatrix = np.zeros((3,3), float)
@@ -54,7 +59,7 @@ class Frame():
         transGlobal = np.matmul(self.transform[:3,:3], transLocal)
 
         affineTransform = np.identity(4, float)
-        affineTransform[:3,:3] = Frame.rotMatFromQ(q)
+        affineTransform[:3,:3] = Transform.rotationMatrixFromQuaternion(q)
         affineTransform[:3, 3] = transGlobal
 
         self.transform = np.matmul(affineTransform, self.transform)
@@ -132,7 +137,7 @@ def drawFrames(frames:list):
 # gather frame behaviour in this testbed, use findings to define a useful transformer class
 def frameTest():
 
-    worldFrame = Frame(np.array([0,0,0]), 0, np.array([1,0,0]))
+    worldFrame = Transform(np.array([0,0,0]), 0, np.array([1,0,0]))
     
     # The launch rail is tilted at 5 degrees from the vertical, facing in the east direction (+x bias of z vector). Therefore, the base rotation is -5 degrees about the axis [0,1,0]
     railTilt = 30 * pi / 180
@@ -140,7 +145,7 @@ def frameTest():
 
     transInit = np.array([1,0,0])
 
-    vehFrame = Frame(transInit, railTilt, railNorm)
+    vehFrame = Transform(transInit, railTilt, railNorm)
     vehFrame.transformLocal(np.array([5,5,0]), -30*pi/180, np.array([0,0.5,0.5]))
 
     print(f"vehicle frame transformation matrix:\n{vehFrame.transform}\n")
