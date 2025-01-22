@@ -7,13 +7,11 @@ import matplotlib.pyplot as plt
 class Transform():
     """
     This class represents the transformation between two reference frames. Use this class to map vectors or points between different axis systems.
-    
     Also contains functions that can be used to map inertia tensors between axis systems according to the frame transform.
     """
 
-    # TODO: move inertia tensor reference move functions into this class, remove from Primitive class
 
-    def __init__(self, transInit:np.array, angInit:float, axisInit:np.array):
+    def __init__(self, transInit:np.array=np.zeros(3), angInit:float=0, axisInit:np.array=np.array([1,0,0], float), baseTransform:np.array=None):
         """The frame is initially defined by it rotation and translation relative to the world centre"""
 
         self.transform = np.identity(4, float)
@@ -23,6 +21,9 @@ class Transform():
         
         self.transform[:3,:3] = Transform.rotationMatrixFromQuaternion(q)
         self.transform[:3, 3] = transInit
+
+        if baseTransform is not None:  # apply this transform to the base transform (chain):
+            self.chain(baseTransform)
 
         self.rotMatrix = self.transform[:3,:3]
         self.transVector = self.transform[:3, 3]
@@ -48,7 +49,7 @@ class Transform():
         return rotMatrix
     
 
-    def transformLocal(self, transLocal:np.array, ang:float, axis:np.array) -> None:
+    def transformLocal(self, translation:np.array=np.zeros((3),float), ang:float=0, axis:np.array=np.array([1,0,0],float)) -> None:
         """Transforms the current frame within its own local coordinate system"""
 
         # quaternion-based rotation matrix
@@ -56,7 +57,7 @@ class Transform():
         q[1:] = sin(ang / 2) * axis
 
         # translation must first be rotated into the frame's reference frame (use the upper 3x3 matrix of current transformation matrix before applying)
-        transGlobal = np.matmul(self.transform[:3,:3], transLocal)
+        transGlobal = np.matmul(self.transform[:3,:3], translation)
 
         affineTransform = np.identity(4, float)
         affineTransform[:3,:3] = Transform.rotationMatrixFromQuaternion(q)
@@ -71,7 +72,7 @@ class Transform():
     
 
     def map(self, vecIn:np.array) -> np.array:
-        """Applies the affine transformation matrix to an existing vector to map it into the local reference frame"""
+        """Maps a vector from the 'base' reference frame to this local reference frame"""
 
         vecIn = np.append(vecIn, np.array([1]))
         mapped = np.matmul(self.transform, vecIn)
@@ -80,10 +81,21 @@ class Transform():
     
 
     def align(self, vecIn:np.array) -> np.array:
-        """Pure rotation transformation part of the affine transformation. This is equivalent to mapping the vector to a reference system whose origin still lies at the world origin, but whose axes are parallel to the local frame's"""
+        """A pure rotation transformation that maps the input vector to a reference frame whose origin does not change but whose axes are now aligned with the local frame"""
         rotMat = self.transform[:3,:3]
         return np.matmul(rotMat, vecIn)
+    
 
+    def chain(self, prevTransform:'Transform'):
+            """
+            This transform is chained from the previous transformation such that this transform is now the combination of both
+
+            If this transformation has matrix B, and the previous transformation has matrix A, we now have B*A
+
+            This is very similar to transform local (it does the same thing but takes in another transform for convenience)
+            """
+
+            self.transform = np.matmul(prevTransform.transform, self.transform)
 
 
 def drawFrames(frames:list):
@@ -132,24 +144,25 @@ def drawFrames(frames:list):
     ax.set_zlabel("z")
 
     plt.show()
+
         
 
 # gather frame behaviour in this testbed, use findings to define a useful transformer class
 def frameTest():
 
-    worldFrame = Transform(np.array([0,0,0]), 0, np.array([1,0,0]))
-    
-    # The launch rail is tilted at 5 degrees from the vertical, facing in the east direction (+x bias of z vector). Therefore, the base rotation is -5 degrees about the axis [0,1,0]
-    railTilt = 30 * pi / 180
-    railNorm = np.array([0,1,0], float)
+    baseFrame = Transform() # this is just a trivial transform (no change from "true" origin)
 
-    transInit = np.array([1,0,0])
+    # let's set the first transformation to be 45 degrees about the x axis:
+    transform1 = Transform(transInit=np.array([1,1,1], float), angInit=pi/4, axisInit=np.array([1,0,0], float))
 
-    vehFrame = Transform(transInit, railTilt, railNorm)
-    vehFrame.transformLocal(np.array([5,5,0]), -30*pi/180, np.array([0,0.5,0.5]))
+    # then, we'll transform this by moving in the new x axis by 5 and rotating 180 degrees about the y axis:
+    transform2 = Transform(transInit=np.array([0,0,0], float), angInit=pi, axisInit=np.array([0,1,0], float))
+    transform2.chain(transform1)
 
-    print(f"vehicle frame transformation matrix:\n{vehFrame.transform}\n")
+    # can we then translate frame 2 by 2 in its local z axis?
+    transform2.transformLocal(np.array([0,0,2], float))
 
-    # plot both frames:
-    frames = [worldFrame, vehFrame]
+    frames = [baseFrame, transform1, transform2]
     drawFrames(frames)
+
+frameTest()

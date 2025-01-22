@@ -11,7 +11,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 import numpy as np
 from math import cos, sin, pi
-from motion.frame import Transform
+from flightsim.motion.transforms import Transform
 from rocket.primitives import Conic, RectangularPrism
 from rocket import materials
 
@@ -51,7 +51,7 @@ def main():
     rectTransform = Transform(np.array([1, 0, 0], float), angInit=0, axisInit=np.array([1,0,0], float))
 
     # build the shapes from primitives, then draw them according to their positions:
-    conic = Conic(length=1, transform=conicTransform, dOuterRoot=1, dOuterEnd=1, dInnerRoot=0.5, dInnerEnd=0.5, name='conic0', material=materials.Aluminium)
+    conic = Conic(length=1, moduleTransform=conicTransform, dOuterRoot=1, dOuterEnd=1, dInnerRoot=0.5, dInnerEnd=0.5, name='conic0', material=materials.Aluminium)
     rectPrism = RectangularPrism(x=1, y=1, z=1, transform=rectTransform, name='rectangular-prism-0', material=materials.Aluminium)
     
     homeVerts, homeEdges = axes(homeTransform)
