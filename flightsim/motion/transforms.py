@@ -88,9 +88,7 @@ class Transform():
 
     def chain(self, prevTransform:'Transform'):
             """
-            This transform is chained from the previous transformation such that this transform is now the combination of both
-
-            If this transformation has matrix B, and the previous transformation has matrix A, we now have B*A
+            Chains transforms A (previous) and B (this one) together such that B is applied in A's local coordinate system.
 
             This is very similar to transform local (it does the same thing but takes in another transform for convenience)
             """
