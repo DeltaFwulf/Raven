@@ -1,22 +1,7 @@
 from math import pi, sqrt, sin, cos
 import numpy as np
 from .materials import *
-from flightsim.motion.transforms import Transform
-
-
-
-def shapeTester():
-
-    transform = Transform(transInit=np.array([0,0,0], float), angInit=0, axisInit=np.array([0,1,0], float))
-    testPrimitive = Conic(length=1, moduleTransform=transform, dOuterRoot=1, dOuterEnd=0, dInnerRoot=0, dInnerEnd=0, name="conic", material="generic")
-
-    # Primitive properties:
-    ###########################################################################################################################################################
-    print(f"the mass of {testPrimitive.name} is {testPrimitive.mass} kg")
-    print(f"the centre of mass of {testPrimitive.name} is\n{testPrimitive.com}")
-    print(f"mass inertia tensor:\n\n{testPrimitive.moi_com}\n")
-    print(f"root inertia tensor:\n\n{testPrimitive.moi_root}\n")
-    print(f"ref inertia tensor:\n\n{testPrimitive.moi_ref}\n")
+from motion.transforms import Transform
 
 
 
@@ -113,7 +98,7 @@ class Primitive():
             return np.matmul(T, np.matmul(tensorIn, np.transpose(T)))
     
 
-    def moveReference(self, tensorIn:np.array, comVecIn:np.array, mass:float, relTransform:Transform) -> np.array:
+    def moveReference(self, tensorIn:np.array, comTransform:np.array, mass:float, relTransform:Transform) -> np.array:
         """
         This function calculates the inertia tensor of an object from a new reference frame given the 
         transformation between the original and new reference frames.
@@ -129,16 +114,20 @@ class Primitive():
         Step 3: return the inertia tensor, I2
         """
 
-        rotating = (relTransform.rotMatrix != np.identity(3)).any()
-        translating = (relTransform.transVector != np.zeros((3), float)).any()
+        rotating = (relTransform.getRotMatrix() != np.identity(3)).any()
+        translating = (relTransform.getTransVec() != np.zeros((3), float)).any()
 
-        tensor = tensorIn()
+        tensor = tensorIn
 
         if rotating:
-            tensor = self.rotateReference(tensorIn=tensor, transform=relTransform)
+            tensor = self.rotateReference(tensorIn=tensor, 
+                                          transform=relTransform)
 
         if translating:
-            tensor = self.translateReference(tensorIn=tensor, transVec=relTransform[:3,-1], mass=mass, com=comVecIn)
+            tensor = self.translateReference(tensorIn=tensor, 
+                                             transVec=relTransform.getTransVec(), 
+                                             mass=mass, 
+                                             com=comTransform.getTransVec())
                                              
         return tensor
 
@@ -148,7 +137,7 @@ class Conic(Primitive):
 
     shape = "conic"
 
-    def __init__(self, length, dOuterRoot, dOuterEnd, dInnerRoot=0, dInnerEnd=0, name="no-name-conic", material=Material, moduleTransform:Transform=Transform()):
+    def __init__(self, moduleTransform:Transform, length, dOuterRoot, dOuterEnd, dInnerRoot=0, dInnerEnd=0, name="conic", material=Material):
 
         self.name = name
         self.material = material
@@ -179,7 +168,7 @@ class Conic(Primitive):
         # Inertia tensors
         self.moi_ref = self.calcMassTensor()
         self.moi_com = self.moi_ref
-        self.moi_root = self.moveReference(tensorIn=self.moi_com, comVecIn=self.comRef, mass=self.mass, relTransform=self.rootTransform)
+        self.moi_root = self.moveReference(tensorIn=self.moi_com, comTransform=self.comRef, mass=self.mass, relTransform=self.rootTransform)
 
         self.vertices, self.edges = self.wireframe()
 
@@ -230,7 +219,7 @@ class Conic(Primitive):
         return outerTensor - innerTensor
     
 
-    def wireframe(self):
+    def wireframe(self, reference:str='root'):
         """
         Returns the correct vertices and edge connections to draw the specified conic shape.
         
@@ -247,7 +236,7 @@ class Conic(Primitive):
         # TODO: build in invalid shape handling (give some dumb shape to show they messed up like a 3 sided prism of 1 x 1)
 
         nFace = 24 # resolution of the part
-        transform = self.transform
+        transform = self.transforms[reference]
 
         # from definiition of 'root location'
         x0 = 0

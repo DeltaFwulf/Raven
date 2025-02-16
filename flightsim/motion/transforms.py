@@ -25,9 +25,6 @@ class Transform():
         if baseTransform is not None:  # apply this transform to the base transform (chain):
             self.chain(baseTransform)
 
-        self.rotMatrix = self.transform[:3,:3]
-        self.transVector = self.transform[:3, 3]
-
 
     def rotationMatrixFromQuaternion(q:np.array) -> np.array:
         """Given a unit quaternion, outputs a 3x3 rotation matrix"""
@@ -64,11 +61,6 @@ class Transform():
         affineTransform[:3, 3] = transGlobal
 
         self.transform = np.matmul(affineTransform, self.transform)
-
-        self.rotMatrix = self.transform[:3, :3]
-        self.transVector = self.transform[:3, 3]
-
-        return
     
 
     def map(self, vecIn:np.array) -> np.array:
@@ -94,6 +86,15 @@ class Transform():
             """
 
             self.transform = np.matmul(prevTransform.transform, self.transform)
+
+
+    def getRotMatrix(self):
+        return self.transform[:3, :3]
+    
+
+    def getTransVec(self):
+        return self.transform[:3, -1]
+
 
 
 def drawFrames(frames:list):
@@ -131,7 +132,6 @@ def drawFrames(frames:list):
         ax.plot([o[0], z[0]], [o[1], z[1]], [o[2], z[2]], '-b')
 
     # dynamically bound the plot based on the largest values of any terms in x, y, z
-  
     ax.set_xlim([xMin, xMax])
     ax.set_ylim([yMin, yMax])
     ax.set_zlim([zMin, zMax])
@@ -141,26 +141,6 @@ def drawFrames(frames:list):
     ax.set_ylabel("y")
     ax.set_zlabel("z")
 
+    ax.legend(['x', 'y', 'z'])
+
     plt.show()
-
-        
-
-# gather frame behaviour in this testbed, use findings to define a useful transformer class
-def frameTest():
-
-    baseFrame = Transform() # this is just a trivial transform (no change from "true" origin)
-
-    # let's set the first transformation to be 45 degrees about the x axis:
-    transform1 = Transform(transInit=np.array([1,1,1], float), angInit=pi/4, axisInit=np.array([1,0,0], float))
-
-    # then, we'll transform this by moving in the new x axis by 5 and rotating 180 degrees about the y axis:
-    transform2 = Transform(transInit=np.array([0,0,0], float), angInit=pi, axisInit=np.array([0,1,0], float))
-    transform2.chain(transform1)
-
-    # can we then translate frame 2 by 2 in its local z axis?
-    transform2.transformLocal(np.array([0,0,2], float))
-
-    frames = [baseFrame, transform1, transform2]
-    drawFrames(frames)
-
-frameTest()
