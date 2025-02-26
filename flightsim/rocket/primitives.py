@@ -1,7 +1,7 @@
 from math import pi, sqrt, sin, cos
 import numpy as np
-from .materials import *
-from motion.transforms import Transform
+from rocket.materials import *
+from motion.vectorUtil import Transform
 
 
 
@@ -268,8 +268,8 @@ class Conic(Primitive):
 
             for i in range(0, nFace):
 
-                v0_outer.append(transform.map((x0, r0_outer * cos(ang[i]), r0_outer * sin(ang[i]))))
-                v1_outer.append(transform.map((xf, r1_outer * cos(ang[i]), r1_outer * sin(ang[i]))))
+                v0_outer.append(transform.local2parent((x0, r0_outer * cos(ang[i]), r0_outer * sin(ang[i]))))
+                v1_outer.append(transform.local2parent((xf, r1_outer * cos(ang[i]), r1_outer * sin(ang[i]))))
 
                 edges.append((i, (i+1) % nFace)) # ring 0
                 edges.append((i + nFace, (i + 1) % nFace + offOut1)) # ring 1
@@ -277,22 +277,22 @@ class Conic(Primitive):
 
         elif(r0_outer > 0):
 
-            v1_outer.append(transform.map((xf, 0, 0)))
+            v1_outer.append(transform.local2parent((xf, 0, 0)))
 
             for i in range(0, nFace):
                 
-                v0_outer.append(transform.map((x0, r0_outer * cos(ang[i]), r0_outer * sin(ang[i]))))
+                v0_outer.append(transform.local2parent((x0, r0_outer * cos(ang[i]), r0_outer * sin(ang[i]))))
 
                 edges.append((i, (i+1) % nFace)) # ring 0
                 edges.append((i, offOut1)) # conic point
 
         elif(r1_outer > 0):
 
-            v0_outer.append(transform.map((x0, 0, 0)))
+            v0_outer.append(transform.local2parent((x0, 0, 0)))
 
             for i in range(0, nFace):
 
-                v1_outer.append(transform.map((xf, r1_outer * cos(ang[i]), r1_outer * sin(ang[i]))))
+                v1_outer.append(transform.local2parent((xf, r1_outer * cos(ang[i]), r1_outer * sin(ang[i]))))
 
                 edges.append((i + offOut1, (i+1) % nFace + offOut1))
                 edges.append((i + offOut1, 0))
@@ -309,8 +309,8 @@ class Conic(Primitive):
         if(r0_inner > 0 and r1_inner > 0):
             for i in range(0, nFace):
                 
-                v0_inner.append(transform.map((x0, r0_inner * cos(ang[i]), r0_inner * sin(ang[i]))))
-                v1_inner.append(transform.map((xf, r1_inner * cos(ang[i]), r1_inner * sin(ang[i]))))
+                v0_inner.append(transform.local2parent((x0, r0_inner * cos(ang[i]), r0_inner * sin(ang[i]))))
+                v1_inner.append(transform.local2parent((xf, r1_inner * cos(ang[i]), r1_inner * sin(ang[i]))))
 
                 edges.append((i + offIn0, (i+1) % nFace + offIn0)) # inner ring 0
                 edges.append((i + offIn1, (i+1) % nFace + offIn1)) # inner ring 1
@@ -322,10 +322,10 @@ class Conic(Primitive):
 
         elif(r0_inner == 0 and r1_inner > 0):
             
-            v0_inner.append(transform.map((x0, 0, 0)))
+            v0_inner.append(transform.local2parent((x0, 0, 0)))
 
             for i in range(0, nFace):
-                v1_inner.append(transform.map((xf, r1_inner * cos(ang[i]), r1_inner * sin(ang[i]))))
+                v1_inner.append(transform.local2parent((xf, r1_inner * cos(ang[i]), r1_inner * sin(ang[i]))))
                 edges.append((i + offIn1, (i+1) % nFace + offIn1)) # inner ring 1
                 edges.append((offIn0, i + offIn1)) # conic point
 
@@ -334,10 +334,10 @@ class Conic(Primitive):
 
         elif(r0_inner > 0 and r1_inner == 0):
 
-            v1_inner.append(transform.map((xf, 0, 0)))
+            v1_inner.append(transform.local2parent((xf, 0, 0)))
 
             for i in range(0, nFace):
-                v0_inner.append(transform.map((x0, r0_inner * cos(ang[i]), r0_inner * sin(ang[i]))))
+                v0_inner.append(transform.local2parent((x0, r0_inner * cos(ang[i]), r0_inner * sin(ang[i]))))
                 edges.append((i + offIn0, (i+1) % nFace + offIn0)) # inner ring 0
                 edges.append((i + offIn0, offIn1)) # conic point
 
@@ -407,14 +407,14 @@ class RectangularPrism(Primitive):
         zf = 0.5 * self.z
 
         #cube vertices:
-        vertices = (transform.map((x0, y0, z0)),
-                    transform.map((x0, y0, zf)),
-                    transform.map((x0, yf, z0)),
-                    transform.map((x0, yf, zf)),
-                    transform.map((xf, y0, z0)),
-                    transform.map((xf, y0, zf)),
-                    transform.map((xf, yf, z0)),
-                    transform.map((xf, yf, zf)))
+        vertices = (transform.local2parent((x0, y0, z0)),
+                    transform.local2parent((x0, y0, zf)),
+                    transform.local2parent((x0, yf, z0)),
+                    transform.local2parent((x0, yf, zf)),
+                    transform.local2parent((xf, y0, z0)),
+                    transform.local2parent((xf, y0, zf)),
+                    transform.local2parent((xf, yf, z0)),
+                    transform.local2parent((xf, yf, zf)))
 
         edges = ((0,1),
                 (0,2),

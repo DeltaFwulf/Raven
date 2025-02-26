@@ -8,6 +8,12 @@ class Transform():
     """
     This class represents the transformation between two reference frames. Use this class to map vectors or points between different axis systems.
     Also contains functions that can be used to map inertia tensors between axis systems according to the frame transform.
+
+    Use this class to create reference frames, move reference frames, or map vectors into different frames of reference.
+
+
+    Planned: 
+    - accept euler angles for vehicle attitude
     """
 
 
@@ -61,15 +67,42 @@ class Transform():
         affineTransform[:3, 3] = transGlobal
 
         self.transform = np.matmul(affineTransform, self.transform)
-    
 
-    def map(self, vecIn:np.array) -> np.array:
-        """Maps a vector from the 'base' reference frame to this local reference frame"""
 
-        vecIn = np.append(vecIn, np.array([1]))
-        mapped = np.matmul(self.transform, vecIn)
+    def move(self, axis:np.array=None, ang:float=None, translation:np.array=None, reference:str='local') -> None:
+        """Moves the reference frame according to a rotation and translation, in either local or parent frame's reference."""
 
-        return mapped[:-1] # reshaping in this function is unnecessary
+        transform = np.identity(4)
+
+        if axis is not None:
+            if reference == 'parent':
+                axis = np.matmul(self.transform[:3,:3].transpose(), axis)
+                
+            q = np.zeros(4)
+            q[0] = cos(ang / 2)
+            q[1:] = sin(ang/2) * axis
+
+            transform[:3, :3] = Transform.rotationMatrixFromQuaternion(q)
+
+        if translation is not None:
+            if reference == 'parent':
+                translation = np.matmul(self.transform[:3,:3].transpose(), translation)
+
+            transform[:3, 3] = translation
+
+        self.transform = np.matmul(self.transform, transform)
+
+
+    def local2parent(self, vecIn:np.array) -> np.array:
+        """Maps a vector defined relative to this reference frame into the parent frame's coordinate system"""
+        return np.matmul(self.transform, np.append(vecIn, np.array([1])))[:-1]
+
+       
+    def parent2local(self, vecIn:np.array) -> np.array:
+        """Maps a vector defined relative to the parent reference frame into this reference system"""
+        # y = ax + b
+        # a^-1(y-b) = x
+        return np.matmul(self.transform[:3, :3].transpose(), vecIn - self.transform[:3, 3])
     
 
     def align(self, vecIn:np.array) -> np.array:
@@ -112,10 +145,10 @@ def drawFrames(frames:list):
 
     for frame in frames:
 
-        x = frame.map(np.array([1,0,0]))
-        y = frame.map(np.array([0,1,0]))
-        z = frame.map(np.array([0,0,1]))
-        o = frame.map(np.array([0,0,0]))
+        x = frame.local2parent(np.array([1,0,0]))
+        y = frame.local2parent(np.array([0,1,0]))
+        z = frame.local2parent(np.array([0,0,1]))
+        o = frame.local2parent(np.array([0,0,0]))
 
         # update plot limits
         xMin = np.min(np.array([xMin, x[0], y[0], z[0]]))

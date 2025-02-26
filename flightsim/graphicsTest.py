@@ -11,7 +11,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 import numpy as np
 from math import cos, sin, pi
-from flightsim.motion.transforms import Transform
+from flightsim.motion.vectorUtil import Transform
 from rocket.primitives import Conic, RectangularPrism
 from rocket import materials
 
@@ -19,10 +19,10 @@ from rocket import materials
 
 def axes(transform:Transform):
 
-    vertices = (transform.map((0, 0, 0)),
-                transform.map((1, 0, 0)),
-                transform.map((0, 1, 0)),
-                transform.map((0, 0, 1)))
+    vertices = (transform.local2parent((0, 0, 0)),
+                transform.local2parent((1, 0, 0)),
+                transform.local2parent((0, 1, 0)),
+                transform.local2parent((0, 0, 1)))
 
     edges = ((0,1),
              (0,2),
