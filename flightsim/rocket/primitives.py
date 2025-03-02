@@ -20,118 +20,6 @@ class Primitive():
         return f"{self.name}({self.shape})"
     
 
-    def translateReference(self, tensorIn:np.array, transVec:np.array, mass:float, com:np.array=np.zeros(3)) -> np.array: 
-        """
-        This function uses a generalised form of the parallel axis theorem found here: https://doi.org/10.1119/1.4994835
-
-        Inputs: 
-        - object inertia tensor, I1, with axes [x1,y1,z1] about centre R1
-        - translation to get to R2, about which to find the inertia tensor, I2 with axes [x2,y2,z2] parallel to [x1,y1,z1]
-        - centre of mass position in frame 1 (does not have to be [0,0,0])
-        - object's mass
-
-        Outputs:
-        - I2
-
-        I' = I + M[(R2,R2)] - 2M[(R2,C)]
-
-        if we only know the inertia tensor about, for example, the root part, I believe that C becomes different than [0,0,0]
-        and the location about which the tensor is known becomes [0,0,0]. Therefore, we can still use the relation having only
-        I about some arbitrary point so long as we know the point's location relative to the centre of mass
-
-        Usual use might be to use reference location at the centre of mass to obtain the root tensor, then to change the reference location to the root for placement in the module
-        """
-
-        def getSymmetricMatrix(a, b):
-
-            c = np.empty((3,3), float)
-
-            c[0,0] = a[1]*b[1] + a[2]*b[2]
-            c[0,1] = -0.5 * (a[0]*b[1] + a[1]*b[0])
-            c[0,2] = -0.5 * (a[0]*b[2] + a[2]*b[0])
-
-            c[1,0] = c[0,1]
-            c[1,1] = a[0]*b[0] + a[2]*b[2]
-            c[1,2] = -0.5 * (a[1]*b[2] + a[2]*b[1])
-
-            c[2,0] = c[0,2]
-            c[2,1] = c[1,2]
-            c[2,2] = a[0]*b[0] + a[1]*b[1]
-
-            return c
-
-
-        I2 = tensorIn + (mass * getSymmetricMatrix(transVec, transVec)) - (2 * mass * getSymmetricMatrix(transVec,com))
-
-        return I2
-
-
-    def rotateReference(self, tensorIn:np.array, transform:Transform) -> np.array:
-
-            i = np.array([1, 0, 0])
-            j = np.array([0, 1, 0])
-            k = np.array([0, 0, 1])
-
-            iNew = transform.align(i)
-            jNew = transform.align(j)
-            kNew = transform.align(k)
-
-            def cosAng(vec1, vec2):
-                dot = np.dot(vec1, vec2)
-                mag = sqrt(np.sum(vec1**2 + vec2**2))
-                return dot/mag
-
-            T = np.empty((3,3), float)
-        
-            T[0,0] = cosAng(iNew, i)
-            T[0,1] = cosAng(iNew, j)
-            T[0,2] = cosAng(iNew, k)
-
-            T[1,0] = cosAng(jNew, i)
-            T[1,1] = cosAng(jNew, j)
-            T[1,2] = cosAng(jNew, k)
-
-            T[2,0] = cosAng(kNew, i)
-            T[2,1] = cosAng(kNew, j)
-            T[2,2] = cosAng(kNew, k)
-
-            return np.matmul(T, np.matmul(tensorIn, np.transpose(T)))
-    
-
-    def moveReference(self, tensorIn:np.array, comTransform:np.array, mass:float, relTransform:Transform) -> np.array:
-        """
-        This function calculates the inertia tensor of an object from a new reference frame given the 
-        transformation between the original and new reference frames.
-
-        Inputs:
-        - untransformed tensor
-        - transform between original and new reference frames
-        - untransformed translation vector to the part centre of mass
-        - mass of the object
-
-        Step 1: align the mass inertia tensor to the reference axis system
-        Step 2: using parallel axis theorem, add a correction from translation to the inertia tensor
-        Step 3: return the inertia tensor, I2
-        """
-
-        rotating = (relTransform.getRotMatrix() != np.identity(3)).any()
-        translating = (relTransform.getTransVec() != np.zeros((3), float)).any()
-
-        tensor = tensorIn
-
-        if rotating:
-            tensor = self.rotateReference(tensorIn=tensor, 
-                                          transform=relTransform)
-
-        if translating:
-            tensor = self.translateReference(tensorIn=tensor, 
-                                             transVec=relTransform.getTransVec(), 
-                                             mass=mass, 
-                                             com=comTransform.getTransVec())
-                                             
-        return tensor
-
-
 
 class Conic(Primitive):
 
@@ -145,10 +33,10 @@ class Conic(Primitive):
 
         self.length = length
 
-        self.dOuterRoot = dOuterRoot
-        self.dOuterEnd = dOuterEnd
-        self.dInnerRoot = dInnerRoot
-        self.dInnerEnd = dInnerEnd
+        # self.dOuterRoot = dOuterRoot
+        # self.dOuterEnd = dOuterEnd
+        # self.dInnerRoot = dInnerRoot
+        # self.dInnerEnd = dInnerEnd
 
         self.rOuterRoot = dOuterRoot / 2
         self.rOuterEnd = dOuterEnd / 2
@@ -158,17 +46,11 @@ class Conic(Primitive):
         self.mass = self.calcMass()
         self.com = self.calcCoM()
 
-        self.rootTransform = Transform(transInit=self.com)
-        self.moduleTransform = moduleTransform
-        self.moduleTransform.chain(self.rootTransform) # module transforms are based on the primitive root frame
-   
-        self.transforms = {'root':self.rootTransform, 'module':moduleTransform} # all transforms are relative to the part's reference axes (here it is the object's principal axes)
-        self.comRef = Transform() # this primitive has its reference frame at the centre of mass
-
-        # Inertia tensors
-        self.moi_ref = self.calcMassTensor()
-        self.moi_com = self.moi_ref
-        self.moi_root = self.moveReference(tensorIn=self.moi_com, comTransform=self.comRef, mass=self.mass, relTransform=self.rootTransform)
+        self.com2root = Transform(transInit=-self.com) # Remember! This is within the local coordinate system!
+        
+        # The primitive contains a monent of inetia tensor about its centre of mass, OR some other reference location (specified with com2ref transform)
+        self.com2ref = Transform() # this primitive has its reference frame at the centre of mass
+        self.MoI = self.calcInertiaTensor()
 
         self.vertices, self.edges = self.wireframe()
 
@@ -186,7 +68,7 @@ class Conic(Primitive):
         return CoM
     
 
-    def calcMassTensor(self):
+    def calcInertiaTensor(self):
         
         def getSolidTensor(rootRadius, endRadius, length, CoM, density): # returns the inertia tensor of the object about its centre of mass, in the part's principal axes
 

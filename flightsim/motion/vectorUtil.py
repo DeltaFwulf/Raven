@@ -1,5 +1,5 @@
 import numpy as np
-from math import cos, sin, pi
+from math import cos, sin, sqrt
 import matplotlib.pyplot as plt
 
 
@@ -52,23 +52,6 @@ class Transform():
         return rotMatrix
     
 
-    def transformLocal(self, translation:np.array=np.zeros((3),float), ang:float=0, axis:np.array=np.array([1,0,0],float)) -> None:
-        """Transforms the current frame within its own local coordinate system"""
-
-        # quaternion-based rotation matrix
-        q = cos(ang / 2) * np.ones((4), float)
-        q[1:] = sin(ang / 2) * axis
-
-        # translation must first be rotated into the frame's reference frame (use the upper 3x3 matrix of current transformation matrix before applying)
-        transGlobal = np.matmul(self.transform[:3,:3], translation)
-
-        affineTransform = np.identity(4, float)
-        affineTransform[:3,:3] = Transform.rotationMatrixFromQuaternion(q)
-        affineTransform[:3, 3] = transGlobal
-
-        self.transform = np.matmul(affineTransform, self.transform)
-
-
     def move(self, axis:np.array=None, ang:float=None, translation:np.array=None, reference:str='local') -> None:
         """Moves the reference frame according to a rotation and translation, in either local or parent frame's reference."""
 
@@ -93,6 +76,12 @@ class Transform():
         self.transform = np.matmul(self.transform, transform)
 
 
+    def invert(self) -> None:
+        """Inverts the transformation"""
+        self.transform[:3, :3] = self.transform[:3, :3].transpose()
+        self.transform[:3, 3] = -self.transform[:3, 3]
+
+
     def local2parent(self, vecIn:np.array) -> np.array:
         """Maps a vector defined relative to this reference frame into the parent frame's coordinate system"""
         return np.matmul(self.transform, np.append(vecIn, np.array([1])))[:-1]
@@ -100,33 +89,99 @@ class Transform():
        
     def parent2local(self, vecIn:np.array) -> np.array:
         """Maps a vector defined relative to the parent reference frame into this reference system"""
-        # y = ax + b
-        # a^-1(y-b) = x
+        # y = ax + b,  a^-1(y-b) = x
         return np.matmul(self.transform[:3, :3].transpose(), vecIn - self.transform[:3, 3])
     
 
     def align(self, vecIn:np.array) -> np.array:
-        """A pure rotation transformation that maps the input vector to a reference frame whose origin does not change but whose axes are now aligned with the local frame"""
-        rotMat = self.transform[:3,:3]
-        return np.matmul(rotMat, vecIn)
+        """Maps a vector defined in this reference frame into the world frame BUT assumes that this reference frame shares an origin with the parent - pure rotation without translation"""
+        return np.matmul(self.rotationMatrix(), vecIn)
     
 
-    def chain(self, prevTransform:'Transform'):
-            """
-            Chains transforms A (previous) and B (this one) together such that B is applied in A's local coordinate system.
+    def chain(self, nextTransform:'Transform'):
+            """This combines two subsequent transformations together, in the order of self.transform, newTransform"""
 
-            This is very similar to transform local (it does the same thing but takes in another transform for convenience)
-            """
-
-            self.transform = np.matmul(prevTransform.transform, self.transform)
+            self.transform = np.matmul(self.transform, nextTransform.transform)
 
 
-    def getRotMatrix(self):
+    def rotationMatrix(self):
         return self.transform[:3, :3]
     
 
-    def getTransVec(self):
-        return self.transform[:3, -1]
+    def translation(self):
+        return self.transform[:3, 3]
+    
+
+    def transformInertiaTensor(self, tensorIn, mass, com2ref:np.array=np.zeros(3)) -> np.array:
+        """Changes the reference frame of the mass moment of inertia tensor to that about a reference frame with this transform from the body aligned, CoM centered reference frame.
+        
+        For generalised parallel axis theorem, you can also specify translation (in parent coordinates) of the reference location from the object's centre of mass. If the tensor input is about the object's centre of mass,
+        do not put anything for initialTranslation. If the initial translation is non-zero, please put the translation in; the generalised parallel axis theorem method can take this into account.
+        """
+        
+        rotating = (self.transform.rotationMatrix() != np.identity(3)).any()
+        translating = (self.transform.translation() != np.zeros((3), float)).any()
+
+        tensor = tensorIn
+
+        if rotating:
+            
+            i = np.array([1, 0, 0])
+            j = np.array([0, 1, 0])
+            k = np.array([0, 0, 1])
+
+            iNew = self.transform.align(i)
+            jNew = self.transform.align(j)
+            kNew = self.transform.align(k)
+
+            def cosAng(vec1, vec2):
+                return np.dot(vec1, vec2) / sqrt(np.linalg.norm(vec1) * np.linalg.norm(vec2))
+            T = np.empty((3,3), float)
+        
+            T[0,0] = cosAng(iNew, i)
+            T[0,1] = cosAng(iNew, j)
+            T[0,2] = cosAng(iNew, k)
+
+            T[1,0] = cosAng(jNew, i)
+            T[1,1] = cosAng(jNew, j)
+            T[1,2] = cosAng(jNew, k)
+
+            T[2,0] = cosAng(kNew, i)
+            T[2,1] = cosAng(kNew, j)
+            T[2,2] = cosAng(kNew, k)
+
+            tensor = np.matmul(T, np.matmul(tensor, np.transpose(T)))
+
+        if translating:
+            """
+            This function uses a generalised form of the parallel axis theorem found here: https://doi.org/10.1119/1.4994835
+
+            I' = Iref + M[(R2,R2)] - 2M[(R2,C)]
+            """
+
+            def getSymmetricMatrix(a, b):
+
+                c = np.empty((3,3), float)
+
+                c[0,0] = a[1]*b[1] + a[2]*b[2]
+                c[0,1] = -0.5 * (a[0]*b[1] + a[1]*b[0])
+                c[0,2] = -0.5 * (a[0]*b[2] + a[2]*b[0])
+
+                c[1,0] = c[0,1]
+                c[1,1] = a[0]*b[0] + a[2]*b[2]
+                c[1,2] = -0.5 * (a[1]*b[2] + a[2]*b[1])
+
+                c[2,0] = c[0,2]
+                c[2,1] = c[1,2]
+                c[2,2] = a[0]*b[0] + a[1]*b[1]
+
+                return c
+
+            translation = self.translation()
+
+            tensor += (mass * getSymmetricMatrix(translation, translation)) - (2 * mass * getSymmetricMatrix(translation, com2ref))
+                                             
+        return tensor
 
 
 
@@ -145,24 +200,24 @@ def drawFrames(frames:list):
 
     for frame in frames:
 
-        x = frame.local2parent(np.array([1,0,0]))
-        y = frame.local2parent(np.array([0,1,0]))
-        z = frame.local2parent(np.array([0,0,1]))
+        frameX = frame.local2parent(np.array([1,0,0]))
+        frameY = frame.local2parent(np.array([0,1,0]))
+        frameZ = frame.local2parent(np.array([0,0,1]))
         o = frame.local2parent(np.array([0,0,0]))
 
         # update plot limits
-        xMin = np.min(np.array([xMin, x[0], y[0], z[0]]))
-        xMax = np.max(np.array([xMax, x[0], y[0], z[0]]))
+        xMin = np.min(np.array([xMin, frameX[0], frameY[0], frameZ[0]]))
+        xMax = np.max(np.array([xMax, frameX[0], frameY[0], frameZ[0]]))
 
-        yMin = np.min(np.array([yMin, x[1], y[1], z[1]]))
-        yMax = np.max(np.array([yMax, x[1], y[1], z[1]]))
+        yMin = np.min(np.array([yMin, frameX[1], frameY[1], frameZ[1]]))
+        yMax = np.max(np.array([yMax, frameX[1], frameY[1], frameZ[1]]))
 
-        zMin = np.min(np.array([zMin, x[2], y[2], z[2]]))
-        zMax = np.max(np.array([zMax, x[2], y[2], z[2]]))
+        zMin = np.min(np.array([zMin, frameX[2], frameY[2], frameZ[2]]))
+        zMax = np.max(np.array([zMax, frameX[2], frameY[2], frameZ[2]]))
         
-        ax.plot([o[0], x[0]], [o[1], x[1]], [o[2], x[2]], '-r')
-        ax.plot([o[0], y[0]], [o[1], y[1]], [o[2], y[2]], '-g')
-        ax.plot([o[0], z[0]], [o[1], z[1]], [o[2], z[2]], '-b')
+        ax.plot([o[0], frameX[0]], [o[1], frameX[1]], [o[2], frameX[2]], '-r')
+        ax.plot([o[0], frameY[0]], [o[1], frameY[1]], [o[2], frameY[2]], '-g')
+        ax.plot([o[0], frameZ[0]], [o[1], frameZ[1]], [o[2], frameZ[2]], '-b')
 
     # dynamically bound the plot based on the largest values of any terms in x, y, z
     ax.set_xlim([xMin, xMax])
