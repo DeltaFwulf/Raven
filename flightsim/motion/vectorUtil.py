@@ -17,7 +17,7 @@ class Transform():
     """
 
 
-    def __init__(self, transInit:np.array=np.zeros(3), angInit:float=0, axisInit:np.array=np.array([1,0,0], float), baseTransform:np.array=None):
+    def __init__(self, transInit:np.array=np.zeros(3), angInit:float=0, axisInit:np.array=np.array([1,0,0], float)):
         """The frame is initially defined by it rotation and translation relative to the world centre"""
 
         self.transform = np.identity(4, float)
@@ -27,9 +27,6 @@ class Transform():
         
         self.transform[:3,:3] = Transform.rotationMatrixFromQuaternion(q)
         self.transform[:3, 3] = transInit
-
-        if baseTransform is not None:  # apply this transform to the base transform (chain):
-            self.chain(baseTransform)
 
 
     def rotationMatrixFromQuaternion(q:np.array) -> np.array:
@@ -54,6 +51,8 @@ class Transform():
 
     def move(self, axis:np.array=None, ang:float=None, translation:np.array=None, reference:str='local') -> None:
         """Moves the reference frame according to a rotation and translation, in either local or parent frame's reference."""
+
+        # TODO: if the reference is 'parent', we should just be able to directly add on the translation to the vector, and only chain the rotations, basically this seems like too much computation
 
         transform = np.identity(4)
 
@@ -119,8 +118,8 @@ class Transform():
         do not put anything for initialTranslation. If the initial translation is non-zero, please put the translation in; the generalised parallel axis theorem method can take this into account.
         """
         
-        rotating = (self.transform.rotationMatrix() != np.identity(3)).any()
-        translating = (self.transform.translation() != np.zeros((3), float)).any()
+        rotating = (self.rotationMatrix() != np.identity(3)).any()
+        translating = (self.translation() != np.zeros((3), float)).any()
 
         tensor = tensorIn
 
@@ -130,9 +129,9 @@ class Transform():
             j = np.array([0, 1, 0])
             k = np.array([0, 0, 1])
 
-            iNew = self.transform.align(i)
-            jNew = self.transform.align(j)
-            kNew = self.transform.align(k)
+            iNew = self.align(i)
+            jNew = self.align(j)
+            kNew = self.align(k)
 
             def cosAng(vec1, vec2):
                 return np.dot(vec1, vec2) / sqrt(np.linalg.norm(vec1) * np.linalg.norm(vec2))

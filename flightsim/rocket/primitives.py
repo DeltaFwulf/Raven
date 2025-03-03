@@ -1,4 +1,4 @@
-from math import pi, sqrt, sin, cos
+from math import pi, sin, cos
 import numpy as np
 from rocket.materials import *
 from motion.vectorUtil import Transform
@@ -25,18 +25,13 @@ class Conic(Primitive):
 
     shape = "conic"
 
-    def __init__(self, moduleTransform:Transform, length, dOuterRoot, dOuterEnd, dInnerRoot=0, dInnerEnd=0, name="conic", material=Material):
+    def __init__(self, length, dOuterRoot, dOuterEnd, dInnerRoot=0, dInnerEnd=0, name="conic", material=Material):
 
         self.name = name
         self.material = material
         self.density = material.density
 
         self.length = length
-
-        # self.dOuterRoot = dOuterRoot
-        # self.dOuterEnd = dOuterEnd
-        # self.dInnerRoot = dInnerRoot
-        # self.dInnerEnd = dInnerEnd
 
         self.rOuterRoot = dOuterRoot / 2
         self.rOuterEnd = dOuterEnd / 2
@@ -45,14 +40,12 @@ class Conic(Primitive):
 
         self.mass = self.calcMass()
         self.com = self.calcCoM()
-
-        self.com2root = Transform(transInit=-self.com) # Remember! This is within the local coordinate system!
         
-        # The primitive contains a monent of inetia tensor about its centre of mass, OR some other reference location (specified with com2ref transform)
-        self.com2ref = Transform() # this primitive has its reference frame at the centre of mass
-        self.MoI = self.calcInertiaTensor()
-
-        self.vertices, self.edges = self.wireframe()
+        self.root2com = Transform(transInit=self.com) # XXX: this is basically storing no new information beyond the CoM position, maybe we should just use that
+        
+        # The primitive contains a monent of inetia tensor about its centre of mass, OR some other reference location with a known transform from the CoM
+        self.com2ref = np.zeros(3) # this primitive has its reference frame at the centre of mass (also, offset is a pure translation, no rotation)
+        self.moi = self.calcInertiaTensor()
 
     
     def calcMass(self):
@@ -101,7 +94,7 @@ class Conic(Primitive):
         return outerTensor - innerTensor
     
 
-    def wireframe(self, reference:str='root'):
+    def wireframe(self, rootTransform:Transform):
         """
         Returns the correct vertices and edge connections to draw the specified conic shape.
         
@@ -118,7 +111,7 @@ class Conic(Primitive):
         # TODO: build in invalid shape handling (give some dumb shape to show they messed up like a 3 sided prism of 1 x 1)
 
         nFace = 24 # resolution of the part
-        transform = self.transforms[reference]
+        transform = rootTransform
 
         # from definiition of 'root location'
         x0 = 0

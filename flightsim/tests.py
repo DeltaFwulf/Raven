@@ -1,9 +1,12 @@
 """Validation tests for primitives are run here"""
 from math import floor, log10
+from copy import deepcopy
+
 from motion.vectorUtil import Transform, drawFrames
 from rocket.primitives import *
-from ui.textUtil import formatArray
-from copy import deepcopy
+from ui.textUtil import arrFormat
+from rocket.modules import Module
+
 
 
 def shapeTester():
@@ -21,15 +24,18 @@ def shapeTester():
     print("\n+===================Inertia Tensors=======================+")
     #use solution found here: https://stackoverflow.com/questions/45478488/python-print-floats-padded-with-spaces-instead-of-zeros
 
-    print(f"Mass:\n{formatArray(shape.moi_com, sigFigs=3, tabs=2)}")
-    print(f"Root:\n{formatArray(shape.moi_root, sigFigs=3, tabs=2)}")
-    print(f"Reference:\n{formatArray(shape.moi_root, sigFigs=3, tabs=2)}")
+    print(f"Mass:\n{arrFormat(shape.moi_com, sigFigs=3, tabs=2)}")
+    print(f"Root:\n{arrFormat(shape.moi_root, sigFigs=3, tabs=2)}")
+    print(f"Reference:\n{arrFormat(shape.moi_root, sigFigs=3, tabs=2)}")
 
     # TODO: draw the shape in the module frame
 
 
 def frameTest():
-    """Uses the Transform class in different ways and outputs the result in a 3D plot to validate transform behaviour"""
+    """Uses the Transform class in different ways and outputs the result in a 3D plot to validate transform behaviour
+    
+    Passed
+    """
 
     baseFrame = Transform() # this is just a trivial transform (no change from "true" origin)
 
@@ -47,7 +53,10 @@ def frameTest():
 
 
 def chainTest():
-    """Chains multiple transformations together to make sure they behave as expected"""
+    """Chains multiple transformations together to make sure they behave as expected
+    
+    Passed
+    """
 
     baseFrame = Transform()
 
@@ -61,15 +70,43 @@ def chainTest():
 
 
 
-def tensorTests():
-    """Moves around primitives, then forms a compound object from primitives, returns the primitives and compound tensors"""
+def moduleTest():
+    """
+    A module is built and its properties output, to be checked against the same geometry in CAD.
+    
+    Findings:
+    - we need a good way to access the primitive and their transform by a name, or to associate an index with a useful name so that we can assign behaviour to certain primitives
+
+    Passed
+    """
 
     # Where within the Module is the primitive?
-    primitive0 = Conic(moduleTransform=Transform(), length=1, dOuterRoot=1, dOuterEnd=1, dInnerRoot=0, dInnerEnd=0, name='conic0', material=Aluminium)
-    
+    cylinder = Conic(length=1, dOuterRoot=1, dOuterEnd=1, dInnerRoot=0, dInnerEnd=0, name='cylinder', material=Aluminium)
+    cone = Conic(length=0.5, dOuterRoot=1, dOuterEnd=0, dInnerRoot=0, dInnerEnd=0, name='cone', material=Aluminium)
 
+    cylinderTransform = Transform(axisInit=np.array([0,1,0], float), angInit=pi/4)
+    coneTransform = deepcopy(cylinderTransform)
+    coneTransform.move(translation=np.array([1,0,0], float), reference='local')
+    #coneTransform = Transform(transInit=np.array([1.5,0,0]), axisInit=np.array([0,1,0]), angInit=pi)
 
+    primitives = [cylinder, cone]
+    rootTransforms = [cylinderTransform, coneTransform]
+
+    for i in range(0, len(primitives)):
+        print("=========================================")
+        print(f"Name: {primitives[i].name}")
+        print(f"Mass:\n\t\t{'%.3f' % primitives[i].mass} kg\n")
+        print(f"Centre of Mass:\n{arrFormat(primitives[i].com, sigFigs=3, tabs=2)}\n")
+        print(f"Moment of Inertia Tensor:\n{arrFormat(primitives[i].moi, sigFigs=3, tabs=2)}\n")
+
+    module = Module(primitives=primitives, rootTransforms=rootTransforms)
+
+    # get the module's mass, CoM, MoI tensor, compare against result in CAD and hand calc:
+    print(f"Module mass:\n\t\t{'%.3f' % module.mass} kg")
+    print(f"Module CoM:\n{arrFormat(module.com, sigFigs=3, tabs=2)}\n")
+    print(f"Module MoI:\n{arrFormat(module.moi, sigFigs=3, tabs=2)}\n")
 
 #shapeTester()
 #frameTest()
-chainTest()
+#chainTest()
+moduleTest()
