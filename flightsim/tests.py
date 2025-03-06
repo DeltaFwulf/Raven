@@ -84,7 +84,7 @@ def moduleTest():
     cylinder = Conic(length=1, dOuterRoot=1, dOuterEnd=1, dInnerRoot=0, dInnerEnd=0, name='cylinder', material=Aluminium)
     cone = Conic(length=0.5, dOuterRoot=1, dOuterEnd=0, dInnerRoot=0, dInnerEnd=0, name='cone', material=Aluminium)
 
-    cylinderTransform = Transform(axisInit=np.array([0,1,0], float), angInit=pi/4)
+    cylinderTransform = Transform(axisInit=np.array([0,1,0], float), angInit=0)
     coneTransform = deepcopy(cylinderTransform)
     coneTransform.move(translation=np.array([1,0,0], float), reference='local')
     #coneTransform = Transform(transInit=np.array([1.5,0,0]), axisInit=np.array([0,1,0]), angInit=pi)

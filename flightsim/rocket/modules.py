@@ -58,11 +58,11 @@ class Module():
             # We have the MoI of each primitive about its own CoM, we now need it about the CoM of the module.
             pcom2mcom = deepcopy(self.rootTransforms[i])
             pcom2mcom.chain(self.primitives[i].root2com) 
-            pcom2mcom.invert()
-            pcom2mcom.move(translation=self.com, reference='parent')
-
+            pcom2mcom.invert() # this is the transform from the primitive CoM to the module root
+            pcom2mcom.move(translation=self.com, reference='parent') # we add the transform from the module root to the module CoM
+            
             # Transform this primitive's MoI by the pcom2mcom transform:
-            MoI += pcom2mcom.transformInertiaTensor(self.primitives[i].MoI, self.primitives[i].mass, self.primitives[i].com2ref)
+            MoI += pcom2mcom.transformInertiaTensor(self.primitives[i].moi, self.primitives[i].mass, self.primitives[i].com2ref)
 
         return MoI
     
@@ -91,3 +91,7 @@ class Tank(Module):
         # tank propellant type
 
         pass
+
+
+class SolidMotor(Module):
+    

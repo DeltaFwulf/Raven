@@ -49,30 +49,20 @@ class Transform():
         return rotMatrix
     
 
-    def move(self, axis:np.array=None, ang:float=None, translation:np.array=None, reference:str='local') -> None:
+    def move(self, axis:np.array=np.array([1,0,0]), ang:float=0, translation:np.array=np.array([0,0,0]), reference:str='local') -> None:
         """Moves the reference frame according to a rotation and translation, in either local or parent frame's reference."""
 
-        # TODO: if the reference is 'parent', we should just be able to directly add on the translation to the vector, and only chain the rotations, basically this seems like too much computation
+        if reference == 'parent':
+            axis = np.matmul(self.rotationMatrix().transpose(), axis)
+            rotationMatrix = Transform.rotationMatrixFromQuaternion(np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)]))
+            self.transform[:3, :3] = np.matmul(self.rotationMatrix(), rotationMatrix)
+            self.transform[:3, 3] += translation
 
-        transform = np.identity(4)
-
-        if axis is not None:
-            if reference == 'parent':
-                axis = np.matmul(self.transform[:3,:3].transpose(), axis)
-                
-            q = np.zeros(4)
-            q[0] = cos(ang / 2)
-            q[1:] = sin(ang/2) * axis
-
-            transform[:3, :3] = Transform.rotationMatrixFromQuaternion(q)
-
-        if translation is not None:
-            if reference == 'parent':
-                translation = np.matmul(self.transform[:3,:3].transpose(), translation)
-
+        elif reference == 'local':
+            transform = np.zeros((4,4))
+            transform[:3, :3] = Transform.rotationMatrixFromQuaternion(np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)]))
             transform[:3, 3] = translation
-
-        self.transform = np.matmul(self.transform, transform)
+            self.transform = np.matmul(self.transform, transform)
 
 
     def invert(self) -> None:

@@ -7,7 +7,6 @@ There are three key reference frames in the simulation: The inertial reference f
 
 The Transform class has been written to represent a specific reference frame (relative to a parent frame), such as mapping vectors defined in one coordinate system into either the parent or child frame of reference, as well as moving the reference frame itself. The relationships between these should be specified inside of a tree structure so that the position of all relative objects can be traced relative to any other.
 
-
 ## Inertia Tensor
 
 ### Definition, calculating the inertia tensor of a single object about CoM
@@ -32,21 +31,17 @@ The root transform is defined from the centre of mass within the primitive durin
 
 Within the primitive are stored three transforms: 
 - CoM location in root coordinates
-- Properties relative to CoM: *I*
+- Properties relative to CoM: I
 
 Though, we may not need to store any with reference to the root in compound within the primitive, as these will likely just be stored within the compound in some sort of list or dict.
 The properties of the object within the compound must be transformed into the compund coordinate system (tied to the compound CoM), so we first need  the compound CoM relative to the compound 'root'
 
 Once we have this, we can get all properties relative to it, and we have the same information as within the primitive: 
 - CoM location in root coordinates
-- Properties relative to compound CoM: *I*
+- Properties relative to compound CoM: I
 
 This means that when we wish to combine compounds, we don't need to recalculate everything - we can bake this compound into a new, named primitive. This is useful for example when you want to make a nosecone out of multiple hollow conic sections, or battery packs etc from multiple rectangular prisms. It keeps part count down and reduces calculations.
 
 The only parts that must be kept separate are those liable to change, for example tanks with fluid that drains will need recalculating at each timestep and so should be kept at the compound / module stage.
 
 A module is a compound object with functions defined to vary the compounds physical properties (element position, element size, mass, shape, etc). It can be used to represent distinct subsystems such as tanks, actuated fins, structures, or any major subsystem of a rocket.
-
-- How do we want to store the data relating to the compound object / Module?
-- Also, is a Module a compound object? <- Yes
-- 
