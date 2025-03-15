@@ -11,13 +11,13 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 import numpy as np
 from math import cos, sin, pi
-from flightsim.motion.vectorUtil import Transform
+from flightsim.motion.vectorUtil import referenceFrame
 from rocket.primitives import Conic, RectangularPrism
 from rocket import materials
 
 
 
-def axes(transform:Transform):
+def axes(transform:referenceFrame):
 
     vertices = (transform.local2parent((0, 0, 0)),
                 transform.local2parent((1, 0, 0)),
@@ -46,9 +46,9 @@ def draw(vertices:tuple, edges:tuple):
 
 def main():
 
-    homeTransform = Transform(np.array([0, 0, 0], float), angInit=0, axisInit=np.array([1,0,0], float))
-    conicTransform = Transform(np.array([2, 0, 0], float), angInit=pi/4, axisInit=np.array([1,1,1], float))
-    rectTransform = Transform(np.array([1, 0, 0], float), angInit=0, axisInit=np.array([1,0,0], float))
+    homeTransform = referenceFrame(np.array([0, 0, 0], float), angInit=0, axisInit=np.array([1,0,0], float))
+    conicTransform = referenceFrame(np.array([2, 0, 0], float), angInit=pi/4, axisInit=np.array([1,1,1], float))
+    rectTransform = referenceFrame(np.array([1, 0, 0], float), angInit=0, axisInit=np.array([1,0,0], float))
 
     # build the shapes from primitives, then draw them according to their positions:
     conic = Conic(length=1, moduleTransform=conicTransform, dOuterRoot=1, dOuterEnd=1, dInnerRoot=0.5, dInnerEnd=0.5, name='conic0', material=materials.Aluminium)

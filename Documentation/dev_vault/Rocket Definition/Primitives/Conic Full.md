@@ -61,7 +61,7 @@ $A = \int_{x_0}^{x_f}\int_{0}^{2\pi}\frac{1}{2}R(x)^2x^2 \ d\theta \ dx$
 $A = \int_{x_0}^{x_f}\pi R(x)^2x^2 \ dx$
 
 $$
-A = \pi\int_{x_0}^{x_f}(R_0 + k(x-x_0))^2x^2 \ dx$
+A = \pi\int_{x_0}^{x_f}(R_0 + k(x-x_0))^2x^2 \ dx
 $$
 
 **Method 1: Integration by Parts**

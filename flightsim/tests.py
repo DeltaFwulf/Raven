@@ -1,17 +1,19 @@
 """Validation tests for primitives are run here"""
 from math import floor, log10
 from copy import deepcopy
+import matplotlib.pyplot as plt
 
-from motion.vectorUtil import Transform, drawFrames
+from motion.vectorUtil import referenceFrame, drawFrames
 from rocket.primitives import *
 from ui.textUtil import arrFormat
 from rocket.modules import Module
+from motion.motionSolvers import linearRK4
 
 
 
 def shapeTester():
 
-    transform = Transform(transInit=np.array([0,0,0], float), angInit=pi/4, axisInit=np.array([1,0,0], float))
+    transform = referenceFrame(transInit=np.array([0,0,0], float), angInit=pi/4, axisInit=np.array([1,0,0], float))
     shape = Conic(length=1, moduleTransform=transform, dOuterRoot=1, dOuterEnd=0, dInnerRoot=0.5, dInnerEnd=0, name="test_conic", material=Aluminium)
 
     print(f"Name:\t\t{shape.name}")
@@ -37,18 +39,18 @@ def frameTest():
     Passed
     """
 
-    baseFrame = Transform() # this is just a trivial transform (no change from "true" origin)
+    worldFrame = referenceFrame() # this is just a trivial transform (no change from "true" origin)
 
-    move1 = deepcopy(baseFrame)
-    move1.move(axis=np.array([0,1,0]), ang=pi/6, translation=np.array([1,0,0]))
+    frame1 = deepcopy(worldFrame)
+    frame1.move(axis=np.array([0,1,0]), ang=pi/6, translation=np.array([1,0,0]))
 
-    move2 = deepcopy(move1)
-    move2.move(axis=np.array([0,0,1]), ang=pi, translation=np.array([0,0,1]))
+    frame2 = deepcopy(frame1)
+    frame2.move(axis=np.array([0,0,1]), ang=pi, translation=np.array([0,0,1]))
 
-    move3 = deepcopy(move1)
-    move3.move(axis=np.array([0,0,1]), ang=pi, translation = np.array([3,0,0]), reference='parent')
+    frame3 = deepcopy(frame1)
+    frame3.move(axis=np.array([0,0,1]), ang=pi, translation = np.array([3,0,0]), reference='parent')
 
-    drawFrames([baseFrame, move1, move2, move3])
+    drawFrames([worldFrame, frame1, frame2, frame3])
 
 
 
@@ -58,15 +60,15 @@ def chainTest():
     Passed
     """
 
-    baseFrame = Transform()
+    worldFrame = referenceFrame()
 
-    move1 = Transform(axisInit=np.array([1,0,0]), angInit=pi/6, transInit=np.array([5,0,0]))
-    move2 = Transform(transInit=np.array([0,1,0]))
+    frame1 = referenceFrame(axisInit=np.array([1,0,0]), angInit=pi/6, transInit=np.array([5,0,0]))
+    frame2 = referenceFrame(transInit=np.array([0,1,0]))
     
-    chain = deepcopy(move1)
-    chain.chain(move2)
+    chain = deepcopy(frame1)
+    chain.chain(frame2)
 
-    drawFrames([baseFrame, move1, chain])
+    drawFrames([worldFrame, frame1, chain])
 
 
 
@@ -84,7 +86,7 @@ def moduleTest():
     cylinder = Conic(length=1, dOuterRoot=1, dOuterEnd=1, dInnerRoot=0, dInnerEnd=0, name='cylinder', material=Aluminium)
     cone = Conic(length=0.5, dOuterRoot=1, dOuterEnd=0, dInnerRoot=0, dInnerEnd=0, name='cone', material=Aluminium)
 
-    cylinderTransform = Transform(axisInit=np.array([0,1,0], float), angInit=0)
+    cylinderTransform = referenceFrame(axisInit=np.array([0,1,0], float), angInit=0)
     coneTransform = deepcopy(cylinderTransform)
     coneTransform.move(translation=np.array([1,0,0], float), reference='local')
     #coneTransform = Transform(transInit=np.array([1.5,0,0]), axisInit=np.array([0,1,0]), angInit=pi)
@@ -106,7 +108,37 @@ def moduleTest():
     print(f"Module CoM:\n{arrFormat(module.com, sigFigs=3, tabs=2)}\n")
     print(f"Module MoI:\n{arrFormat(module.moi, sigFigs=3, tabs=2)}\n")
 
-#shapeTester()
-#frameTest()
-#chainTest()
-moduleTest()
+
+
+def linearTest():
+    """Tests the linear RK4 motion function by simulating the trajectory of a primitive thrown upwards on the Earth."""
+
+    def gravity(X:np.array, dt:float, params:dict) -> np.array:
+        return -params['mu'] * X[0,:] / np.linalg.norm(X[0,:])**3
+    
+    primitive = Conic(length=1.0, dOuterRoot=1, dOuterEnd=1, material=Aluminium)
+    params = {'mu':3.986e14, 'object':primitive}
+
+    dt = 0.1
+    tf = 20
+    t = np.arange(0, tf, dt)
+    
+    x = np.zeros((t.size, 3), float)
+    v = np.zeros((t.size, 3), float)
+
+    x[0,:] = [6378e3, 0, 0]
+    v[0,:] = [100, 0, 0]
+
+    for i in range(1, t.size):
+        x[i,:], v[i,:] = linearRK4(x[i-1], v[i-1], dt, gravity, params)
+
+    fig, ax = plt.subplots()
+
+    ax.plot(t, x[:,0], '-')
+    ax.set_xlabel('time, s')
+    ax.set_label('x, m')
+    plt.show()
+
+
+
+linearTest()

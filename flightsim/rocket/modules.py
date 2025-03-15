@@ -1,7 +1,7 @@
 import numpy as np
 from copy import deepcopy
 
-from motion.vectorUtil import Transform
+from motion.vectorUtil import referenceFrame
 from rocket.primitives import *
 from ui.textUtil import arrFormat
 # define all module types that can be added to the rocket
@@ -20,7 +20,7 @@ class Module():
     We can parameterise these modules as well to make creation of different geometries easier i.e. parameterising a nosecone's shape can create and locate the required primitives to approximate desired geometry.
     """
 
-    def __init__(self, primitives:list[Primitive]=[], rootTransforms:list[Transform]=[]):
+    def __init__(self, primitives:list[Primitive]=[], rootTransforms:list[referenceFrame]=[]):
         self.primitives = primitives # Each primitive or compound within the module is stored in this list
         self.rootTransforms = rootTransforms # Stores a transform for each corresponding primitive (or compound) root from the module's root frame
 
@@ -95,3 +95,14 @@ class Tank(Module):
 
 class SolidMotor(Module):
     
+    # Solid motors have a jacket, a fuel grain, and a nozzle. 
+
+    # The fuel has an initial profile that gives a thrust curve.
+
+    # We import the thrust curve and core shape from the motor name, to drive
+    # fuel profile etc.
+
+    def __init__(self, motor:str=None):
+
+        """You can either select a solid motor from the list of precalculated motors, or specify a new one"""
+
