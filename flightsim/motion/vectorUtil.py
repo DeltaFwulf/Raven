@@ -1,10 +1,12 @@
 import numpy as np
-from math import cos, sin, sqrt
+from numpy.linalg import norm
+from math import pi, cos, sin, atan2, sqrt, isnan
 import matplotlib.pyplot as plt
+from copy import deepcopy
 
 
 
-class referenceFrame():
+class ReferenceFrame():
     """
     This class represents the transformation between two reference frames. Use this class to map vectors or points between different axis systems.
     Also contains functions that can be used to map inertia tensors between axis systems according to the frame transform.
@@ -12,22 +14,75 @@ class referenceFrame():
     Use this class to create reference frames, move reference frames, or map vectors into different frames of reference.
     """
 
-    # TODO: split out into a rotation matrix (or just quaternion) and translation vector
+    # TODO: remove rotation matrices and only store a unit quaternion, using quaternion multiplication to rotate vectors (rotations are more accurate)
 
+    def __init__(self, axis:np.array=None, ang:float=None, translation:np.array=np.zeros(3,float), sphereAngs:np.array=None, roll:float=None, axisName:str=None):
 
-    def __init__(self, transInit:np.array=np.zeros(3), angInit:float=0, axisInit:np.array=np.array([1,0,0], float)):
-        """The frame is initially defined by it rotation and translation relative to the world centre"""
+        """
+        Passing Spherical Coordinates with Roll:
+            You can pass an array representing inclination and azimuth on the unit sphere (aligned to parent frame), with an explicit roll angle.
+            In this case, the unit vector from the sphere origin and the location on the sphere is the new axis (named either 'x', 'y', or 'z').
+            The transformation between the parent 'x', 'y', or 'z' is determined and sets the initial rotation matrix. The roll is then applied in the new frame's local system to get the final rotation matrix.
+        """
 
-        self.affineMatrix = np.identity(4, float)
+        self.q = np.array([1,0,0,0], float)
+        self.rotationMatrix = np.identity(3, float)
+        self.translation = np.zeros((3), float)
 
-        q = cos(angInit/2) * np.ones((4), float)
-        q[1:] = sin(angInit / 2) * axisInit
+        if axis is not None:
+
+            # quaternion for rotation:
+            self.q = ReferenceFrame.axisAngle2Quaternion(axis, ang)
+
+            self.rotationMatrix = ReferenceFrame.quat2RotationMatrix(self.q)
+            self.translation = translation
         
-        self.affineMatrix[:3,:3] = referenceFrame.rotationMatrixFromQuaternion(q)
-        self.affineMatrix[:3, 3] = transInit
+        elif sphereAngs is not None:
+            
+            referenceAxis = np.zeros(3, float)
+
+            match axisName:
+                case 'x':
+                    n = 0
+                case 'y':
+                    n = 1
+                case 'z':
+                    n = 2
+
+            referenceAxis[n] = 1
+
+            # what is the new axis?
+            newAxis = np.zeros(3, float)
+            newAxis[0] = sin(sphereAngs[0]) * cos(sphereAngs[1])
+            newAxis[1] = sin(sphereAngs[0]) * sin(sphereAngs[1])
+            newAxis[2] = cos(sphereAngs[0])
+
+            # get the axis and angle of rotation
+            if (newAxis == referenceAxis).all():
+                rotAxis = np.array([1,0,0], float)
+            else:
+                rotAxis = np.cross(referenceAxis, newAxis)
+                rotAxis /= norm(rotAxis) # normalise the vector
+            
+            angle = getAngleUnsigned(referenceAxis, newAxis)
+
+            self.q = ReferenceFrame.axisAngle2Quaternion(rotAxis, angle)
+
+            self.rotationMatrix = ReferenceFrame.quat2RotationMatrix(self.q)
+            self.translation = translation
+            self.move(referenceAxis, roll) # apply roll
 
 
-    def rotationMatrixFromQuaternion(q:np.array) -> np.array:
+    def axisAngle2Quaternion(axis:np.array, angle:float):
+
+        q = np.zeros(4, float)
+        q[0] = cos(angle / 2)
+        q[1:] = sin(angle/ 2) * axis
+
+        return q / norm(q)
+
+
+    def quat2RotationMatrix(q:np.array) -> np.array:
         """Given a unit quaternion, outputs a 3x3 rotation matrix"""
 
         rotMatrix = np.zeros((3,3), float)
@@ -47,57 +102,122 @@ class referenceFrame():
         return rotMatrix
     
 
-    def move(self, axis:np.array=np.array([1,0,0]), ang:float=0, translation:np.array=np.array([0,0,0]), reference:str='local') -> None:
+    def sphereAngs2RotationMatrix(sphereAngs:list[float], axis:str='x') -> np.array:
+
+        referenceAxis = np.zeros(3, float)
+
+        match axis:
+            case 'x':
+                n = 0
+            case 'y':
+                n = 1
+            case 'z':
+                n = 2
+
+        referenceAxis[n] = 1
+
+        # what is the new axis?
+        newAxis = np.zeros(3, float)
+        newAxis[0] = sin(sphereAngs[0]) * cos(sphereAngs[1])
+        newAxis[1] = sin(sphereAngs[0]) * sin(sphereAngs[1])
+        newAxis[2] = cos(sphereAngs[0])
+
+        # get the axis and angle of rotation
+        if (newAxis == referenceAxis).all():
+            rotAxis = np.array([1,0,0], float)
+        else:
+            rotAxis = np.cross(referenceAxis, newAxis)
+            rotAxis /= norm(rotAxis) # normalise the vector
+        
+        #angle = acos(np.dot(referenceAxis, newAxis) / (norm(referenceAxis) * norm(newAxis)))
+        q = ReferenceFrame.axisAngle2Quaternion(rotAxis, getAngleUnsigned(referenceAxis, newAxis))
+
+        return ReferenceFrame.quat2RotationMatrix(q)
+    
+
+    def move(self, axis:np.array=np.array([1,0,0], float), ang:float=0, translation:np.array=np.array([0,0,0], float), reference:str='local') -> None:
         """Moves the reference frame according to a rotation and translation, in either local or parent frame's reference."""
 
+        axis /= norm(axis) # normalise the axis (so that we can pass any axis of rotation into the function)
+
         if reference == 'parent':
-            axis = np.matmul(self.rotationMatrix().transpose(), axis)
-            rotationMatrix = referenceFrame.rotationMatrixFromQuaternion(np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)]))
-            self.affineMatrix[:3, :3] = np.matmul(self.rotationMatrix(), rotationMatrix)
-            self.affineMatrix[:3, 3] += translation
+            axis = np.matmul(self.rotationMatrix.transpose(), axis)
+            q = np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)], float)
+            q /= norm(q) # renormalise q here to prevent drift
+           
+            self.rotationMatrix = np.matmul(self.rotationMatrix, ReferenceFrame.quat2RotationMatrix(q))
+            self.translation += translation
 
         elif reference == 'local':
-            transform = np.zeros((4,4))
-            transform[:3, :3] = referenceFrame.rotationMatrixFromQuaternion(np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)]))
+            transform = np.identity((4))
+
+            q = np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)], float)
+            q /= norm(q) # we have to renormalise the matrix here otherwise we get crazy drift
+
+            transform[:3, :3] = ReferenceFrame.quat2RotationMatrix(q)
             transform[:3, 3] = translation
-            self.affineMatrix = np.matmul(self.affineMatrix, transform)
+
+            # TODO: replace this with no reference to the affine transformation matrix (this is a quick fix so I can keep developing)
+            affineMatrix0 = np.identity(4, float)
+            affineMatrix0[:3, :3] = self.rotationMatrix
+            affineMatrix0[:3, 3] = self.translation
+
+            affineMatrix1 = np.matmul(affineMatrix0, transform)
+
+            self.rotationMatrix = affineMatrix1[:3, :3]
+            self.translation = affineMatrix1[:3, 3]
+
+        else:
+            print("reference keyword invalid: please use either local or parent")
 
 
     def invert(self) -> None:
         """Inverts the transformation"""
-        self.affineMatrix[:3, :3] = self.affineMatrix[:3, :3].transpose()
-        self.affineMatrix[:3, 3] = -self.affineMatrix[:3, 3]
+
+        self.rotationMatrix = self.rotationMatrix.transpose()
+        self.translation = -self.translation
 
 
-    def local2parent(self, vecIn:np.array) -> np.array:
-        """Maps a vector defined relative to this reference frame into the parent frame's coordinate system"""
-        return np.matmul(self.affineMatrix, np.append(vecIn, np.array([1])))[:-1]
+    def local2parent(self, vecIn:np.array, incTranslation:bool=True) -> np.array:
+        """If the vector is described in the local coordinate system, this returns the same vector as expressed in the world coordinate system
+        
+        if incTranslation == False, this purely rotates the vector (assumes the vector passed in was from the parent frame origin)
+        """
+        
+        vecOut = np.matmul(self.rotationMatrix, vecIn)
+        
+        if incTranslation:
+            vecOut += self.translation
+
+        return vecOut
 
        
-    def parent2local(self, vecIn:np.array) -> np.array:
-        """Maps a vector defined relative to the parent reference frame into this reference system"""
-        # y = ax + b,  a^-1(y-b) = x
-        return np.matmul(self.affineMatrix[:3, :3].transpose(), vecIn - self.affineMatrix[:3, 3])
+    def parent2local(self, vecIn:np.array, incTranslation:bool=True) -> np.array:
+        """If the vector is specified in world coordinates, this is what the vector would be expressed as in local coordinates
+        
+        if incTranslation == False, this purely rotates the vector (assumes the localVector shared an origin with the local frame origin)
+        """
+
+        if incTranslation:
+            vecIn -= self.translation
+
+        return np.matmul(self.rotationMatrix.transpose(), vecIn)
     
 
+    # TODO: deprecate this, it's covered by local2parent
     def align(self, vecIn:np.array) -> np.array:
         """Maps a vector defined in this reference frame into the world frame BUT assumes that this reference frame shares an origin with the parent - pure rotation without translation"""
         return np.matmul(self.rotationMatrix(), vecIn)
     
-
-    def chain(self, nextTransform:'referenceFrame'):
+    
+    def chain(self, nextFrame:'ReferenceFrame'):
             """This combines two subsequent transformations together, in the order of self.transform, newTransform"""
 
-            self.affineMatrix = np.matmul(self.affineMatrix, nextTransform.affineMatrix)
+            chainedRotation = np.matmul(self.rotationMatrix, nextFrame.rotationMatrix)
 
+            self.rotationMatrix = chainedRotation
+            self.translation += nextFrame.translation
 
-    def rotationMatrix(self):
-        return self.affineMatrix[:3, :3]
-    
-
-    def translation(self):
-        return self.affineMatrix[:3, 3]
-    
 
     def transformInertiaTensor(self, tensorIn, mass, com2ref:np.array=np.zeros(3)) -> np.array:
         """Changes the reference frame of the mass moment of inertia tensor to that about a reference frame with this transform from the body aligned, CoM centered reference frame.
@@ -106,8 +226,8 @@ class referenceFrame():
         do not put anything for initialTranslation. If the initial translation is non-zero, please put the translation in; the generalised parallel axis theorem method can take this into account.
         """
         
-        rotating = (self.rotationMatrix() != np.identity(3)).any()
-        translating = (self.translation() != np.zeros((3), float)).any()
+        rotating = (self.rotationMatrix != np.identity(3)).any()
+        translating = (self.translation != np.zeros((3), float)).any()
 
         tensor = tensorIn
 
@@ -164,47 +284,142 @@ class referenceFrame():
 
                 return c
 
-            translation = self.translation()
+            translation = self.translation
 
             tensor += (mass * getSymmetricMatrix(translation, translation)) - (2 * mass * getSymmetricMatrix(translation, com2ref))
-                                             
-        return tensor
+                                                
+            return tensor
+        
+
+
+def cartesian2spherical(vector:np.array) -> tuple[float, float, float]:
+    """
+    Converts a cartesian vector to spherical coordinates (r, inc, az)
+    here we are following the ISO (physics convention)
+    """
+    
+    r = norm(vector)
+
+    inc = atan2(norm(vector[0:-1]), vector[2])
+    if isnan(inc):
+        inc = 0
+
+    az = atan2(vector[1], vector[0])
+    if isnan(az):
+        az = 0
+
+    return r, inc, az
 
 
 
-def drawFrames(frames:list):
+def coords2sphereAngs(latitude, longitude) -> tuple[float, float]:
+    """Converts latitude and longitude into spherical inclination and azimuth
+    
+    we are following the ISO (physics angle convention)
+    """
+    
+    inclination = (pi/2) - latitude
+    return inclination, longitude
+
+
+
+def sphereAngs2coords(inclination:float, azimuth:float) -> tuple[float, float]:
+
+    latitude = pi/2 - inclination
+    return latitude, azimuth
+
+
+
+def getAngleSigned(vecA:np.array, vecB:np.array, planeNormal:np.array) -> float:
+
+    """Gets the angle from vecA to vecB in the correct direction, given that they both lie on a known plane."""
+
+    n = planeNormal / norm(planeNormal)
+    return atan2(np.dot(n, np.cross(vecA, vecB)), np.dot(vecA, vecB))
+
+
+
+def getAngleUnsigned(vecA:np.array, vecB:np.array) -> float:
+    """Returns the magnitude of the angle between two vectors, but cannot give the sign (direction) of the angle."""
+    return atan2(norm(np.cross(vecA, vecB)), np.dot(vecA, vecB))
+
+
+
+def projectVector(vecA:np.array, vecB:np.array, comp:str) -> np.array:
+    """Projects vector A along vector B, returns either 'parallel' or 'normal' component of vector A to vector B."""
+    bUnit = vecB / norm(vecB)
+    parallel = np.dot(vecA, bUnit) * bUnit
+
+    if comp == 'parallel':
+        return parallel
+    
+    else:
+        return vecA - parallel
+    
+
+
+def grassmann(a, b):
+    """multiplies to quaternions together, maybe this can be used to represent rotation?)"""
+
+    qOut = np.zeros(4, float)
+
+    qOut[0] = a[0] * b[0] - np.dot(a[1:],b[1:])
+    qOut[1:] = a[0]*b[1:] + a[1:]*b[0] + np.cross(a[1:], b[1:])
+
+    return qOut
+
+
+
+def rotateQuaternion(vecIn, q):
+
+    qConv = q
+    qConv[1:] *= -1.0
+
+    def grassmann(a, b):
+
+        qOut = np.zeros(4, float)
+
+        qOut[0] = a[0] * b[0] - np.dot(a[1:],b[1:])
+        qOut[1:] = a[0]*b[1:] + a[1:]*b[0] + np.cross(a[1:], b[1:])
+
+        return qOut
+    
+    return grassmann(grassmann(q, np.hstack((0, vecIn))), qConv)[1:]
+
+
+def drawFrames(frames:list[ReferenceFrame]) -> None:
 
     """This function takes in a list of frames and for each one plots a set of orthogonal axes according to their respective transforms."""
 
     ax = plt.figure().add_subplot(projection='3d')
 
-    xMin = 0
-    xMax = 0
-    yMin = 0
-    yMax = 0
-    zMin = 0
-    zMax = 0
+    xMin = frames[0].translation[0]
+    xMax = frames[-1].translation[0]
+    yMin = frames[0].translation[1]
+    yMax = frames[-1].translation[1]
+    zMin = frames[0].translation[2]
+    zMax = frames[-1].translation[2]
 
     for frame in frames:
 
-        frameX = frame.local2parent(np.array([1,0,0]))
-        frameY = frame.local2parent(np.array([0,1,0]))
-        frameZ = frame.local2parent(np.array([0,0,1]))
-        o = frame.local2parent(np.array([0,0,0]))
+        x = frame.local2parent(np.array([1,0,0]))
+        y = frame.local2parent(np.array([0,1,0]))
+        z = frame.local2parent(np.array([0,0,1]))
+        o = frame.translation
 
         # update plot limits
-        xMin = np.min(np.array([xMin, frameX[0], frameY[0], frameZ[0]]))
-        xMax = np.max(np.array([xMax, frameX[0], frameY[0], frameZ[0]]))
+        xMin = np.min(np.array([xMin, x[0], y[0], z[0]]))
+        xMax = np.max(np.array([xMax, x[0], y[0], z[0]]))
 
-        yMin = np.min(np.array([yMin, frameX[1], frameY[1], frameZ[1]]))
-        yMax = np.max(np.array([yMax, frameX[1], frameY[1], frameZ[1]]))
+        yMin = np.min(np.array([yMin, x[1], y[1], z[1]]))
+        yMax = np.max(np.array([yMax, x[1], y[1], z[1]]))
 
-        zMin = np.min(np.array([zMin, frameX[2], frameY[2], frameZ[2]]))
-        zMax = np.max(np.array([zMax, frameX[2], frameY[2], frameZ[2]]))
+        zMin = np.min(np.array([zMin, x[2], y[2], z[2]]))
+        zMax = np.max(np.array([zMax, x[2], y[2], z[2]]))
         
-        ax.plot([o[0], frameX[0]], [o[1], frameX[1]], [o[2], frameX[2]], '-r')
-        ax.plot([o[0], frameY[0]], [o[1], frameY[1]], [o[2], frameY[2]], '-g')
-        ax.plot([o[0], frameZ[0]], [o[1], frameZ[1]], [o[2], frameZ[2]], '-b')
+        ax.plot([o[0], x[0]], [o[1], x[1]], [o[2], x[2]], '-r')
+        ax.plot([o[0], y[0]], [o[1], y[1]], [o[2], y[2]], '-g')
+        ax.plot([o[0], z[0]], [o[1], z[1]], [o[2], z[2]], '-b')
 
     # dynamically bound the plot based on the largest values of any terms in x, y, z
     ax.set_xlim([xMin, xMax])
@@ -219,3 +434,76 @@ def drawFrames(frames:list):
     ax.legend(['x', 'y', 'z'])
 
     plt.show()
+
+
+
+def frameTest():
+    """Move a frame in different ways and plot to visually verify the results"""
+
+    rootFrame = ReferenceFrame(axis=np.array([1,0,0], float), ang=0, translation=np.array([0,0,0], float))
+
+    testFrame = ReferenceFrame(axis=np.array([1,1,0], float), ang=10*pi/180, translation=np.array([1,0,0], float))
+    globalMoved = deepcopy(testFrame)
+    localMoved = deepcopy(testFrame)
+    inverted = deepcopy(testFrame)
+    chained = deepcopy(testFrame)
+
+    globalMoved.move(axis=np.array([0,0,1], float), ang=pi, translation=np.array([1,0,0], float), reference='parent')
+    localMoved.move(axis=np.array([0,0,1], float), ang=pi, translation=np.array([0,0,0], float), reference='local')
+    inverted.invert()
+    chained.chain(testFrame)
+
+    drawFrames([rootFrame, testFrame, chained])
+
+
+
+def conversionTest():
+
+    cart = np.array([-1, -0.1, -0.5])
+    print(f"x:{cart[0]}, y:{cart[1]}, z:{cart[2]}")
+
+    radius, inclination, azimuth = cartesian2spherical(cart)
+    print(f"radius: {radius}, inclination: {inclination * 180 / pi}, azimuth: {azimuth * 180 / pi}")
+
+    latitude, longitude = sphereAngs2coords(inclination, azimuth)
+    print(f"latitude: {latitude * 180 / pi}, longitude {longitude * 180 / pi}")
+
+    inc2, az2 = coords2sphereAngs(latitude, longitude)
+    print(f"returned inclination: {inc2 * 180 / pi}, returned azimuth: {az2 * 180 / pi}")
+
+
+
+def rotationTests():
+
+    axis = np.array([1,0,0], float)
+    ang = pi/2
+
+    q = np.zeros(4, float)
+    q[0] = cos(ang / 2)
+    q[1:] = sin(ang / 2) * axis
+
+    qConj = q
+    qConj[1:] *= -1.0
+
+    v = np.array([0,1,0], float)
+
+    # rotate a vector two ways, to determine wtf the 'grassmann product' from vardyn is referring to
+
+    frame = ReferenceFrame(axis=axis, ang=ang)
+
+    vRotatedFrame = frame.local2parent(v)
+
+    vSandwich = np.hstack((np.array([0], float), v))
+
+    vRotatedSandwich = grassmann(q, vSandwich)
+    vRotatedSandwich = grassmann(vRotatedSandwich, qConj)
+
+    vQuaternion = rotateQuaternion(v, q)
+
+    print(f"\n Rotation Matrix: {vRotatedFrame}")
+    print(f"\nSandwich: {vRotatedSandwich[1:]}")
+    print(f"\nQuaternion: {vQuaternion}")
+
+
+
+rotationTests()

@@ -1,7 +1,7 @@
 import numpy as np
 from copy import deepcopy
 
-from motion.vectorUtil import referenceFrame
+from motion.vectorUtil import ReferenceFrame
 from rocket.primitives import *
 from ui.textUtil import arrFormat
 # define all module types that can be added to the rocket
@@ -20,7 +20,7 @@ class Module():
     We can parameterise these modules as well to make creation of different geometries easier i.e. parameterising a nosecone's shape can create and locate the required primitives to approximate desired geometry.
     """
 
-    def __init__(self, primitives:list[Primitive]=[], rootTransforms:list[referenceFrame]=[]):
+    def __init__(self, primitives:list[Primitive]=[], rootTransforms:list[ReferenceFrame]=[]):
         self.primitives = primitives # Each primitive or compound within the module is stored in this list
         self.rootTransforms = rootTransforms # Stores a transform for each corresponding primitive (or compound) root from the module's root frame
 

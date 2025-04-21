@@ -33,6 +33,8 @@ def linearRK4(x:np.array, v:np.array, h:float, accFn, params:dict) -> np.array:
 
 def angularRK4(q0, omega0, h:float, rotFn, params:dict) -> np.array:
 
+    """Given a shape with known inertia tensor, centre of mass, moments, and initial state, calculates the angular motion over a given timestep using Runge-Kutta Nystrom 4 Algorithm."""
+
     def diff(dt:float, X:np.array, moments:function, mass) -> np.array:
 
         moment = moments(X, dt)
@@ -43,6 +45,4 @@ def angularRK4(q0, omega0, h:float, rotFn, params:dict) -> np.array:
 
         return Xdot
     
-    pass
-
-    
+    # calculate the rate of change of quaternion

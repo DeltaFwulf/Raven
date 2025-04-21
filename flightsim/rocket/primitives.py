@@ -1,7 +1,7 @@
 from math import pi, sin, cos
 import numpy as np
 from rocket.materials import *
-from motion.vectorUtil import referenceFrame
+from motion.vectorUtil import ReferenceFrame
 
 
 
@@ -41,7 +41,7 @@ class Conic(Primitive):
         self.mass = self.calcMass()
         self.com = self.calcCoM()
         
-        self.root2com = referenceFrame(transInit=self.com) # XXX: this is basically storing no new information beyond the CoM position, maybe we should just use that
+        self.root2com = ReferenceFrame(translation=self.com) # XXX: this is basically storing no new information beyond the CoM position, maybe we should just use that
         
         # The primitive contains a monent of inetia tensor about its centre of mass, OR some other reference location with a known transform from the CoM
         self.com2ref = np.zeros(3) # this primitive has its reference frame at the centre of mass (also, offset is a pure translation, no rotation)
@@ -94,7 +94,7 @@ class Conic(Primitive):
         return outerTensor - innerTensor
     
 
-    def wireframe(self, rootTransform:referenceFrame):
+    def wireframe(self, rootTransform:ReferenceFrame):
         """
         Returns the correct vertices and edge connections to draw the specified conic shape.
         
@@ -227,7 +227,7 @@ class RectangularPrism(Primitive):
 
     shape = "rectangular_prism"
 
-    def __init__(self, x, y, z, transform:referenceFrame, name="unnamed", material=Material):
+    def __init__(self, x, y, z, transform:ReferenceFrame, name="unnamed", material=Material):
 
         self.name = name
         self.transform = transform
@@ -305,6 +305,11 @@ class RectangularPrism(Primitive):
                 (6,7))
 
         return vertices, edges
+    
+
+
+class HAACK(Primitive):
+    pass
     
 
 

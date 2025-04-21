@@ -1,9 +1,8 @@
 """Validation tests for primitives are run here"""
-from math import floor, log10
 from copy import deepcopy
 import matplotlib.pyplot as plt
 
-from motion.vectorUtil import referenceFrame, drawFrames
+from motion.vectorUtil import ReferenceFrame, drawFrames
 from rocket.primitives import *
 from ui.textUtil import arrFormat
 from rocket.modules import Module
@@ -13,7 +12,7 @@ from motion.motionSolvers import linearRK4
 
 def shapeTester():
 
-    transform = referenceFrame(transInit=np.array([0,0,0], float), angInit=pi/4, axisInit=np.array([1,0,0], float))
+    transform = ReferenceFrame(transInit=np.array([0,0,0], float), angInit=pi/4, axisInit=np.array([1,0,0], float))
     shape = Conic(length=1, moduleTransform=transform, dOuterRoot=1, dOuterEnd=0, dInnerRoot=0.5, dInnerEnd=0, name="test_conic", material=Aluminium)
 
     print(f"Name:\t\t{shape.name}")
@@ -39,7 +38,7 @@ def frameTest():
     Passed
     """
 
-    worldFrame = referenceFrame() # this is just a trivial transform (no change from "true" origin)
+    worldFrame = ReferenceFrame() # this is just a trivial transform (no change from "true" origin)
 
     frame1 = deepcopy(worldFrame)
     frame1.move(axis=np.array([0,1,0]), ang=pi/6, translation=np.array([1,0,0]))
@@ -60,10 +59,10 @@ def chainTest():
     Passed
     """
 
-    worldFrame = referenceFrame()
+    worldFrame = ReferenceFrame()
 
-    frame1 = referenceFrame(axisInit=np.array([1,0,0]), angInit=pi/6, transInit=np.array([5,0,0]))
-    frame2 = referenceFrame(transInit=np.array([0,1,0]))
+    frame1 = ReferenceFrame(axisInit=np.array([1,0,0]), angInit=pi/6, transInit=np.array([5,0,0]))
+    frame2 = ReferenceFrame(transInit=np.array([0,1,0]))
     
     chain = deepcopy(frame1)
     chain.chain(frame2)
@@ -86,7 +85,7 @@ def moduleTest():
     cylinder = Conic(length=1, dOuterRoot=1, dOuterEnd=1, dInnerRoot=0, dInnerEnd=0, name='cylinder', material=Aluminium)
     cone = Conic(length=0.5, dOuterRoot=1, dOuterEnd=0, dInnerRoot=0, dInnerEnd=0, name='cone', material=Aluminium)
 
-    cylinderTransform = referenceFrame(axisInit=np.array([0,1,0], float), angInit=0)
+    cylinderTransform = ReferenceFrame(axis=np.array([0,1,0], float), ang=0)
     coneTransform = deepcopy(cylinderTransform)
     coneTransform.move(translation=np.array([1,0,0], float), reference='local')
     #coneTransform = Transform(transInit=np.array([1.5,0,0]), axisInit=np.array([0,1,0]), angInit=pi)
@@ -141,4 +140,4 @@ def linearTest():
 
 
 
-linearTest()
+moduleTest()
