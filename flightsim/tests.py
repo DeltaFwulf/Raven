@@ -1,19 +1,21 @@
 """Validation tests for primitives are run here"""
 from copy import deepcopy
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from numpy.linalg import norm
 
 from motion.vectorUtil import ReferenceFrame, drawFrames
 from rocket.primitives import *
 from ui.textUtil import arrFormat
 from rocket.modules import Module
-from motion.motionSolvers import linearRK4
+from motion.motionSolvers import linearRK4, angularRK4
 
 
 
-def shapeTester():
+def primitiveTest():
 
-    transform = ReferenceFrame(transInit=np.array([0,0,0], float), angInit=pi/4, axisInit=np.array([1,0,0], float))
-    shape = Conic(length=1, moduleTransform=transform, dOuterRoot=1, dOuterEnd=0, dInnerRoot=0.5, dInnerEnd=0, name="test_conic", material=Aluminium)
+    #shape = Conic(length=1, dOuterRoot=1, dOuterEnd=1, dInnerRoot=0, dInnerEnd=0, name="test_conic", material=Aluminium)
+    shape = RectangularPrism(x=1, y=1, z=1, material=Aluminium)
 
     print(f"Name:\t\t{shape.name}")
     print(f"Shape:\t\t{shape.shape}")
@@ -25,10 +27,8 @@ def shapeTester():
     print("\n+===================Inertia Tensors=======================+")
     #use solution found here: https://stackoverflow.com/questions/45478488/python-print-floats-padded-with-spaces-instead-of-zeros
 
-    print(f"Mass:\n{arrFormat(shape.moi_com, sigFigs=3, tabs=2)}")
-    print(f"Root:\n{arrFormat(shape.moi_root, sigFigs=3, tabs=2)}")
-    print(f"Reference:\n{arrFormat(shape.moi_root, sigFigs=3, tabs=2)}")
-
+    print(f"Inertia Tensor:\n{arrFormat(shape.moi, sigFigs=3, tabs=2)}")
+    
     # TODO: draw the shape in the module frame
 
 
@@ -139,5 +139,94 @@ def linearTest():
     plt.show()
 
 
+def angularTest():
 
-moduleTest()
+    def freeRotation(t:float, q:np.array, omega:np.array):
+        return np.zeros(3, float) # no torque acts on the body in free rotation (in the body frame)
+
+    primitive = Conic(length=10, dOuterRoot=1, dOuterEnd=1, material=Aluminium)
+    
+    dt = 0.05
+    tf = 20
+    t = np.arange(0, tf, dt)
+
+    q = np.zeros((t.size, 4), float)
+    omega = np.zeros((t.size, 3), float)
+
+    initFrame = ReferenceFrame(axis=np.array([1,0,0], float), ang=0)
+
+    q[0,:] = deepcopy(initFrame.q)
+    omega[0,:] = np.array([pi, 0.1, 0])
+
+    for i in range(1, t.size):
+        q[i,:], omega[i,:] = angularRK4(q[i-1,:], omega[i-1,:], primitive.moi, t[i], dt, freeRotation)
+
+    # draw the initial cone reference frame:
+    objFrame = ReferenceFrame()
+    objFrame.q = q[0,:]
+
+    fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
+
+    x = np.array([1,0,0], float)
+    y = np.array([0,1,0], float)
+    z = np.array([0,0,1], float)
+
+    objX = objFrame.local2parent(x)
+    objY = objFrame.local2parent(y)
+    objZ = objFrame.local2parent(z)
+
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
+
+    linex, = ax.plot([objFrame.translation[0], objX[0]], [objFrame.translation[1], objX[1]], [objFrame.translation[2], objX[2]], '-r')
+    liney, = ax.plot([objFrame.translation[0], objY[0]], [objFrame.translation[1], objY[1]], [objFrame.translation[2], objY[2]], '-g')
+    linez, = ax.plot([objFrame.translation[0], objZ[0]], [objFrame.translation[0], objZ[1]], [objFrame.translation[2], objZ[2]], '-b')
+
+    ax.set_aspect('equal')
+
+    def update(i):
+
+        objFrame.q = q[i,:]
+        
+        objX = objFrame.local2parent(x)
+        objY = objFrame.local2parent(y)
+        objZ = objFrame.local2parent(z)
+
+        linex.set_data([objFrame.translation[0], objX[0]], [objFrame.translation[1], objX[1]])
+        liney.set_data([objFrame.translation[0], objY[0]], [objFrame.translation[1], objY[1]])
+        linez.set_data([objFrame.translation[0], objZ[0]], [objFrame.translation[0], objZ[1]])
+
+        linex.set_3d_properties([objFrame.translation[2], objX[2]])
+        liney.set_3d_properties([objFrame.translation[2], objY[2]])
+        linez.set_3d_properties([objFrame.translation[2], objZ[2]])
+
+        # keep the origin of the frame centred in the plot:
+        ax.set_xlim([objFrame.translation[0] - 1.2, objFrame.translation[0] + 1.2])
+        ax.set_ylim([objFrame.translation[1] - 1.2, objFrame.translation[1] + 1.2])
+        ax.set_zlim([objFrame.translation[2] - 1.2, objFrame.translation[2] + 1.2])
+        
+        ax.set_aspect('equal')
+
+        return linex, liney, linez
+
+    ani = FuncAnimation(fig=fig, func=update, frames=t.size, interval=30)
+
+
+    fig2, ax2 = plt.subplots()
+
+    # Show how angular momentum decays due to truncation errors:
+    # since L = I omega, in the body frame since I is constant, then omega is directly proportional to L.
+    magOmega = np.zeros(np.shape(omega)[0], float)
+    for i in range(0, np.shape(omega)[0]):
+        magOmega[i] = norm(omega[i,:])
+
+    ax2.plot(t, magOmega, '-k')
+    ax2.set_xlabel("time, s")
+    ax2.set_ylabel("total angular velocity, rad/s")
+
+    
+    plt.show()
+
+
+angularTest()

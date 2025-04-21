@@ -227,10 +227,10 @@ class RectangularPrism(Primitive):
 
     shape = "rectangular_prism"
 
-    def __init__(self, x, y, z, transform:ReferenceFrame, name="unnamed", material=Material):
+    def __init__(self, x, y, z, name="rect-prism", material=Material):
 
         self.name = name
-        self.transform = transform
+        self.material = material
 
         self.x = x
         self.y = y
@@ -239,15 +239,14 @@ class RectangularPrism(Primitive):
         self.material = material
         
         self.mass = self.material.density * x * y * z
-        self.com = 0.5 * np.array((x, y, z), float) # centre of the part
+        self.com = np.array([x/2, 0, 0], float)
+
+        self.root2com = ReferenceFrame(translation=self.com)
 
         # Inertia tensors
-        self.moi_com = self.calcMassTensor() # inertia tensor about centre of mass
-        self.moi_root = self.translateReference(self.moi_com, self.com) # interia tensor about part root location
-        self.moi_ref = self.moveReference(self.moi_com, self.transform, reference='root') # inertia tensor about module root
-
-        self.vertices, self.edges = self.wireframe()
-
+        self.com2ref = np.zeros(3) # the part's centre of mass is its point of reference
+        self.moi = self.calcInertiaTensor() # inertia tensor about centre of mass
+    
 
     def calcMass(self):
         return self.material.density * self.x * self.y * self.z
@@ -260,18 +259,21 @@ class RectangularPrism(Primitive):
         return CoM
     
 
-    def calcMassTensor(self):
+    def calcInertiaTensor(self):
 
         MoI = np.zeros((3,3), float)
+        mass = self.calcMass()
 
-        #TODO: input inertia tensor calculations
+        MoI[0,0] = mass / 12 * (self.y**2 + self.z**2)
+        MoI[1,1] = mass / 12 * (self.x**2 + self.z**2)
+        MoI[2,2] = mass / 12 * (self.x**2 + self.y**2)
 
         return MoI
     
 
-    def wireframe(self):
+    def wireframe(self, rootTransform:ReferenceFrame):
 
-        transform = self.transform
+        transform = rootTransform
 
         # first face offset:
         x0 = 0
