@@ -92,3 +92,5 @@ B = \frac{\pi(x_f-x_0)}{20}\left[
 $$
 
 $x_0$ and $x_f$ are relative to the combined shape's centre of mass. As this shape is axisymmetric, we can also say that $I_{zz} = I_{yy}$.
+
+NOTE: in hindsight I'm pretty sure the x limits don't have to be the same at all...

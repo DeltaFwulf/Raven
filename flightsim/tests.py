@@ -139,15 +139,29 @@ def linearTest():
     plt.show()
 
 
+
 def angularTest():
 
     def freeRotation(t:float, q:np.array, omega:np.array):
         return np.zeros(3, float) # no torque acts on the body in free rotation (in the body frame)
 
-    primitive = Conic(length=10, dOuterRoot=1, dOuterEnd=1, material=Aluminium)
-    
+
+    def spinUp(t:float, q:np.array, omega:np.array):
+        return 100 * sin(t) * np.array([1,0,0], float)
+
+
+    def governor(t:float, q:np.array, omega:np.array):
+        
+        targetOmega = 5 - 0.1 * t
+        kp = 200
+        return kp * (targetOmega - norm(omega))  * np.array([1,0,0], float)
+
+
+    #primitive = Conic(length=10, dOuterRoot=1, dOuterEnd=1, material=Aluminium)
+    primitive = RectangularPrism(x=2, y=1.5, z=0.2, material=Aluminium)
+
     dt = 0.05
-    tf = 20
+    tf = 60
     t = np.arange(0, tf, dt)
 
     q = np.zeros((t.size, 4), float)
@@ -156,7 +170,7 @@ def angularTest():
     initFrame = ReferenceFrame(axis=np.array([1,0,0], float), ang=0)
 
     q[0,:] = deepcopy(initFrame.q)
-    omega[0,:] = np.array([pi, 0.1, 0])
+    omega[0,:] = np.array([0.1, 1, 0])
 
     for i in range(1, t.size):
         q[i,:], omega[i,:] = angularRK4(q[i-1,:], omega[i-1,:], primitive.moi, t[i], dt, freeRotation)

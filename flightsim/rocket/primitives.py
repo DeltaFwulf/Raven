@@ -2,6 +2,7 @@ from math import pi, sin, cos
 import numpy as np
 from rocket.materials import *
 from motion.vectorUtil import ReferenceFrame
+from ursina import Mesh
 
 
 

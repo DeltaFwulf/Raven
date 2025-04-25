@@ -83,12 +83,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Rocket Definition/Primitives/Conic Full.md",
+                "file": "Rocket Definition/Primitives/Conic Generalised.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Conic Full"
+              "title": "Conic Generalised"
             }
           },
           {
@@ -250,11 +250,11 @@
   },
   "active": "37302d39e5c97f05",
   "lastOpenFiles": [
+    "Rocket Definition/Primitives/Conic Full.md",
     "Rocket Definition/Primitives/Conic Generalised.md",
     "Rocket Definition/Primitives/Rectangular Prism.md",
     "Rocket Definition/Primitives/Primitives.md",
     "Rocket Definition/Primitives/Custom Primitive.md",
-    "Rocket Definition/Primitives/Conic Full.md",
     "Kinematics/Reference Frames and Inertia Tensors.md",
     "Welcome.md",
     "Primitives/Conic Full.md",

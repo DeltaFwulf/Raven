@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.linalg import norm
-from math import pi, cos, sin, atan2, sqrt, isnan
+from math import pi, cos, sin, atan2, asin, sqrt, isnan
 import matplotlib.pyplot as plt
 from copy import deepcopy
 
@@ -96,7 +96,7 @@ class ReferenceFrame():
         return rotMatrix
     
 
-    def sphereAngs2RotationMatrix(sphereAngs:list[float], axis:str='x') -> np.array:
+    def sphereAngs2Quaternion(sphereAngs:list[float], axis:str='x') -> np.array:
 
         referenceAxis = np.zeros(3, float)
 
@@ -124,9 +124,8 @@ class ReferenceFrame():
             rotAxis /= norm(rotAxis) # normalise the vector
         
         #angle = acos(np.dot(referenceAxis, newAxis) / (norm(referenceAxis) * norm(newAxis)))
-        q = ReferenceFrame.axisAngle2Quaternion(rotAxis, getAngleUnsigned(referenceAxis, newAxis))
+        return ReferenceFrame.axisAngle2Quaternion(rotAxis, getAngleUnsigned(referenceAxis, newAxis))
 
-        return ReferenceFrame.quat2RotationMatrix(q)
     
 
     def move(self, axis:np.array=np.array([1,0,0], float), ang:float=0, translation:np.array=np.array([0,0,0], float), reference:str='local') -> None:
@@ -351,6 +350,16 @@ def projectVector(vecA:np.array, vecB:np.array, comp:str) -> np.array:
         return vecA - parallel
     
 
+def quaternion2euler(q:float, order:str='tait-bryan'):
+    
+    if order=='tait-bryan':
+        # flight dynamics convention (heading, pitch, bank)
+        roll = atan2(2*(q[0]*q[1] + q[2]*q[3]), 1- 2*(q[1]**2 + q[2]**2))
+        pitch = asin(2*(q[0]*q[2] - q[1]*q[3]))
+        yaw = atan2(2*(q[0]*q[3] + q[1]*q[2]), 1 - 2*(q[2]**2 + q[3]**2))
+
+    return roll, pitch, yaw
+
 
 def grassmann(a, b):
     """direct quaternion multiplication, symmetric product"""
@@ -365,18 +374,16 @@ def grassmann(a, b):
 
 def rotateQuaternion(vecIn, q):
 
+    # TODO: use this faster algorithm for quaternion rotation:
+    # https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+
         qConv = deepcopy(q)
         qConv[1:] *= -1.0
 
-        def grassmann(a, b):
+        t = np.cross(2*q[1:], vecIn)
+        return(vecIn + q[0]*t + np.cross(q[1:], t))
 
-            qOut = np.zeros(4, float)
-            qOut[0] = a[0] * b[0] - np.dot(a[1:],b[1:])
-            qOut[1:] = a[0]*b[1:] + a[1:]*b[0] + np.cross(a[1:], b[1:])
-
-            return qOut
-        
-        return grassmann(grassmann(q, np.hstack((0, vecIn))), qConv)[1:]       
+        #return grassmann(grassmann(q, np.hstack((0, vecIn))), qConv)[1:]       
         
 
 
