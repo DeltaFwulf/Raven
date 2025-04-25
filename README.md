@@ -5,11 +5,9 @@
  **Key Features**
  - Modular spacecraft construction with hierarchy
  - Full 6DOF motion simulation
- - Barrowman aerodynamics model
- - Orbital simulation for Earth-Moon system (planet creation suite to be added later)
- - Simple UI for validating rocket construction / visualising flight
+ - Extended Barrowman aerodynamics model
+ - n-body gravity model
  - Plotting functions for trajectory
- - Motor design suite, thrust curves simulated according to engine parameters and feed simulation
  - Emulation of control systems for active guidance simulation, orbital launch optimisation, etc.
  - Flight save and TOML files for quick analysis of previous simulations
 
