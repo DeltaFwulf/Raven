@@ -33,3 +33,18 @@ All primitives have certain intrinsic properties:
 - edges and vertices for openGL
 
 With this information, the part can be used within modules.
+
+
+
+## Default Primitive:
+
+### Inputs:
+- material
+- dimensions
+
+### Outputs:
+- mass
+- centre of mass
+- inertia tensor
+- root frame to centre of mass vector
+- centre of mass to reference frame

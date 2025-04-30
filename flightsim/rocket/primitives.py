@@ -47,6 +47,11 @@ class Conic(Primitive):
         # The primitive contains a monent of inetia tensor about its centre of mass, OR some other reference location with a known transform from the CoM
         self.com2ref = np.zeros(3) # this primitive has its reference frame at the centre of mass (also, offset is a pure translation, no rotation)
         self.moi = self.calcInertiaTensor()
+        
+
+    def findMass(x:float, y:float, z:float, rho:float) -> float:
+
+        return rho * x * y * z
 
     
     def calcMass(self):
@@ -231,7 +236,6 @@ class RectangularPrism(Primitive):
     def __init__(self, x, y, z, name="rect-prism", material=Material):
 
         self.name = name
-        self.material = material
 
         self.x = x
         self.y = y

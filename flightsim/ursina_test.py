@@ -47,7 +47,7 @@ print(f"roll: {roll*180/pi} deg, pitch: {pitch*180/pi} deg, yaw: {yaw * 180/pi} 
 
 roll *= 180 / pi
 pitch *= 180 / pi
-yaw *= -180 / pi
+yaw *= 180 / pi
 
 rectPrism.rotation = Vec3(roll, pitch, yaw)
 
