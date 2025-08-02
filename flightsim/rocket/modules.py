@@ -1,14 +1,17 @@
 import numpy as np
-from copy import deepcopy
+from copy import copy, deepcopy
+from math import sqrt
 
-from motion.vectorUtil import ReferenceFrame
+from utility.vectorUtil import ReferenceFrame
 from rocket.primitives import *
-from ui.textUtil import arrFormat
+from utility.textUtil import arrFormat
 # define all module types that can be added to the rocket
 
 # OPEN PROBLEMS
 
 # a module can be built from any number of primitives of different shapes and root locations, by adding them to the module before using it. Each primitive shape may be made from a specific material as well, allowing for quite detailed subassemblies to be configured
+
+# TODO: switch list methods for MoI, mass, etc - to use dicts (for key in dict etc)
 
 
 class Module():
@@ -20,31 +23,36 @@ class Module():
     We can parameterise these modules as well to make creation of different geometries easier i.e. parameterising a nosecone's shape can create and locate the required primitives to approximate desired geometry.
     """
 
-    def __init__(self, primitives:list[Primitive]=[], rootTransforms:list[ReferenceFrame]=[]):
-        self.primitives = primitives # Each primitive or compound within the module is stored in this list
-        self.rootTransforms = rootTransforms # Stores a transform for each corresponding primitive (or compound) root from the module's root frame
+    def __init__(self):
+        self.primitives = {} # Each primitive or compound within the module is stored in this list
+        self.rootFrames = {} # Stores a transform for each corresponding primitive (or compound) root from the module's root frame
 
-        self.mass = self.getMass()
+        self.mass = self._getMass()
         self.com = self.getCoM()
         self.moi = self.getMoI()
 
-    # calculate and return the module's mass
+
     def getMass(self) -> float:
         """Calculates the total mass of the module"""
         mass = 0
-        for primitive in self.primitives: mass += primitive.mass
-
+        
+        for key in self.primitives:
+            mass += self.primitives[key].mass
+        
         return mass
     
 
-    def getCoM(self) -> np.array:
+    def getCoM(self, recalcMass:bool=False) -> np.array:
         """Calculates the centre of mass position of the module relative to its root frame"""
 
         CoM = np.zeros(3)
-       
-        for i in range(0, len(self.primitives)):
-            CoM += self.primitives[i].mass * self.rootTransforms[i].local2parent(self.primitives[i].com) / self.mass
 
+        if recalcMass:
+            self.mass = self.getMass()
+
+        for key in self.primitives:
+            CoM += self.primitives['key'].mass * self.rootFrames[key].local2parent(self.primitives[key].com) / self.mass
+       
         return CoM
 
 
@@ -53,18 +61,22 @@ class Module():
 
         MoI = np.zeros((3,3), float)
 
-        for i in range(0, len(self.primitives)):
+        for key in self.primitives:
 
             # We have the MoI of each primitive about its own CoM, we now need it about the CoM of the module.
-            pcom2mcom = deepcopy(self.rootTransforms[i])
-            pcom2mcom.chain(self.primitives[i].root2com) 
+            pcom2mcom = deepcopy(self.rootFrames[key])
+            pcom2mcom.chain(self.primitives[key].root2com) 
             pcom2mcom.invert() # this is the transform from the primitive CoM to the module root
             pcom2mcom.move(translation=self.com, reference='parent') # we add the transform from the module root to the module CoM
             
             # Transform this primitive's MoI by the pcom2mcom transform:
-            MoI += pcom2mcom.transformInertiaTensor(self.primitives[i].moi, self.primitives[i].mass, self.primitives[i].com2ref)
+            MoI += pcom2mcom.transformInertiaTensor(self.primitives[key].moi, self.primitives[key].mass, self.primitives[key].com2ref)
 
         return MoI
+    
+
+    def getForce(self) -> np.array:
+        return np.zeros((3), float)
     
 
 
@@ -94,15 +106,106 @@ class Tank(Module):
 
 
 class SolidMotor(Module):
-    
-    # Solid motors have a jacket, a fuel grain, and a nozzle. 
 
-    # The fuel has an initial profile that gives a thrust curve.
+    # TODO: allow for thrust vectoring, decide location of thrust for moment calculations on vehicle scale
 
-    # We import the thrust curve and core shape from the motor name, to drive
-    # fuel profile etc.
+    def __init__(self, geometry:dict, fArray:list, tArray:list, isp:float, propellant:Material, wallMaterial:Material):
 
-    def __init__(self, motor:str=None):
+        self.isp = isp
+        self.fArr = fArray
+        self.tArr = tArray
 
-        """You can either select a solid motor from the list of precalculated motors, or specify a new one"""
+        # build the motor casing from primitives
+        self.primitives = {}
+        self.rootFrames = {} # reference frame mapping to primitive root within module parent frame
 
+        odCasing = geometry['casing-diameter']
+        idCasing = odCasing - 2 * geometry['casing-thickness']
+        lNozzle = 0.5 * (geometry['exit-diameter'] - geometry['throat-diameter']) / sin(geometry['nozzle-half-angle'])
+        tProj = geometry['nozzle-thickness'] / cos(geometry['nozzle-half-angle'])
+        lGrain = geometry['casing-length'] - 2 * geometry['casing-thickness']
+
+        self.primitives.update({'casing':Conic(length=geometry['casing-length'], 
+                                               dOuterRoot=odCasing,
+                                               dOuterEnd=odCasing,
+                                               dInnerRoot=idCasing,
+                                               dInnerEnd=idCasing,
+                                               name='casing',
+                                               material=wallMaterial)})
+        
+        self.primitives.update({'fore-bulkhead':Conic(length=geometry['casing-thickness'],
+                                                      dOuterRoot=idCasing,
+                                                      dOuterEnd=idCasing,
+                                                      dInnerRoot=0,
+                                                      dInnerEnd=0,
+                                                      name='fore-bulkhead',
+                                                      material=wallMaterial)})
+        
+
+        self.primitives.update({'aft-bulkhead':Conic(length=geometry['casing-thickness'],
+                                                     dOuterRoot=idCasing,
+                                                     dOuterEnd=idCasing,
+                                                     dInnerRoot=geometry['throat-diameter'],
+                                                     dInnerEnd=geometry['throat-diameter'],
+                                                     name='aft-bulkhead',
+                                                     material=wallMaterial)})
+        
+
+        self.primitives.update({'nozzle':Conic(length=lNozzle,
+                                               dOuterRoot=geometry['throat-diameter'] + tProj,
+                                               dOuterEnd=geometry['exit-diameter'] + tProj,
+                                               dInnerRoot=geometry['throat-diameter'],
+                                               dInnerEnd=geometry['exit-diameter'],
+                                               name='nozzle',
+                                               material=wallMaterial)})
+        
+
+        self.primitives.update({'grain':Conic(length=lGrain,
+                                             dOuterRoot=idCasing,
+                                             dOuterEnd=idCasing,
+                                             dInnerRoot=geometry['fuel-port'],
+                                             dInnerEnd=geometry['fuel-port'],
+                                             name='grain',
+                                             material=propellant)})
+                    
+
+        self.rootFrames.update({'casing':ReferenceFrame()})
+        self.rootFrames.update({'fore-bulkhead':ReferenceFrame()})
+        self.rootFrames.update({'aft-bulkhead':ReferenceFrame(translation=np.array([-geometry['casing-length'] + geometry['casing-thickness'], 0, 0], float))})
+        self.rootFrames.update({'nozzle':ReferenceFrame(translation=np.array([-geometry['casing-length'], 0, 0], float))})
+        self.rootFrames.update({'grain':ReferenceFrame(translation=np.array([-geometry['casing-thickness'], 0, 0], float))})
+
+        self.thrust = 0.0
+        self.onTime = 0.0
+        self.activated = False # ignites the motor, allows the timer to count up
+
+        self.update(0.0)
+
+
+    def update(self, dt) -> None:
+
+        self.onTime += dt
+        self.thrust = np.interp(self.onTime, self.tArr, self.fArr)
+        massFlow = self.thrust / (9.80665*self.isp)
+
+        grain = self.primitives['grain']
+
+        r0 = grain.rInnerRoot
+        dr = sqrt(r0**2 + massFlow*dt / (pi*grain.length*grain.material.density))
+        dNew = 2*(r0 + dr)
+
+        if dNew > grain.dOuterRoot:
+            dNew = grain.dOuterRoot
+            self.activated = False
+
+        self.primitives['grain'] = Conic(length=grain.length,
+                                         dOuterRoot=grain.dOuterRoot,
+                                         dOuterEnd=grain.dOuterEnd,
+                                         dInnerRoot=dNew,
+                                         dInnerEnd=dNew,
+                                         name='grain',
+                                         material=grain.material)
+
+        self.mass = self.getMass()
+        self.com = self.getCoM()
+        self.moi = self.getMoI()

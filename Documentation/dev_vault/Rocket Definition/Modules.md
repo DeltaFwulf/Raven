@@ -39,6 +39,17 @@
 - wall material
 - nozzle material
 
+Geometry dict will contain
+- throat diameter
+- exit diameter
+- chamber diameter
+- chamber length
+- chamber wall thickness
+- nozzle thickness
+- nozzle angle
+- fuel core diameter
+
+
 
 
 ### Nosecone

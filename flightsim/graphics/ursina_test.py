@@ -1,6 +1,6 @@
 from ursina import *
 from ursina.shaders import basic_lighting_shader
-from motion.vectorUtil import ReferenceFrame, quaternion2euler
+from utility.vectorUtil import ReferenceFrame, quaternion2euler
 from rocket.primitives import *
 
 app = Ursina()

@@ -1,8 +1,7 @@
 from math import pi, sin, cos
 import numpy as np
 from rocket.materials import *
-from motion.vectorUtil import ReferenceFrame
-from ursina import Mesh
+from utility.vectorUtil import ReferenceFrame
 
 
 
@@ -15,6 +14,14 @@ class Primitive():
         self.name = name
         self.mass = 0
         self.com = np.zeros((3), float)
+
+
+    def getMeshData(self):
+
+        pts = np.zeros((1, 3), float)
+        tris = []
+
+        return pts, tris
 
 
     def __str__(self):
@@ -33,6 +40,11 @@ class Conic(Primitive):
         self.density = material.density
 
         self.length = length
+
+        self.dOuterRoot = dOuterRoot
+        self.dOuterEnd = dOuterEnd
+        self.dInnerRoot = dInnerRoot
+        self.dInnerEnd = dInnerEnd
 
         self.rOuterRoot = dOuterRoot / 2
         self.rOuterEnd = dOuterEnd / 2
@@ -61,7 +73,7 @@ class Conic(Primitive):
     def calcCoM(self):
 
         CoM = np.zeros((3), float)
-        CoM[0] = (self.length / 4) * ((self.rOuterRoot**2 - self.rInnerRoot**2) + 2 * (self.rOuterRoot * self.rOuterEnd - self.rInnerRoot * self.rInnerEnd) + 3 * (self.rOuterEnd**2 - self.rInnerEnd**2)) / \
+        CoM[0] = -(self.length / 4) * ((self.rOuterRoot**2 - self.rInnerRoot**2) + 2 * (self.rOuterRoot * self.rOuterEnd - self.rInnerRoot * self.rInnerEnd) + 3 * (self.rOuterEnd**2 - self.rInnerEnd**2)) / \
                  ((self.rOuterRoot**2 - self.rInnerRoot**2) + (self.rOuterRoot * self.rOuterEnd - self.rInnerRoot * self.rInnerEnd) + (self.rOuterEnd**2 - self.rInnerEnd**2))
         
         return CoM
@@ -79,13 +91,13 @@ class Conic(Primitive):
                 tensor[0,0] = (pi * density * length / 2) * rootRadius**4
                 
             # Iyy, Izz:
-            x0 = -CoM[0]
-            xf = length - CoM[0]
+            xr = -CoM[0]
+            xe = -CoM[0] - length
 
             dR = endRadius - rootRadius
             k = dR / length
 
-            A = ((k**2 / 5) * (xf**5 - x0**5) + (k/2) * (rootRadius - k*x0) * (xf**4 - x0**4) + (1/3) * (rootRadius - k*x0)**2 * (xf**3 - x0**3))
+            A = ((k**2 / 5) * (xe**5 - xr**5) + (k/2) * (rootRadius - k*xr) * (xe**4 - xr**4) + (1/3) * (rootRadius - k*xr)**2 * (xe**3 - xr**3))
             B = (length / 20) * ((5 * rootRadius**4) + (10 * dR * rootRadius**3) + (10 * dR**2 * rootRadius**2) + (5 * dR**3 * rootRadius) + (dR**4))
 
             tensor[1,1] = pi * density * (A + B) # this has been verified for cylindrical case as well, with errors on the order of 1e-13
@@ -226,7 +238,114 @@ class Conic(Primitive):
             vertices.extend(v1_inner)
 
         return vertices, edges
+    
+    def getMeshData(self):
+
+        """Returns points and triangles to be used in mayavi's triangular_mesh function"""
+        n = 20
+        theta = np.linspace(0, 2*pi, n, endpoint=False)
+
+        rOutRoot = self.rOuterRoot
+        rOutEnd = self.rOuterEnd
+
+        rInRoot = self.rInnerRoot
+        rInEnd = self.rInnerEnd
+
+        l = self.length
+
+        # Outer wall points
+        yOutRoot = rOutRoot*np.cos(theta) if rOutRoot > 0 else np.array([0], float)
+        yOutEnd = rOutEnd*np.cos(theta) if rOutEnd > 0 else np.array([0], float)
         
+        zOutRoot = rOutRoot*np.sin(theta) if rOutRoot > 0 else np.array([0], float)
+        zOutEnd = rOutEnd*np.sin(theta) if rOutEnd > 0 else np.array([0], float)
+
+        xOutRoot = np.zeros_like(yOutRoot)
+        xOutEnd = -l*np.ones_like(yOutEnd)
+
+        # Inner wall points
+        yInRoot = rInRoot*np.cos(theta) if rInRoot > 0 else np.array([0], float)
+        yInEnd = rInEnd*np.cos(theta) if rInEnd > 0 else np.array([0], float)
+
+        zInRoot = rInRoot*np.sin(theta) if rInRoot > 0 else np.array([0], float)
+        zInEnd = rInEnd*np.sin(theta) if rInEnd > 0 else np.array([0], float)
+
+        xInRoot = np.zeros_like(yInRoot)
+        xInEnd = -l*np.ones_like(yInEnd)
+
+        x = np.r_[xOutRoot, xOutEnd, xInRoot, xInEnd]
+        y = np.r_[yOutRoot, yOutEnd, yInRoot, yInEnd]
+        z = np.r_[zOutRoot, zOutEnd, zInRoot, zInEnd]
+
+        pts = np.zeros((x.size, 3), float)
+        pts[:,0] = x
+        pts[:,1] = y
+        pts[:,2] = z
+
+        nro = xOutRoot.size
+        neo = xOutEnd.size
+
+        tris = []
+
+        if nro == 1 and neo > 1:
+            for i in range(0, neo):
+                tris.append ((0, nro + i, nro + (i + 1)%neo))
+
+        elif nro > 1 and neo == 1:
+            for i in range(0, nro):
+                tris.append((nro, i, (i + 1)%nro))
+
+        elif nro > 1 and neo > 1:
+            for i in range(0, nro):
+                tris.append((i, (i + 1)%nro, nro + i))
+                tris.append(((i + 1)%nro, nro + i, nro + (i + 1)%nro))
+
+        else:
+            print(f"{self.name}: invalid shape provided, cancelling")
+            return
+
+        po = xOutRoot.size + xOutEnd.size
+
+        # inner wall:
+        nri = xInRoot.size
+        nei = xInEnd.size
+    
+        if nri == 1 and nei > 1:
+            for i in range(0, nei):
+                tris.append((po, po + nri + i, po + nri + (i + 1)%nei))
+
+        elif nri > 1 and nei == 1:
+            for i in range(0, nri):
+                tris.append((po + nri, po + i, po + (i + 1)%nri))
+
+        elif nri > 1 and nei > 1:
+            for i in range(0, nri):
+                tris.append((po + i, po + (i + 1)%nri, po + nri + i))
+                tris.append((po + (i + 1)%nri, po + nri + i, po + nri + (i + 1)%nri))
+
+        # ROOT AND END FACES ##########################################################################################################
+        # if either rOutRoot or rOutEnd == 0, corresponding inner size is also == 0, so no stitching is required
+
+        if rOutRoot > 0 and rInRoot == 0:
+            for i in range(0, nro):
+                tris.append((po, i, (i + 1)%nro))
+
+        elif (rOutRoot > 0 and rInRoot > 0) and (rOutRoot != rInRoot):
+            for i in range(0, nro):
+                tris.append((i, (i + 1) % nro, po + i))
+                tris.append(((i + 1)%nro, po + i, po + (i + 1)%nro))
+
+        if rOutEnd > 0 and rInEnd == 0:
+            for i in range(0, neo):
+                tris.append((nro, nro + i, nro + (i + 1)%neo))
+
+        elif (rOutEnd > 0 and rInEnd > 0) and (rOutEnd != rInEnd):
+            for i in range(0, neo):
+                tris.append((nro + i, nro + (i + 1)%neo, po + nri + i))
+                tris.append((nro + (i + 1)%neo, nri + po + i, nri + po + (i + 1)%nei))
+
+        return pts, tris
+
 
 
 class RectangularPrism(Primitive):
@@ -260,7 +379,7 @@ class RectangularPrism(Primitive):
     def calcCoM(self):
         
         CoM = np.zeros((3), float)
-        CoM[0] = self.x / 2
+        CoM[0] = -self.x / 2
         return CoM
     
 
@@ -312,7 +431,29 @@ class RectangularPrism(Primitive):
                 (6,7))
 
         return vertices, edges
-    
+
+
+    def getMeshData(self):
+
+        pts = np.zeros((8, 3), float)
+        tris = []
+
+        pts[:,0] = [0, -1, -1, 0, 0, -1, -1, 0]
+        pts[:,1] = [-0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5]
+        pts[:,2] = [-0.5, -0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5]
+
+        pts[:,0] *= self.x
+        pts[:,1] *= self.y
+        pts[:,2] *= self.z
+
+        tris = [(0, 1, 4), (1, 4, 5),
+                (1, 2, 5), (2, 5, 6),
+                (2, 3, 6), (3, 6, 7),
+                (3, 0, 7), (0, 7, 4),
+                (0, 1, 2), (0, 2, 3),
+                (4, 5, 6), (4, 6, 7)]
+
+        return pts, tris
 
 
 class HAACK(Primitive):

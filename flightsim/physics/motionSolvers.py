@@ -1,5 +1,5 @@
 import numpy as np
-from motion.vectorUtil import grassmann
+from utility.vectorUtil import grassmann
 from copy import deepcopy
 
 

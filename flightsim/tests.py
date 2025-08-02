@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from numpy.linalg import norm
 
-from motion.vectorUtil import ReferenceFrame, drawFrames
+from utility.vectorUtil import ReferenceFrame, drawFrames
 from rocket.primitives import *
-from ui.textUtil import arrFormat
+from utility.textUtil import arrFormat
 from rocket.modules import Module
-from motion.motionSolvers import linearRK4, angularRK4
+from physics.motionSolvers import linearRK4, angularRK4
 
 
 
@@ -100,7 +100,7 @@ def moduleTest():
         print(f"Centre of Mass:\n{arrFormat(primitives[i].com, sigFigs=3, tabs=2)}\n")
         print(f"Moment of Inertia Tensor:\n{arrFormat(primitives[i].moi, sigFigs=3, tabs=2)}\n")
 
-    module = Module(primitives=primitives, rootTransforms=rootTransforms)
+    module = Module(primitives=primitives, rootFrames=rootTransforms)
 
     # get the module's mass, CoM, MoI tensor, compare against result in CAD and hand calc:
     print(f"Module mass:\n\t\t{'%.3f' % module.mass} kg")

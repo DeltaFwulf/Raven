@@ -24,13 +24,10 @@ class ReferenceFrame():
         """
 
         self.q = np.array([1,0,0,0], float)
-        self.translation = np.zeros((3), float)
+        self.translation = translation
 
         if axis is not None:
-
-            # quaternion for rotation:
             self.q = ReferenceFrame.axisAngle2Quaternion(axis, ang)
-            self.translation = translation
         
         elif sphereAngs is not None:
             
@@ -62,8 +59,6 @@ class ReferenceFrame():
             angle = getAngleUnsigned(referenceAxis, newAxis)
 
             self.q = ReferenceFrame.axisAngle2Quaternion(rotAxis, angle)
-            self.translation = translation
-            
             self.move(referenceAxis, roll) # apply roll
 
 
