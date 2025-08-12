@@ -10,24 +10,29 @@ from utility.textUtil import arrFormat
 from rocket.modules import Module
 from physics.motionSolvers import linearRK4, angularRK4
 
+# TODO: ensure reference frame and primitive tests are robust (maybe talk to Stell about writing these?)
 
 
-def primitiveTest():
+
+def primitiveTest(primitive:Primitive):
+
+
+    # TODO: Check that all outputs exist and are in the correct form
 
     #shape = Conic(length=1, dOuterRoot=1, dOuterEnd=1, dInnerRoot=0, dInnerEnd=0, name="test_conic", material=Aluminium)
-    shape = RectangularPrism(x=1, y=1, z=1, material=Aluminium)
+    #shape = RectangularPrism(x=1, y=1, z=1, material=Aluminium)
 
-    print(f"Name:\t\t{shape.name}")
-    print(f"Shape:\t\t{shape.shape}")
-    print(f"Material:\t{shape.material.name}")
-    print(f"Mass:\t\t{'%.3f' % shape.mass} kg\n")
+    print(f"Name:\t\t{primitive.name}")
+    print(f"Shape:\t\t{primitive.shape}")
+    print(f"Material:\t{primitive.material.name}")
+    print(f"Mass:\t\t{'%.3f' % primitive.mass} kg\n")
     
-    print(f"Centre of Mass:\n\t\tx: {'%.3f' % shape.com[0]} m\n\t\ty: {'%.3f' % shape.com[1]} m\n\t\tz: {'%.3f' % shape.com[2]} m")
+    print(f"Centre of Mass:\n\t\tx: {'%.3f' % primitive.com[0]} m\n\t\ty: {'%.3f' % primitive.com[1]} m\n\t\tz: {'%.3f' % primitive.com[2]} m")
     
     print("\n+===================Inertia Tensors=======================+")
     #use solution found here: https://stackoverflow.com/questions/45478488/python-print-floats-padded-with-spaces-instead-of-zeros
 
-    print(f"Inertia Tensor:\n{arrFormat(shape.moi, sigFigs=3, tabs=2)}")
+    print(f"Inertia Tensor:\n{arrFormat(primitive.moi, sigFigs=3, tabs=2)}")
     
     # TODO: draw the shape in the module frame
 
@@ -89,7 +94,6 @@ def moduleTest():
     coneTransform = deepcopy(cylinderTransform)
     coneTransform.move(translation=np.array([1,0,0], float), reference='local')
     #coneTransform = Transform(transInit=np.array([1.5,0,0]), axisInit=np.array([0,1,0]), angInit=pi)
-
     primitives = [cylinder, cone]
     rootTransforms = [cylinderTransform, coneTransform]
 
@@ -243,4 +247,5 @@ def angularTest():
     plt.show()
 
 
-angularTest()
+#angularTest()
+primitiveTest(Conic(length=1.0, dOuterRoot=1.0, dOuterEnd=0.0, name='test', material=Aluminium))

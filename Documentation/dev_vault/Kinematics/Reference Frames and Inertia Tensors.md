@@ -44,4 +44,9 @@ This means that when we wish to combine compounds, we don't need to recalculate 
 
 The only parts that must be kept separate are those liable to change, for example tanks with fluid that drains will need recalculating at each timestep and so should be kept at the compound / module stage.
 
-A module is a compound object with functions defined to vary the compounds physical properties (element position, element size, mass, shape, etc). It can be used to represent distinct subsystems such as tanks, actuated fins, structures, or any major subsystem of a rocket.
+
+
+## Angular / Linear Velocities
+
+It may be worth storing velocities within a reference frame in future, as this would permit methods within the frame class that find the velocity of an object within a rotating frame, for use with, e.g. atmospheric flight in a rotating planet's atmosphere. These functions have been derived outside of the reference frame, but not integrated (could be fun, could save code)
+

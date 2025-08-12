@@ -1,3 +1,4 @@
+A module is a compound object with functions defined to vary the compounds physical properties (element position, element size, mass, shape, etc). It can be used to represent distinct subsystems such as tanks, actuated fins, structures, or any major subsystem of a rocket.
 ## Species
 
 ### Dumb Mass

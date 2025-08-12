@@ -9,11 +9,13 @@ class Primitive():
 
     shape = "default"
 
+    # NOTE: if a shape is modified, its pts and tris must also be recalculated
 
     def __init__(self, name="unnamed"): # TODO: use this for part indexing later, we could create a dictionary of named parts in each module?
         self.name = name
         self.mass = 0
         self.com = np.zeros((3), float)
+        self.ptsLocal = self.getMeshData()[0] # pts used in graphics later on
 
 
     def getMeshData(self):
@@ -59,6 +61,8 @@ class Conic(Primitive):
         # The primitive contains a monent of inetia tensor about its centre of mass, OR some other reference location with a known transform from the CoM
         self.com2ref = np.zeros(3) # this primitive has its reference frame at the centre of mass (also, offset is a pure translation, no rotation)
         self.moi = self.calcInertiaTensor()
+
+        self.ptsLocal = self.getMeshData()[0]
         
 
     def findMass(x:float, y:float, z:float, rho:float) -> float:
@@ -97,7 +101,7 @@ class Conic(Primitive):
             dR = endRadius - rootRadius
             k = dR / length
 
-            A = ((k**2 / 5) * (xe**5 - xr**5) + (k/2) * (rootRadius - k*xr) * (xe**4 - xr**4) + (1/3) * (rootRadius - k*xr)**2 * (xe**3 - xr**3))
+            A = ((k**2 / 5) * (xr**5 - xe**5) + (k/2) * (rootRadius - k*xe) * (xr**4 - xe**4) + (1/3) * (rootRadius - k*xe)**2 * (xr**3 - xe**3))
             B = (length / 20) * ((5 * rootRadius**4) + (10 * dR * rootRadius**3) + (10 * dR**2 * rootRadius**2) + (5 * dR**3 * rootRadius) + (dR**4))
 
             tensor[1,1] = pi * density * (A + B) # this has been verified for cylindrical case as well, with errors on the order of 1e-13
@@ -363,14 +367,15 @@ class RectangularPrism(Primitive):
         self.material = material
         
         self.mass = self.material.density * x * y * z
-        self.com = np.array([x/2, 0, 0], float)
+        self.com = np.array([-x/2, 0, 0], float)
 
         self.root2com = ReferenceFrame(translation=self.com)
 
         # Inertia tensors
         self.com2ref = np.zeros(3) # the part's centre of mass is its point of reference
         self.moi = self.calcInertiaTensor() # inertia tensor about centre of mass
-    
+
+        self.ptsLocal = self.getMeshData()[0]
 
     def calcMass(self):
         return self.material.density * self.x * self.y * self.z

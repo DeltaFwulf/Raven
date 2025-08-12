@@ -1,10 +1,14 @@
-import mayavi.mlab as maya
+import mayavi.mlab as mlab
 import numpy as np
 from math import pi
+from copy import deepcopy
 
 from rocket.primitives import Conic, RectangularPrism
 from rocket.materials import Aluminium
 from utility.vectorUtil import ReferenceFrame
+from physics.motionSolvers import linearRK4, angularRK4
+
+
 
 def tri_mesh():
 
@@ -130,26 +134,25 @@ def tri_mesh():
             tris.append((nro + i, nro + (i + 1)%neo, po + nri + i))
             tris.append((nro + (i + 1)%neo, nri + po + i, nri + po + (i + 1)%nei))
 
-    fig = maya.figure()
-    maya.triangular_mesh(x, y, z, tris, figure=fig)
-    maya.show()
+    fig = mlab.figure()
+    mlab.triangular_mesh(x, y, z, tris, figure=fig)
+    mlab.show()
 
 
 
-
-def drawPrimitives():
+def animPrimatives():
 
     primitives = {}
-    primitives.update({'conic':Conic(1.0, 1.0, 0.5, 0.5, 0.25, material=Aluminium)})
+    primitives.update({'conic':Conic(5.0, 1.0, 0, 0, 0, material=Aluminium)})
     primitives.update({'rect':RectangularPrism(x=1, y=1, z=1, material=Aluminium)})
 
     frames = {}
-    frames.update({'conic':ReferenceFrame(translation=np.array([0, 0, 0], float), axis=np.array([0,1,0], float), ang=0.0)})
-    frames.update({'rect':ReferenceFrame(translation=np.array([5, 0, 0], float))})
+    frames.update({'conic':ReferenceFrame(translation=np.array([0, 0, 0], float), axis=np.array([1,0,0], float), ang=pi/4)})
+    frames.update({'rect':ReferenceFrame(translation=np.array([5, 0, 0], float), axis=np.array([1,0,0], float), ang=pi/4)})
 
     # draw all primitives in the scene
-    fig = maya.figure()
-
+    fig = mlab.figure()
+    meshes = {}
     # the function should be able to draw each of the primitives in the list, and also to permit animation / updating all of the primitives' frames
 
     for key in primitives:
@@ -159,10 +162,116 @@ def drawPrimitives():
         for i in range(0, np.shape(pts)[0]):
             pts[i,:] = frames[key].local2parent(pts[i,:])
 
-        maya.triangular_mesh(pts[:,0], pts[:,1], pts[:,2], tris, figure=fig)
+        meshes.update({key:None})
+        meshes[key] = mlab.triangular_mesh(pts[:,0], pts[:,1], pts[:,2], tris, figure=fig)
+        # meshes[key].mlab_source.x = pts[:,0]*5
     
-    maya.show()
+    # TODO: come up with more efficient way of moving points
+    # - currently, we need to recreate all points and tris to move them to final position
+    # - we should either store a copy of local pts data for modification OR
+    # - interpolate between two frames using a difference method within referenceFrame like diff()
+    # - OR we could invert the transform of the mesh points then update the frame (however this doesn't cover variable primitive geometry)
+    @mlab.animate(delay=17)
+    def anim(plays:int=1):
 
-    # simulate angular movement of the system and animate the plot
+        n = 0
 
-drawPrimitives()
+        while(n < plays):
+
+            for i in range(0, 360):
+                
+                # spin the primitives about the(ir) z axis
+                dAng = pi / 180
+
+                for key in primitives:
+                    
+                    p = primitives[key]
+                    f = frames[key]
+
+                    #TODO: solve issue of non-zero origin with local rotation
+
+                    #f.move(axis=np.array([0,0,1], float), ang=dAng, reference='parent')
+                    com = p.com
+                    f.moveAbout(origin=com, axis=np.array([0,0,1], float), ang=dAng, frame='local')
+                    pts = f.local2parent(p.ptsLocal)
+                    meshes[key].mlab_source.trait_set(x=pts[:,0], y=pts[:,1], z=pts[:,2])
+                    yield
+
+            n += 1
+
+
+    anim(100)
+    mlab.show()
+
+
+
+def physicsIntegration():
+
+
+    def freeRotation(t:float, q:np.array, omega:np.array):
+        return np.zeros(3, float) # no torque acts on the body in free rotation (in the body frame)
+
+
+    def gravity(X:np.array, dt:float, params:dict) -> np.array:
+        return -params['mu'] * X[0,:] / np.linalg.norm(X[0,:])**3
+    
+
+    primitive = Conic(1.0, 1.0, 1.0, 0.5, 0.5, material=Aluminium)
+    startFrame = ReferenceFrame(translation=np.array([5, 0, 0], float), axis=np.array([1,0,0], float), ang=pi/4)
+    pts, tris = primitive.getMeshData()
+
+    fig = mlab.figure()
+    mesh = mlab.triangular_mesh(pts[:,0], pts[:,1], pts[:,2], tris, figure=fig)
+
+    tf = 10
+    dt = 0.017
+    t = np.arange(0, tf, dt)
+
+    q = np.zeros((t.size, 4), float)
+    q[0,:] = startFrame.q
+
+    omega = np.zeros((t.size, 3), float)
+    omega[0,:] = [10, 1, 1]
+
+    tvec = np.zeros((t.size, 3), float)
+    tvec[0,:] = startFrame.translation
+
+    v = np.zeros((t.size, 3), float)
+    v[0,:] = [0, 1.0, 0]
+
+    params = {'mu':5.0}
+
+    # solve for object motion over simulation period, record q(t), t(t)
+    for i in range(1, t.size):
+
+        q[i,:], omega[i,:] = angularRK4(q[i-1,:], omega[i-1,:], I=primitive.moi, t0=t[i-1], h=dt, torqueFn=freeRotation)
+        tvec[i,:], v[i,:] = linearRK4(tvec[i-1,:], v[i-1,:], dt, gravity, params)
+
+
+
+    @mlab.animate(delay=17)
+    def anim(plays:int=1):
+
+        n = 0
+
+        f = ReferenceFrame()
+        p = primitive
+
+        while(n < plays):
+
+            for i in range(0, t.size):
+                
+                f.q = q[i,:]
+                f.translation = tvec[i,:]
+
+                pts = f.local2parent(p.ptsLocal)
+                mesh.mlab_source.trait_set(x=pts[:,0], y=pts[:,1], z=pts[:,2])
+                yield
+
+            n += 1
+
+
+    anim(1)
+    mlab.show()
+
+physicsIntegration()
