@@ -222,8 +222,9 @@ def physicsIntegration():
 
     fig = mlab.figure()
     mesh = mlab.triangular_mesh(pts[:,0], pts[:,1], pts[:,2], tris, figure=fig)
+    mlab.view(azimuth=20, elevation=0, distance=20)
 
-    tf = 10
+    tf = 31.4
     dt = 0.017
     t = np.arange(0, tf, dt)
 
@@ -248,6 +249,8 @@ def physicsIntegration():
         tvec[i,:], v[i,:] = linearRK4(tvec[i-1,:], v[i-1,:], dt, gravity, params)
 
 
+    # Plot trajectory
+    mlab.plot3d(tvec[:,0], tvec[:,1], tvec[:,2], tube_radius=0.1, figure=fig)
 
     @mlab.animate(delay=17)
     def anim(plays:int=1):

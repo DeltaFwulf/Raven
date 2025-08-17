@@ -3,6 +3,7 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from numpy.linalg import norm
+import mayavi.mlab as mlab
 
 from utility.vectorUtil import ReferenceFrame, drawFrames
 from rocket.primitives import *
@@ -15,7 +16,6 @@ from physics.motionSolvers import linearRK4, angularRK4
 
 
 def primitiveTest(primitive:Primitive):
-
 
     # TODO: Check that all outputs exist and are in the correct form
 
@@ -34,7 +34,12 @@ def primitiveTest(primitive:Primitive):
 
     print(f"Inertia Tensor:\n{arrFormat(primitive.moi, sigFigs=3, tabs=2)}")
     
-    # TODO: draw the shape in the module frame
+    fig = mlab.figure()
+    pts, tris = primitive.getMeshData()
+    mesh = mlab.triangular_mesh(pts[:,0], pts[:,1], pts[:,2], tris, figure=fig)
+
+    mlab.show()
+
 
 
 def frameTest():
@@ -87,22 +92,22 @@ def moduleTest():
     """
 
     # Where within the Module is the primitive?
-    cylinder = Conic(length=1, dOuterRoot=1, dOuterEnd=1, dInnerRoot=0, dInnerEnd=0, name='cylinder', material=Aluminium)
-    cone = Conic(length=0.5, dOuterRoot=1, dOuterEnd=0, dInnerRoot=0, dInnerEnd=0, name='cone', material=Aluminium)
+    cylinder = Conic(length=1, dOuterRoot=1, dOuterEnd=1, dInnerRoot=0, dInnerEnd=0, name='cylinder', material=Material)
+    cone = Conic(length=1, dOuterRoot=0, dOuterEnd=1, dInnerRoot=0, dInnerEnd=0, name='cone', material=Material)
 
-    cylinderTransform = ReferenceFrame(axis=np.array([0,1,0], float), ang=0)
+    cylinderTransform = ReferenceFrame(axis=np.array([0,1,0], float), ang=pi/4)
     coneTransform = deepcopy(cylinderTransform)
     coneTransform.move(translation=np.array([1,0,0], float), reference='local')
-    #coneTransform = Transform(transInit=np.array([1.5,0,0]), axisInit=np.array([0,1,0]), angInit=pi)
-    primitives = [cylinder, cone]
-    rootTransforms = [cylinderTransform, coneTransform]
+    
+    primitives = {cylinder.name:cylinder, cone.name:cone}
+    rootTransforms = {cylinder.name:cylinderTransform, cone.name:coneTransform}
 
-    for i in range(0, len(primitives)):
+    for key in primitives:
         print("=========================================")
-        print(f"Name: {primitives[i].name}")
-        print(f"Mass:\n\t\t{'%.3f' % primitives[i].mass} kg\n")
-        print(f"Centre of Mass:\n{arrFormat(primitives[i].com, sigFigs=3, tabs=2)}\n")
-        print(f"Moment of Inertia Tensor:\n{arrFormat(primitives[i].moi, sigFigs=3, tabs=2)}\n")
+        print(f"Name: {primitives[key].name}")
+        print(f"Mass:\n\t\t{'%.3f' % primitives[key].mass} kg\n")
+        print(f"Centre of Mass:\n{arrFormat(primitives[key].com, sigFigs=3, tabs=2)}\n")
+        print(f"Moment of Inertia Tensor:\n{arrFormat(primitives[key].moi, sigFigs=3, tabs=2)}\n")
 
     module = Module(primitives=primitives, rootFrames=rootTransforms)
 
@@ -110,6 +115,42 @@ def moduleTest():
     print(f"Module mass:\n\t\t{'%.3f' % module.mass} kg")
     print(f"Module CoM:\n{arrFormat(module.com, sigFigs=3, tabs=2)}\n")
     print(f"Module MoI:\n{arrFormat(module.moi, sigFigs=3, tabs=2)}\n")
+
+
+    def drawFrame(frame:ReferenceFrame, sf:float, figure):
+
+        x = frame.translation[0]
+        y = frame.translation[1]
+        z = frame.translation[2]
+
+        cx = frame.local2parent(np.array([1,0,0], float), incTranslation=False)
+        cy = frame.local2parent(np.array([0,1,0], float), incTranslation=False)
+        cz = frame.local2parent(np.array([0,0,1], float), incTranslation=False)
+        
+        mlab.quiver3d(x, y, z, cx[0], cx[1], cx[2], color=(1,0,0), figure=figure, scale_factor=sf)
+        mlab.quiver3d(x, y, z, cy[0], cy[1], cy[2], color=(0,1,0), figure=figure, scale_factor=sf)
+        mlab.quiver3d(x, y, z, cz[0], cz[1], cz[2], color=(0,0,1), figure=figure, scale_factor=sf)
+
+
+     # Plot the shape:
+    fig = mlab.figure()
+    drawFrame(ReferenceFrame(), 5.0, fig)
+
+    for key in primitives:
+        
+        pts, tris = primitives[key].getMeshData()
+        pts = rootTransforms[key].local2parent(pts)
+        mlab.triangular_mesh(pts[:,0], pts[:,1], pts[:,2], tris, opacity=0.25, figure=fig)
+        drawFrame(rootTransforms[key], 0.25, fig)
+        
+        # these should lead to the module com, and the vectors should therefore touch
+        pcom = rootTransforms[key].local2parent(primitives[key].com, incTranslation=True)
+        m = norm(module.p2m[key])
+
+        print(f"{key}: {m}")
+        mlab.quiver3d(pcom[0], pcom[1], pcom[2], module.p2m[key][0], module.p2m[key][1], module.p2m[key][2], color=(1.0, 0.0, 1.0), scale_factor=norm(module.p2m[key]), scale_mode='scalar', figure=fig)
+
+    mlab.show()
 
 
 
@@ -248,4 +289,5 @@ def angularTest():
 
 
 #angularTest()
-primitiveTest(Conic(length=1.0, dOuterRoot=1.0, dOuterEnd=0.0, name='test', material=Aluminium))
+#primitiveTest(Conic(length=1.0, dOuterRoot=1.0, dOuterEnd=0.0, dInnerRoot=0.5, dInnerEnd=0.0, name='test', material=Aluminium))
+moduleTest()

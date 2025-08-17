@@ -95,13 +95,13 @@ class Conic(Primitive):
                 tensor[0,0] = (pi * density * length / 2) * rootRadius**4
                 
             # Iyy, Izz:
-            xr = -CoM[0]
-            xe = -CoM[0] - length
+            xr = CoM[0]
+            xe = CoM[0] + length
 
             dR = endRadius - rootRadius
             k = dR / length
 
-            A = ((k**2 / 5) * (xr**5 - xe**5) + (k/2) * (rootRadius - k*xe) * (xr**4 - xe**4) + (1/3) * (rootRadius - k*xe)**2 * (xr**3 - xe**3))
+            A = ((k**2 / 5) * (xe**5 - xr**5) + (k/2) * (rootRadius - k*xr) * (xe**4 - xr**4) + (1/3) * (rootRadius - k*xr)**2 * (xe**3 - xr**3))
             B = (length / 20) * ((5 * rootRadius**4) + (10 * dR * rootRadius**3) + (10 * dR**2 * rootRadius**2) + (5 * dR**3 * rootRadius) + (dR**4))
 
             tensor[1,1] = pi * density * (A + B) # this has been verified for cylindrical case as well, with errors on the order of 1e-13

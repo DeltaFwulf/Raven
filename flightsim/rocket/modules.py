@@ -23,15 +23,18 @@ class Module():
     We can parameterise these modules as well to make creation of different geometries easier i.e. parameterising a nosecone's shape can create and locate the required primitives to approximate desired geometry.
     """
 
-    def __init__(self):
-        self.primitives = {} # Each primitive or compound within the module is stored in this list
-        self.rootFrames = {} # Stores a transform for each corresponding primitive (or compound) root from the module's root frame
+    def __init__(self, primitives:dict, rootFrames:dict):
+        
+        self.primitives = primitives # Each primitive or compound within the module is stored in this list
+        self.rootFrames = rootFrames # Stores a transform for each corresponding primitive (or compound) root from the module's root frame
 
-        self.mass = self._getMass()
+        self.p2m = {}
+
+        self.mass = self.getMass()
         self.com = self.getCoM()
         self.moi = self.getMoI()
 
-
+        
     def getMass(self) -> float:
         """Calculates the total mass of the module"""
         mass = 0
@@ -51,7 +54,7 @@ class Module():
             self.mass = self.getMass()
 
         for key in self.primitives:
-            CoM += self.primitives['key'].mass * self.rootFrames[key].local2parent(self.primitives[key].com) / self.mass
+            CoM += self.primitives[key].mass * self.rootFrames[key].local2parent(self.primitives[key].com) / self.mass
        
         return CoM
 
@@ -63,11 +66,10 @@ class Module():
 
         for key in self.primitives:
 
-            # We have the MoI of each primitive about its own CoM, we now need it about the CoM of the module.
             pcom2mcom = deepcopy(self.rootFrames[key])
-            pcom2mcom.chain(self.primitives[key].root2com) 
-            pcom2mcom.invert() # this is the transform from the primitive CoM to the module root
-            pcom2mcom.move(translation=self.com, reference='parent') # we add the transform from the module root to the module CoM
+            pcom2mcom.translation += pcom2mcom.local2parent(self.primitives[key].com, incTranslation=False) - self.com # gives us (pcom - mcom)
+            pcom2mcom.invert() # now becomes mcom - pcom (what we wanted)
+            self.p2m.update({key:pcom2mcom.translation}) # TODO: remove this once testing is complete, or only generate in test modes, or somehow else get this
             
             # Transform this primitive's MoI by the pcom2mcom transform:
             MoI += pcom2mcom.transformInertiaTensor(self.primitives[key].moi, self.primitives[key].mass, self.primitives[key].com2ref)

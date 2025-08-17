@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Kinematics/Reference Frames and Inertia Tensors.md",
+                "file": "Rocket Definition/Primitives/Conic Generalised.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Reference Frames and Inertia Tensors"
+              "title": "Conic Generalised"
             }
           },
           {
@@ -222,8 +222,8 @@
   },
   "active": "186b7845f08619ae",
   "lastOpenFiles": [
-    "Rocket Definition/Modules.md",
     "Kinematics/Reference Frames and Inertia Tensors.md",
+    "Rocket Definition/Modules.md",
     "Rocket Definition/Primitives/Primitives.md",
     "Rocket Definition/Primitives/Conic Full.md",
     "Rocket Definition/Primitives/Conic Generalised.md",
