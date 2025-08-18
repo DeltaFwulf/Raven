@@ -155,7 +155,7 @@ class ReferenceFrame():
             print("reference keyword invalid: please use either local or parent")
 
 
-    def moveAbout(self, origin:np.array, axis:np.array, ang:float, transIn:np.array=np.zeros((3), float), frame:str='local') -> None:
+    def moveAbout(self, origin:np.array, axis:np.array=np.array([1,0,0], float), ang:float=0, transIn:np.array=np.zeros((3), float), frame:str='local') -> None:
         """
         Moves the reference frame about a specified origin relative to the frame. The origin can be specified in either local or parent frames.
         

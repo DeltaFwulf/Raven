@@ -140,7 +140,7 @@ def tri_mesh():
 
 
 
-def animPrimatives():
+def animPrimitives():
 
     primitives = {}
     primitives.update({'conic':Conic(5.0, 1.0, 0, 0, 0, material=Aluminium)})
@@ -207,6 +207,8 @@ def animPrimatives():
 
 def physicsIntegration():
 
+    # TODO: show the angular momentum as a vector with magnitude as the quiver scale
+
 
     def freeRotation(t:float, q:np.array, omega:np.array):
         return np.zeros(3, float) # no torque acts on the body in free rotation (in the body frame)
@@ -216,38 +218,52 @@ def physicsIntegration():
         return -params['mu'] * X[0,:] / np.linalg.norm(X[0,:])**3
     
 
-    primitive = Conic(1.0, 1.0, 1.0, 0.5, 0.5, material=Aluminium)
-    startFrame = ReferenceFrame(translation=np.array([5, 0, 0], float), axis=np.array([1,0,0], float), ang=pi/4)
+    #primitive = Conic(1.0, 1.0, 1.0, 0.5, 0.5, material=Aluminium)
+    #primitive = RectangularPrism(x=2.0, y=0.2, z=1, material=Aluminium)
+    primitive = Conic(length=1.0, dOuterRoot=4.0, dOuterEnd=4.0, dInnerRoot=2.0, dInnerEnd=2.0, material=Aluminium)
+    rootFrameInit = ReferenceFrame(translation=np.array([5, 0, 0], float), axis=np.array([1,0,0], float), ang=pi/4)
     pts, tris = primitive.getMeshData()
+
+    comFrame = deepcopy(rootFrameInit)
+    comFrame.moveAbout(origin=None, transIn=primitive.com, frame='local')
 
     fig = mlab.figure()
     mesh = mlab.triangular_mesh(pts[:,0], pts[:,1], pts[:,2], tris, figure=fig)
     mlab.view(azimuth=20, elevation=0, distance=20)
 
-    tf = 31.4
-    dt = 0.017
+    tf = 100#31.4
+    dt = 0.03#0.017
     t = np.arange(0, tf, dt)
 
     q = np.zeros((t.size, 4), float)
-    q[0,:] = startFrame.q
+    q[0,:] = rootFrameInit.q
 
     omega = np.zeros((t.size, 3), float)
-    omega[0,:] = [10, 1, 1]
+    omega[0,:] = [0.1, 0, 1]
 
     tvec = np.zeros((t.size, 3), float)
-    tvec[0,:] = startFrame.translation
+    tvec[0,:] = comFrame.translation
+
+    tRoot = np.zeros_like(tvec, float)
+    tRoot[0,:] = rootFrameInit.translation
 
     v = np.zeros((t.size, 3), float)
-    v[0,:] = [0, 1.0, 0]
+    v[0,:] = [0, 0.0, 0]
 
-    params = {'mu':5.0}
+    params = {'mu':0.01} #{'mu':5.0}
 
     # solve for object motion over simulation period, record q(t), t(t)
     for i in range(1, t.size):
 
         q[i,:], omega[i,:] = angularRK4(q[i-1,:], omega[i-1,:], I=primitive.moi, t0=t[i-1], h=dt, torqueFn=freeRotation)
-        tvec[i,:], v[i,:] = linearRK4(tvec[i-1,:], v[i-1,:], dt, gravity, params)
+        #tvec[i,:], v[i,:] = linearRK4(tvec[i-1,:], v[i-1,:], dt, gravity, params)
+        tvec[i,:], v[i,:] = tvec[i-1,:], v[i-1,:]
 
+        comFrame.q = q[i,:]
+        comFrame.translation = tvec[i,:]
+
+        # update root frame position
+        tRoot[i,:] = comFrame.local2parent(-primitive.com, incTranslation=True)
 
     # Plot trajectory
     mlab.plot3d(tvec[:,0], tvec[:,1], tvec[:,2], tube_radius=0.1, figure=fig)
@@ -263,9 +279,11 @@ def physicsIntegration():
         while(n < plays):
 
             for i in range(0, t.size):
+
+                # TODO: this is not actually drawing about the centre of mass, but the root frame; change this
                 
                 f.q = q[i,:]
-                f.translation = tvec[i,:]
+                f.translation = tRoot[i,:]
 
                 pts = f.local2parent(p.ptsLocal)
                 mesh.mlab_source.trait_set(x=pts[:,0], y=pts[:,1], z=pts[:,2])
@@ -277,4 +295,5 @@ def physicsIntegration():
     anim(1)
     mlab.show()
 
+animPrimitives()
 physicsIntegration()
