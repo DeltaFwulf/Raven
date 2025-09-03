@@ -41,12 +41,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Rocket Definition/Primitives/Primitives.md",
+                "file": "Kinematics/State Vector Representation.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Primitives"
+              "title": "State Vector Representation"
             }
           },
           {
@@ -78,7 +78,7 @@
             }
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -220,13 +220,14 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "186b7845f08619ae",
+  "active": "f0c862dc66961963",
   "lastOpenFiles": [
     "Kinematics/Reference Frames and Inertia Tensors.md",
-    "Rocket Definition/Modules.md",
+    "Kinematics/State Vector Representation.md",
     "Rocket Definition/Primitives/Primitives.md",
-    "Rocket Definition/Primitives/Conic Full.md",
     "Rocket Definition/Primitives/Conic Generalised.md",
+    "Rocket Definition/Modules.md",
+    "Rocket Definition/Primitives/Conic Full.md",
     "Rocket Definition/Primitives/Rectangular Prism.md",
     "Rocket Definition/Primitives/Custom Primitive.md",
     "Welcome.md",

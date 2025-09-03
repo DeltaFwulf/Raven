@@ -41,8 +41,6 @@ def angularRK4(q0:np.array, omega0:np.array, I:np.array, t0:float, h:float, torq
     
     """
 
-    # TODO: allow I to change throughout a timestep (fuel burn, etc) using linear interpolation
-
     def qAcc(q, qDot, t, I, torqueFn):
 
         qConj = deepcopy(q)
@@ -74,3 +72,26 @@ def angularRK4(q0:np.array, omega0:np.array, I:np.array, t0:float, h:float, torq
     omega1 = 2 * grassmann(qConj1, qDot1)[1:]
 
     return q1, omega1
+
+
+
+def updateState(stateVector:np.array, I:np.array, dt:float, linFn, angFn):
+
+    def diffState(xIn:np.array, dt:float, mode:str):
+
+        # State vector: [x, y, z, u, v, w, q0, q1, q2 q3, w0, w1, w2]
+
+        # Differentiated: 
+        #               [vx, vy, vz, ax, ay, az, qd0, qd1, qd2, qd3, a0, a1, a2]
+
+
+        pass
+
+    pass
+
+
+
+
+    
+    
+
