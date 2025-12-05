@@ -1,7 +1,8 @@
 from math import pi, sin, cos
 import numpy as np
-from rocket.materials import *
-from utility.vectorUtil import ReferenceFrame
+
+from materials import *
+from vectorUtil import ReferenceFrame
 
 
 

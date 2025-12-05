@@ -4,7 +4,6 @@
 from math import pi, sqrt, cos, sin
 import numpy as np
 
-from atmosphere import isa_atmo
 
 # TODO: get the correct freestream angle for summing a rolled vehicle angled to the freestream
 

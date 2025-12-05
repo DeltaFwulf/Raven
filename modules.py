@@ -1,17 +1,10 @@
 import numpy as np
-from copy import copy, deepcopy
+from copy import deepcopy
 from math import sqrt
 
-from utility.vectorUtil import ReferenceFrame
-from rocket.primitives import *
-from utility.textUtil import arrFormat
-# define all module types that can be added to the rocket
+from vectorUtil import ReferenceFrame
+from primitives import *
 
-# OPEN PROBLEMS
-
-# a module can be built from any number of primitives of different shapes and root locations, by adding them to the module before using it. Each primitive shape may be made from a specific material as well, allowing for quite detailed subassemblies to be configured
-
-# TODO: switch list methods for MoI, mass, etc - to use dicts (for key in dict etc)
 
 
 class Module():

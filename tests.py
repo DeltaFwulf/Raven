@@ -5,19 +5,15 @@ from matplotlib.animation import FuncAnimation
 from numpy.linalg import norm
 import mayavi.mlab as mlab
 
-from utility.vectorUtil import ReferenceFrame, drawFrames
-from rocket.primitives import *
-from utility.textUtil import arrFormat
-from rocket.modules import Module
-from physics.motionSolvers import linearRK4, angularRK4
-
-# TODO: ensure reference frame and primitive tests are robust (maybe talk to Stell about writing these?)
+from vectorUtil import ReferenceFrame, drawFrames
+from primitives import *
+from textUtil import arrFormat
+from modules import Module
+from motionSolvers import linearRK4, angularRK4
 
 
 
 def primitiveTest(primitive:Primitive):
-
-    # TODO: Check that all outputs exist and are in the correct form
 
     #shape = Conic(length=1, dOuterRoot=1, dOuterEnd=1, dInnerRoot=0, dInnerEnd=0, name="test_conic", material=Aluminium)
     #shape = RectangularPrism(x=1, y=1, z=1, material=Aluminium)
@@ -186,23 +182,19 @@ def linearTest():
 
 
 def angularTest():
+    
 
-    def freeRotation(t:float, q:np.array, omega:np.array):
+    def torqueFn(t:float, q:np.array, omega:np.array):
+        
+        # return 100 * sin(t) * np.array([1,0,0], float)
+    
+        # targetOmega = 5 - 0.1 * t
+        # kp = 200
+        # return kp * (targetOmega - norm(omega))  * np.array([1,0,0], float)
+
         return np.zeros(3, float) # no torque acts on the body in free rotation (in the body frame)
 
 
-    def spinUp(t:float, q:np.array, omega:np.array):
-        return 100 * sin(t) * np.array([1,0,0], float)
-
-
-    def governor(t:float, q:np.array, omega:np.array):
-        
-        targetOmega = 5 - 0.1 * t
-        kp = 200
-        return kp * (targetOmega - norm(omega))  * np.array([1,0,0], float)
-
-
-    #primitive = Conic(length=10, dOuterRoot=1, dOuterEnd=1, material=Aluminium)
     primitive = RectangularPrism(x=2, y=1.5, z=0.2, material=Aluminium)
 
     dt = 0.05
@@ -218,7 +210,7 @@ def angularTest():
     omega[0,:] = np.array([0.1, 1, 0])
 
     for i in range(1, t.size):
-        q[i,:], omega[i,:] = angularRK4(q[i-1,:], omega[i-1,:], primitive.moi, t[i], dt, freeRotation)
+        q[i,:], omega[i,:] = angularRK4(q[i-1,:], omega[i-1,:], primitive.moi, t[i], dt, torqueFn)
 
     # draw the initial cone reference frame:
     objFrame = ReferenceFrame()
@@ -243,6 +235,7 @@ def angularTest():
     linez, = ax.plot([objFrame.translation[0], objZ[0]], [objFrame.translation[0], objZ[1]], [objFrame.translation[2], objZ[2]], '-b')
 
     ax.set_aspect('equal')
+
 
     def update(i):
 
@@ -384,5 +377,5 @@ def physicsIntegration():
 
 #angularTest()
 #primitiveTest(Conic(length=1.0, dOuterRoot=1.0, dOuterEnd=0.0, dInnerRoot=0.5, dInnerEnd=0.0, name='test', material=Aluminium))
-#moduleTest()
-physicsIntegration()
+moduleTest()
+#physicsIntegration()

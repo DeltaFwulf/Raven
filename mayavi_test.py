@@ -1,12 +1,10 @@
 import mayavi.mlab as mlab
 import numpy as np
 from math import pi
-from copy import deepcopy
 
-from rocket.primitives import Conic, RectangularPrism
-from rocket.materials import Aluminium
-from utility.vectorUtil import ReferenceFrame
-from physics.motionSolvers import linearRK4, angularRK4
+from primitives import Conic, RectangularPrism
+from materials import Aluminium
+from vectorUtil import ReferenceFrame
 
 
 

@@ -1,6 +1,7 @@
 import numpy as np
-from utility.vectorUtil import grassmann
 from copy import deepcopy
+
+from vectorUtil import grassmann
 
 
 
