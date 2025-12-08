@@ -77,6 +77,7 @@ def angularRK4(q0:np.array, omega0:np.array, I:np.array, t0:float, h:float, torq
 
 
 def updateState(stateVector:np.array, I:np.array, dt:float, linFn, angFn):
+    """Given the current state of an object, calculates the motion over one timestep using RK4."""
 
     def diffState(xIn:np.array, dt:float, mode:str):
 
@@ -89,10 +90,3 @@ def updateState(stateVector:np.array, I:np.array, dt:float, linFn, angFn):
         pass
 
     pass
-
-
-
-
-    
-    
-

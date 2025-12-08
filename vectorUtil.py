@@ -328,7 +328,6 @@ class ReferenceFrame():
             return tensor
         
 
-
 def cartesian2spherical(vector:np.array) -> tuple[float, float, float]:
     """
     Converts a cartesian vector to spherical coordinates (r, inc, az)
@@ -348,7 +347,6 @@ def cartesian2spherical(vector:np.array) -> tuple[float, float, float]:
     return r, inc, az
 
 
-
 def coords2sphereAngs(latitude, longitude) -> tuple[float, float]:
     """Converts latitude and longitude into spherical inclination and azimuth
     
@@ -359,27 +357,20 @@ def coords2sphereAngs(latitude, longitude) -> tuple[float, float]:
     return inclination, longitude
 
 
-
 def sphereAngs2coords(inclination:float, azimuth:float) -> tuple[float, float]:
 
     latitude = pi/2 - inclination
     return latitude, azimuth
 
 
-
 def getAngleSigned(vecA:np.array, vecB:np.array, planeNormal:np.array) -> float:
-
     """Gets the angle from vecA to vecB in the correct direction, given that they both lie on a known plane."""
-
-    n = planeNormal / norm(planeNormal)
-    return atan2(np.dot(n, np.cross(vecA, vecB)), np.dot(vecA, vecB))
-
+    return atan2(np.dot(unit(planeNormal), np.cross(vecA, vecB)), np.dot(vecA, vecB))
 
 
 def getAngleUnsigned(vecA:np.array, vecB:np.array) -> float:
     """Returns the magnitude of the angle between two vectors, but cannot give the sign (direction) of the angle."""
     return atan2(norm(np.cross(vecA, vecB)), np.dot(vecA, vecB))
-
 
 
 def projectVector(vecA:np.array, vecB:np.array, comp:str) -> np.array:
@@ -417,141 +408,15 @@ def grassmann(a, b):
 
 
 def rotateQuaternion(vecIn, q):
-
-    # TODO: use this faster algorithm for quaternion rotation:
     # https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
 
-        qConv = deepcopy(q)
-        qConv[1:] *= -1.0
+    qConv = deepcopy(q)
+    qConv[1:] *= -1.0
 
-        t = np.cross(2*q[1:], vecIn)
-        return(vecIn + q[0]*t + np.cross(q[1:], t))
-
-        #return grassmann(grassmann(q, np.hstack((0, vecIn))), qConv)[1:]      
+    t = np.cross(2*q[1:], vecIn)
+    return(vecIn + q[0]*t + np.cross(q[1:], t))     
 
 
 def unit(vec:np.array) -> np.array:
     """Returns a unit vector pointed in the same direction as the original vector""" 
-    
     return vec / norm(vec)
-
-
-def drawFrames(frames:list[ReferenceFrame]) -> None:
-
-    """This function takes in a list of frames and for each one plots a set of orthogonal axes according to their respective transforms."""
-
-    ax = plt.figure().add_subplot(projection='3d')
-
-    xMin = frames[0].translation[0]
-    xMax = frames[-1].translation[0]
-    yMin = frames[0].translation[1]
-    yMax = frames[-1].translation[1]
-    zMin = frames[0].translation[2]
-    zMax = frames[-1].translation[2]
-
-    for frame in frames:
-
-        x = frame.local2parent(np.array([1,0,0]))
-        y = frame.local2parent(np.array([0,1,0]))
-        z = frame.local2parent(np.array([0,0,1]))
-        o = frame.translation
-
-        # update plot limits
-        xMin = np.min(np.array([xMin, x[0], y[0], z[0]]))
-        xMax = np.max(np.array([xMax, x[0], y[0], z[0]]))
-
-        yMin = np.min(np.array([yMin, x[1], y[1], z[1]]))
-        yMax = np.max(np.array([yMax, x[1], y[1], z[1]]))
-
-        zMin = np.min(np.array([zMin, x[2], y[2], z[2]]))
-        zMax = np.max(np.array([zMax, x[2], y[2], z[2]]))
-        
-        ax.plot([o[0], x[0]], [o[1], x[1]], [o[2], x[2]], '-r')
-        ax.plot([o[0], y[0]], [o[1], y[1]], [o[2], y[2]], '-g')
-        ax.plot([o[0], z[0]], [o[1], z[1]], [o[2], z[2]], '-b')
-
-    # dynamically bound the plot based on the largest values of any terms in x, y, z
-    ax.set_xlim([xMin, xMax])
-    ax.set_ylim([yMin, yMax])
-    ax.set_zlim([zMin, zMax])
-
-    ax.set_box_aspect([xMax - xMin, yMax - yMin, zMax - zMin])
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_zlabel("z")
-
-    ax.legend(['x', 'y', 'z'])
-
-    plt.show()
-
-
-
-def frameTest():
-    """Move a frame in different ways and plot to visually verify the results"""
-
-    rootFrame = ReferenceFrame(axis=np.array([1,0,0], float), ang=0, translation=np.array([0,0,0], float))
-
-    testFrame = ReferenceFrame(axis=np.array([1,1,0], float), ang=10*pi/180, translation=np.array([1,0,0], float))
-    globalMoved = deepcopy(testFrame)
-    localMoved = deepcopy(testFrame)
-    inverted = deepcopy(testFrame)
-    chained = deepcopy(testFrame)
-    globalMoved.move(axis=np.array([0,0,1], float), ang=pi, translation=np.array([1,0,0], float), reference='parent')
-    localMoved.move(axis=np.array([0,0,1], float), ang=pi, translation=np.array([1,0,0], float), reference='local')
-    inverted.invert()
-    chained.chain(testFrame)
-
-    toAlign = np.array([1,0,0], float)
-
-    aligned = chained.align(toAlign)
-    print(f"local2parent: {chained.local2parent(toAlign)}, aligned: {aligned}")
-
-    drawFrames([rootFrame, testFrame, globalMoved, localMoved])
-
-
-
-def conversionTest():
-
-    cart = np.array([-1, -0.1, -0.5])
-    print(f"x:{cart[0]}, y:{cart[1]}, z:{cart[2]}")
-
-    radius, inclination, azimuth = cartesian2spherical(cart)
-    print(f"radius: {radius}, inclination: {inclination * 180 / pi}, azimuth: {azimuth * 180 / pi}")
-
-    latitude, longitude = sphereAngs2coords(inclination, azimuth)
-    print(f"latitude: {latitude * 180 / pi}, longitude {longitude * 180 / pi}")
-
-    inc2, az2 = coords2sphereAngs(latitude, longitude)
-    print(f"returned inclination: {inc2 * 180 / pi}, returned azimuth: {az2 * 180 / pi}")
-
-
-
-def rotationTests():
-
-    axis = np.array([1,0,0], float)
-    ang = pi/2
-
-    q1 = np.zeros(4, float)
-    q1[0] = cos(ang / 2)
-    q1[1:] = sin(ang / 2) * axis
-
-    v = np.array([0,1,0], float)
-
-    frame = ReferenceFrame(axis=axis, ang=ang)
-
-    vRotatedFrame = frame.local2parent(v)
-    vSingle = rotateQuaternion(v, q1)
-
-    # Perform a 90 degree rotation by chaining two successive 45 degree rotations:
-    q2 = grassmann(q1, q1)
-    vDouble = rotateQuaternion(v, q2)
-
-    q3 = deepcopy(q1)
-    q3[1:] *= -1
-
-    vOppo = rotateQuaternion(v, q3)
-
-    print(f"\n Rotation Matrix: {vRotatedFrame}")
-    print(f"\nSingle: {vSingle}")
-    print(f"\nDouble: {vDouble}")
-    print(f"\nOpposite: {vOppo}")

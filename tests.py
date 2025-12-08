@@ -5,7 +5,7 @@ from matplotlib.animation import FuncAnimation
 from numpy.linalg import norm
 import mayavi.mlab as mlab
 
-from vectorUtil import ReferenceFrame, drawFrames
+from vectorUtil import ReferenceFrame, cartesian2spherical, coords2sphereAngs, rotateQuaternion, grassmann, sphereAngs2coords
 from primitives import *
 from textUtil import arrFormat
 from modules import Module
@@ -374,6 +374,130 @@ def physicsIntegration():
 
     anim(1)
     mlab.show()
+
+
+
+def drawFrames(frames:list[ReferenceFrame]) -> None:
+
+    """This function takes in a list of frames and for each one plots a set of orthogonal axes according to their respective transforms."""
+
+    ax = plt.figure().add_subplot(projection='3d')
+
+    xMin = frames[0].translation[0]
+    xMax = frames[-1].translation[0]
+    yMin = frames[0].translation[1]
+    yMax = frames[-1].translation[1]
+    zMin = frames[0].translation[2]
+    zMax = frames[-1].translation[2]
+
+    for frame in frames:
+
+        x = frame.local2parent(np.array([1,0,0]))
+        y = frame.local2parent(np.array([0,1,0]))
+        z = frame.local2parent(np.array([0,0,1]))
+        o = frame.translation
+
+        # update plot limits
+        xMin = np.min(np.array([xMin, x[0], y[0], z[0]]))
+        xMax = np.max(np.array([xMax, x[0], y[0], z[0]]))
+
+        yMin = np.min(np.array([yMin, x[1], y[1], z[1]]))
+        yMax = np.max(np.array([yMax, x[1], y[1], z[1]]))
+
+        zMin = np.min(np.array([zMin, x[2], y[2], z[2]]))
+        zMax = np.max(np.array([zMax, x[2], y[2], z[2]]))
+        
+        ax.plot([o[0], x[0]], [o[1], x[1]], [o[2], x[2]], '-r')
+        ax.plot([o[0], y[0]], [o[1], y[1]], [o[2], y[2]], '-g')
+        ax.plot([o[0], z[0]], [o[1], z[1]], [o[2], z[2]], '-b')
+
+    # dynamically bound the plot based on the largest values of any terms in x, y, z
+    ax.set_xlim([xMin, xMax])
+    ax.set_ylim([yMin, yMax])
+    ax.set_zlim([zMin, zMax])
+
+    ax.set_box_aspect([xMax - xMin, yMax - yMin, zMax - zMin])
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_zlabel("z")
+
+    ax.legend(['x', 'y', 'z'])
+
+    plt.show()
+
+
+
+def frameTest():
+    """Move a frame in different ways and plot to visually verify the results"""
+
+    rootFrame = ReferenceFrame(axis=np.array([1,0,0], float), ang=0, translation=np.array([0,0,0], float))
+
+    testFrame = ReferenceFrame(axis=np.array([1,1,0], float), ang=10*pi/180, translation=np.array([1,0,0], float))
+    globalMoved = deepcopy(testFrame)
+    localMoved = deepcopy(testFrame)
+    inverted = deepcopy(testFrame)
+    chained = deepcopy(testFrame)
+    globalMoved.move(axis=np.array([0,0,1], float), ang=pi, translation=np.array([1,0,0], float), reference='parent')
+    localMoved.move(axis=np.array([0,0,1], float), ang=pi, translation=np.array([1,0,0], float), reference='local')
+    inverted.invert()
+    chained.chain(testFrame)
+
+    toAlign = np.array([1,0,0], float)
+
+    aligned = chained.align(toAlign)
+    print(f"local2parent: {chained.local2parent(toAlign)}, aligned: {aligned}")
+
+    drawFrames([rootFrame, testFrame, globalMoved, localMoved])
+
+
+
+def conversionTest():
+
+    cart = np.array([-1, -0.1, -0.5])
+    print(f"x:{cart[0]}, y:{cart[1]}, z:{cart[2]}")
+
+    radius, inclination, azimuth = cartesian2spherical(cart)
+    print(f"radius: {radius}, inclination: {inclination * 180 / pi}, azimuth: {azimuth * 180 / pi}")
+
+    latitude, longitude = sphereAngs2coords(inclination, azimuth)
+    print(f"latitude: {latitude * 180 / pi}, longitude {longitude * 180 / pi}")
+
+    inc2, az2 = coords2sphereAngs(latitude, longitude)
+    print(f"returned inclination: {inc2 * 180 / pi}, returned azimuth: {az2 * 180 / pi}")
+
+
+
+def rotationTests():
+
+    axis = np.array([1,0,0], float)
+    ang = pi/2
+
+    q1 = np.zeros(4, float)
+    q1[0] = cos(ang / 2)
+    q1[1:] = sin(ang / 2) * axis
+
+    v = np.array([0,1,0], float)
+
+    frame = ReferenceFrame(axis=axis, ang=ang)
+
+    vRotatedFrame = frame.local2parent(v)
+    vSingle = rotateQuaternion(v, q1)
+
+    # Perform a 90 degree rotation by chaining two successive 45 degree rotations:
+    q2 = grassmann(q1, q1)
+    vDouble = rotateQuaternion(v, q2)
+
+    q3 = deepcopy(q1)
+    q3[1:] *= -1
+
+    vOppo = rotateQuaternion(v, q3)
+
+    print(f"\n Rotation Matrix: {vRotatedFrame}")
+    print(f"\nSingle: {vSingle}")
+    print(f"\nDouble: {vDouble}")
+    print(f"\nOpposite: {vOppo}")
+
+
 
 #angularTest()
 #primitiveTest(Conic(length=1.0, dOuterRoot=1.0, dOuterEnd=0.0, dInnerRoot=0.5, dInnerEnd=0.0, name='test', material=Aluminium))

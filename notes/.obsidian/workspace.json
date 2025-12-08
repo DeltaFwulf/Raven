@@ -1,0 +1,191 @@
+{
+  "main": {
+    "id": "4e990cfba13a2a0f",
+    "type": "split",
+    "children": [
+      {
+        "id": "de568b162abcbdc9",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e18913eadc89f65f",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Simulation Definition/Raven Overview.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Raven Overview"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "31987aba5d9e6d78",
+    "type": "split",
+    "children": [
+      {
+        "id": "db55bb192c23b449",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "bb2d28d4afeb0714",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "142ab0977bde3f76",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "255f5780cec95b62",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 200
+  },
+  "right": {
+    "id": "87859a8e9a6c50b9",
+    "type": "split",
+    "children": [
+      {
+        "id": "9da15c53a45c04c5",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a4b72d7061474230",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Rocket Definition/Primitives/Conic Generalised.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Conic Generalised"
+            }
+          },
+          {
+            "id": "974e6f4b8d6c86ed",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Rocket Definition/Primitives/Conic Generalised.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Conic Generalised"
+            }
+          },
+          {
+            "id": "ca0b719f1998b37f",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "fcfb2877f0ba82c0",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Rocket Definition/Primitives/Conic Generalised.md"
+              },
+              "icon": "lucide-list",
+              "title": "Outline of Conic Generalised"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "bases:Create new base": false,
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "e18913eadc89f65f",
+  "lastOpenFiles": [
+    "Simulation Definition/Planet Definition.md",
+    "Simulation Definition/Raven Overview.md",
+    "Simulation Definition",
+    "Physics Engine/Reference Frames and Inertia Tensors.md",
+    "Welcome.md",
+    "Rocket Definition/Modules.md",
+    "Rocket Definition/Primitives/Conic Generalised.md",
+    "Kinematics/Reference Frames and Inertia Tensors.md",
+    "Kinematics/State Vector Representation.md",
+    "Rocket Definition/Primitives/Primitives.md",
+    "Rocket Definition/Primitives/Conic Full.md",
+    "Rocket Definition/Primitives/Rectangular Prism.md",
+    "Rocket Definition/Primitives/Custom Primitive.md",
+    "Primitives/Conic Full.md",
+    "Kinematics/Frame Transformation.md",
+    "Kinematics/Chapter 4. 3D Rotations.md",
+    "Kinematics",
+    "Rocket Definition/Coordinate Systems.md",
+    "Rocket Definition",
+    "Kinematics",
+    "Rocket Definition/Primitives"
+  ]
+}

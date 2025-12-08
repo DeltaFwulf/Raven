@@ -75,34 +75,7 @@ class Module():
     
 
 
-class Tank(Module):
-
-    """The Tank object represents a propellant tank to be placed on the vehicle. It has a specified propellant, volume, pressure, and proportion filled
-    
-    The tank is made from a specific material with a constant wall thickness. The tank is currently approximated as a cylinder for ease of calculation, however round caps are planned.
-
-    - The tank can be automatically designed to hold hoop stress (we assume this is the maximum stress for now) by changing the wall thickness.
-    - As the tank drains, its pressure and propellant mass decrease (pressure can be replenished when plumbing is introduced)
-    - The CoM ofthe tank assumes that propellant has settled, though ullage issues can be simulated in the future
-    - All plumbing, etc should be included either on the motor side, or in a feed object that contains all relevant pressure drops, etc.
-    """
-
-    def __init__(self):
-
-        # tank geometry (len, width, volume)
-
-        # tank wall material
-
-        # tank pressure and therefore tank wall thickness
-
-        # tank propellant type
-
-        pass
-
-
 class SolidMotor(Module):
-
-    # TODO: allow for thrust vectoring, decide location of thrust for moment calculations on vehicle scale
 
     def __init__(self, geometry:dict, fArray:list, tArray:list, isp:float, propellant:Material, wallMaterial:Material):
 
