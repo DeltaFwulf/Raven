@@ -1,8 +1,8 @@
 import numpy as np
 from copy import deepcopy
 
-from vectorUtil import ReferenceFrame
-from atmosphere import coesa76
+from vectorUtil import ReferenceFrame, cartesian2coordinates
+from atmosphere.COESA76 import coesa76
 
 class Planet():
 
@@ -25,8 +25,45 @@ class Planet():
         """Returns selected atmospheric properties as a dictionary"""
         return {'T':0.0, 'p':0.0, 'rho':0.0}
     
+    def gravAcceleration(self, x:np.array, inputFrame:str='parent', outputFrame:str='parent') -> np.array:
+        """Calculates the gravitational acceleration vector given a position relative to the planet.
+           Inputs and outputs can be specified in one of three frames: parent, pcr, or pcnr."""
 
+        if inputFrame == 'parent':
+            xloc = self.PCR.parent2local(x, incTranslation=True)
+        elif inputFrame == 'pcr':
+            xloc = x
+        elif inputFrame == 'pcnr':
+            xloc = self.PCR.parent2local(self.PCNR.local2parent(x, incTranslation=True), incTranslation=True)
+
+        aloc = self.mu*xloc / np.norm(xloc)**3
+
+        if outputFrame == 'parent':
+            return self.PCR.local2parent(aloc, incTranslation=False)
+        elif outputFrame == 'pcr':
+            return aloc
+        elif outputFrame == 'pcnr':
+            return self.PCNR.parent2local(self.PCR.local2parent(aloc, incTranslation=False))
     
+
+    def getZSL(self, x:np.array, inputFrame:str='parent') -> float:
+        """Returns altitude above mean sea level"""
+
+        if inputFrame == 'parent':
+            xloc = self.PCR.parent2local(x, incTranslation=True)
+        elif inputFrame == 'pcr':
+            xloc = x
+        elif inputFrame == 'pcnr':
+            xloc = self.PCR.parent2local(self.PCNR.local2parent(x, incTranslation=True))
+
+        # TODO: calculate given coordinates for an oblate spheroid
+        return np.norm(xloc) - self.r
+    
+
+    def getCoordinates(self, x:np.array, inputFrame:str='parent') -> tuple['float', 'float']:
+        pass
+
+
 class Earth(Planet):
 
     def __init__(self, x0, az0):
@@ -38,4 +75,4 @@ class Earth(Planet):
 
 
     def getAtmoProperties(self, z:float, props:list['str']=['T', 'p', 'rho']) -> dict:
-        return coesa76(z_m=z, outputs=props)
+        return coesa76(z_m=z, outputs=props, mode='quick')

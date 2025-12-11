@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Simulation Definition/Raven Overview.md",
+                "file": "Physics Engine/Earth Atmosphere Model.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Raven Overview"
+              "title": "Earth Atmosphere Model"
             }
           }
         ]
@@ -166,10 +166,35 @@
   },
   "active": "e18913eadc89f65f",
   "lastOpenFiles": [
-    "Simulation Definition/Planet Definition.md",
-    "Simulation Definition/Raven Overview.md",
-    "Simulation Definition",
+    "pictures/coesa76/convergence study/compensated.png",
     "Physics Engine/Reference Frames and Inertia Tensors.md",
+    "Physics Engine/State Vector Representation.md",
+    "Physics Engine/Earth Atmosphere Model.md",
+    "pictures/coesa76/convergence study/prop 100 to 1000 km.png",
+    "pictures/coesa76/convergence study/rms 100 to 1000 km.png",
+    "pictures/coesa76/convergence study/rms 86 to 100 km.png",
+    "pictures/coesa76/convergence study/86 to 100 km.png",
+    "pictures/coesa76/convergence study/wtf.png",
+    "pictures/coesa76/convergence study/rms vs resolution.png",
+    "Physics Engine/Chapter 4. 3D Rotations.md",
+    "Untitled.canvas",
+    "Untitled 1.canvas",
+    "Untitled.base",
+    "pictures/coesa76/convergence study/RMS vs resolution.png",
+    "pictures",
+    "Physics Engine/Untitled.base",
+    "Untitled 1.base",
+    "pictures/coesa76/convergence study",
+    "Physics Engine/coesa76/New folder",
+    "pictures/coesa76/optimisation/Tau Calculation/pressure density fixed z 100m inline.png",
+    "pictures/coesa76/optimisation/Tau Calculation/pressure density fixed z 100m expanded.png",
+    "pictures/coesa76/optimisation/Tau Calculation/performance fixed z 100m inline.png",
+    "pictures/coesa76/optimisation/Tau Calculation",
+    "pictures/coesa76/optimisation",
+    "pictures/coesa76",
+    "Physics Engine/New folder",
+    "Simulation Definition/Raven Overview.md",
+    "Simulation Definition/Planet Definition.md",
     "Welcome.md",
     "Rocket Definition/Modules.md",
     "Rocket Definition/Primitives/Conic Generalised.md",
@@ -182,10 +207,6 @@
     "Primitives/Conic Full.md",
     "Kinematics/Frame Transformation.md",
     "Kinematics/Chapter 4. 3D Rotations.md",
-    "Kinematics",
-    "Rocket Definition/Coordinate Systems.md",
-    "Rocket Definition",
-    "Kinematics",
-    "Rocket Definition/Primitives"
+    "Rocket Definition/Coordinate Systems.md"
   ]
 }
