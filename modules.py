@@ -2,7 +2,7 @@ import numpy as np
 from copy import deepcopy
 from math import sqrt
 
-from vectorUtil import ReferenceFrame
+from referenceFrame import ReferenceFrame
 from primitives import *
 
 

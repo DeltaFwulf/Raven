@@ -57,5 +57,8 @@ The performance of the function was greatly improved by moving as many calculati
 
 Obtaining accurate results with the COESA76 function directly still requires a lot of computation, however, leading to excessive compute time. To avoid this, the values obtained from the convergence study were used to build arrays for pressure, density, and mean molecular weight for altitudes between 86 and 1000 km. These will instead by interpolated between, skipping the computation.
 
-To speed up interpolation, it may be even quicker to split the arrays into several smaller ones?
+By doing so, the atmosphere model can return any value within 1 millisecond for any altitude.
+
+![[interpolation.png]]
+
 

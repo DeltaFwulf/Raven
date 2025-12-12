@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Physics Engine/Earth Atmosphere Model.md",
+                "file": "Simulation/Planet Definition.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Earth Atmosphere Model"
+              "title": "Planet Definition"
             }
           }
         ]
@@ -166,10 +166,13 @@
   },
   "active": "e18913eadc89f65f",
   "lastOpenFiles": [
+    "Simulation/Overview.md",
+    "Simulation/Planet Definition.md",
+    "Physics Engine/Earth Atmosphere Model.md",
+    "pictures/coesa76/optimisation/interpolation.png",
     "pictures/coesa76/convergence study/compensated.png",
     "Physics Engine/Reference Frames and Inertia Tensors.md",
     "Physics Engine/State Vector Representation.md",
-    "Physics Engine/Earth Atmosphere Model.md",
     "pictures/coesa76/convergence study/prop 100 to 1000 km.png",
     "pictures/coesa76/convergence study/rms 100 to 1000 km.png",
     "pictures/coesa76/convergence study/rms 86 to 100 km.png",
@@ -187,14 +190,10 @@
     "pictures/coesa76/convergence study",
     "Physics Engine/coesa76/New folder",
     "pictures/coesa76/optimisation/Tau Calculation/pressure density fixed z 100m inline.png",
-    "pictures/coesa76/optimisation/Tau Calculation/pressure density fixed z 100m expanded.png",
-    "pictures/coesa76/optimisation/Tau Calculation/performance fixed z 100m inline.png",
     "pictures/coesa76/optimisation/Tau Calculation",
     "pictures/coesa76/optimisation",
     "pictures/coesa76",
     "Physics Engine/New folder",
-    "Simulation Definition/Raven Overview.md",
-    "Simulation Definition/Planet Definition.md",
     "Welcome.md",
     "Rocket Definition/Modules.md",
     "Rocket Definition/Primitives/Conic Generalised.md",

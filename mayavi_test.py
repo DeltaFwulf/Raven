@@ -4,7 +4,7 @@ from math import pi
 
 from primitives import Conic, RectangularPrism
 from materials import Aluminium
-from vectorUtil import ReferenceFrame
+from referenceFrame import ReferenceFrame
 
 
 

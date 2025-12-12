@@ -106,7 +106,7 @@ def speedTest():
         for key in keyZ:
             axt.plot([keyZ[key], keyZ[key]], [0, np.max(arrays['time'])], '--r', linewidth=1.2, label=key)
 
-        axt.legend(loc='lower right')
+        axt.legend(loc='upper right')
         figt.tight_layout()
 
     plt.show()
