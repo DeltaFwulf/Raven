@@ -302,7 +302,7 @@ def physicsIntegration():
     pts, tris = primitive.getMeshData()
 
     comFrame = deepcopy(rootFrameInit)
-    comFrame.moveAbout(origin=None, transIn=primitive.com, frame='local')
+    comFrame.moveFrame(origin=None, trans=primitive.com, frame='local')
 
     tf = 100#31.4
     dt = 0.03#0.017

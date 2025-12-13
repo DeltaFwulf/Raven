@@ -6,11 +6,7 @@ from copy import deepcopy
 
 
 def cartesian2spherical(vector:np.array) -> tuple[float, float, float]:
-    """
-    Converts a cartesian vector to spherical coordinates (r, inc, az)
-    here we are following the ISO (physics convention)
-    """
-    
+    """Converts a cartesian vector to spherical coordinates (r, inc, az) following ISO convention"""
     r = norm(vector)
 
     inc = atan2(norm(vector[0:-1]), vector[2])
@@ -25,20 +21,20 @@ def cartesian2spherical(vector:np.array) -> tuple[float, float, float]:
 
 
 def cartesian2coords(vector:np.array) -> tuple['float', 'float']:
+    """ Calculates the latitude and longitude on a spherical body given a cartesian vector"""
+    lat = pi / 2 - atan2(norm(vector[0:-1]), vector[2])
+    if isnan(lat):
+        lat = pi / 2
 
-    inc = atan2(norm(vector[0:-1]), vector[2])
-    if isnan(inc):
-        inc = 0
+    long = atan2(vector[1], vector[0])
+    if isnan(long):
+        long = 0
 
-    az = atan2(vector[1], vector[0])
-    if isnan(az):
-        az = 0
-
-    return (pi / 2) - inc, az
+    return lat, long
 
 
 def coords2cartesian(lat:float, long:float, r:float) -> np.array:
-    """Returns the position vector given latitude, longitude, and radius"""
+    """Returns a cartesian vector given latitude, longitude, and radius"""
     x = r*cos(lat)*cos(long)
     y = r*cos(lat)*sin(long)
     z = r*sin(lat)
@@ -47,7 +43,7 @@ def coords2cartesian(lat:float, long:float, r:float) -> np.array:
 
 
 def sphereAngs2cartesian(inc:float, az:float, r:float) -> np.array:
-    """Returns the position vector given spherical coordinates"""
+    """Returns the cartesian vector given spherical coordinates"""
     x = r*sin(inc)*cos(az)
     y = r*sin(inc)*sin(az)
     z = r*cos(inc)
@@ -56,24 +52,18 @@ def sphereAngs2cartesian(inc:float, az:float, r:float) -> np.array:
 
 
 def coords2sphereAngs(latitude, longitude) -> tuple[float, float]:
-    """Converts latitude and longitude into spherical inclination and azimuth
-    
-    we are following the ISO (physics angle convention)
-    """
-    
-    inclination = (pi/2) - latitude
-    return inclination, longitude
+    """Converts latitude and longitude into spherical inclination and azimuth"""
+    return (pi/2) - latitude, longitude
 
 
 def sphereAngs2coords(inclination:float, azimuth:float) -> tuple[float, float]:
-
     latitude = pi/2 - inclination
     return latitude, azimuth
 
 
-def getAngleSigned(vecA:np.array, vecB:np.array, planeNormal:np.array) -> float:
+def getAngleSigned(vecA:np.array, vecB:np.array, normal:np.array) -> float:
     """Gets the angle from vecA to vecB in the correct direction, given that they both lie on a known plane."""
-    return atan2(np.dot(unit(planeNormal), np.cross(vecA, vecB)), np.dot(vecA, vecB))
+    return atan2(np.dot(unit(normal), np.cross(vecA, vecB)), np.dot(vecA, vecB))
 
 
 def getAngleUnsigned(vecA:np.array, vecB:np.array) -> float:
@@ -104,13 +94,13 @@ def quaternion2euler(q:float, order:str='tait-bryan'):
     return roll, pitch, yaw
 
 
-def grassmann(a, b):
-    """direct quaternion multiplication, symmetric product"""
+def grassmann(qA, qB):
+    """Returns the inner product of two quaternions (similar to dot-product but with orthogonal vectors)"""
 
     qOut = np.zeros(4, float)
 
-    qOut[0] = a[0] * b[0] - np.dot(a[1:],b[1:])
-    qOut[1:] = a[0]*b[1:] + a[1:]*b[0] + np.cross(a[1:], b[1:])
+    qOut[0] = qA[0] * qB[0] - np.dot(qA[1:],qB[1:])
+    qOut[1:] = qA[0]*qB[1:] + qA[1:]*qB[0] + np.cross(qA[1:], qB[1:])
 
     return qOut
 
@@ -139,3 +129,41 @@ def rotateAxisAngle(vecIn:np.array, axis:np.array, ang:float) -> np.array:
     q[1:] = sin(ang / 2)*axis
 
     return rotateQuaternion(vecIn, q)
+
+
+def axisAngle2Quaternion(axis:np.array, angle:float) -> np.array:
+        q = np.zeros(4, float)
+        q[0] = cos(angle / 2)
+        q[1:] = sin(angle/ 2)*axis
+
+        return q / norm(q)
+
+
+def sphereAngs2Quaternion(sphereAngs:list[float], axis:str='x') -> np.array:
+
+    referenceAxis = np.zeros(3, float)
+
+    match axis:
+        case 'x':
+            n = 0
+        case 'y':
+            n = 1
+        case 'z':
+            n = 2
+
+    referenceAxis[n] = 1
+
+    # what is the new axis?
+    newAxis = np.zeros(3, float)
+    newAxis[0] = sin(sphereAngs[0]) * cos(sphereAngs[1])
+    newAxis[1] = sin(sphereAngs[0]) * sin(sphereAngs[1])
+    newAxis[2] = cos(sphereAngs[0])
+
+    # get the axis and angle of rotation
+    if (newAxis == referenceAxis).all():
+        rotAxis = np.array([1,0,0], float)
+    else:
+        rotAxis = np.cross(referenceAxis, newAxis)
+        rotAxis /= norm(rotAxis) # normalise the vector
+    
+    return axisAngle2Quaternion(rotAxis, getAngleUnsigned(referenceAxis, newAxis))

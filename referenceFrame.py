@@ -3,7 +3,7 @@ from numpy.linalg import norm
 from math import sin, cos, sqrt
 from copy import deepcopy
 
-from vectorUtil import getAngleUnsigned, rotateQuaternion, grassmann, unit
+from vectorUtil import getAngleUnsigned, rotateQuaternion, grassmann, unit, axisAngle2Quaternion
 
 class ReferenceFrame():
     """
@@ -26,7 +26,7 @@ class ReferenceFrame():
         self.translation = translation
 
         if axis is not None:
-            self.q = ReferenceFrame.axisAngle2Quaternion(axis, ang)
+            self.q = axisAngle2Quaternion(axis, ang)
         
         elif sphereAngs is not None:
             
@@ -57,158 +57,105 @@ class ReferenceFrame():
             
             angle = getAngleUnsigned(referenceAxis, newAxis)
 
-            self.q = ReferenceFrame.axisAngle2Quaternion(rotAxis, angle)
+            self.q = axisAngle2Quaternion(rotAxis, angle)
             self.move(referenceAxis, roll) # apply roll
 
 
-    def axisAngle2Quaternion(axis:np.array, angle:float):
+    # # TODO: add the third mode, rotation within the parent frame (including rotation of translation vector)
+    # def move(self, axis:np.array=np.array([1,0,0], float), ang:float=0, translation:np.array=np.array([0,0,0], float), reference:str='local') -> None:
+    #     """Moves the reference frame according to a rotation and translation, in either local or parent frame's reference."""
 
-        q = np.zeros(4, float)
-        q[0] = cos(angle / 2)
-        q[1:] = sin(angle/ 2) * axis
+    #     axis /= norm(axis) # normalise the axis (so that we can pass any axis of rotation into the function)
 
-        return q / norm(q)
+    #     if reference == 'parent':
 
-
-    def quat2RotationMatrix(q:np.array) -> np.array:
-        """Given a unit quaternion, outputs a 3x3 rotation matrix"""
-
-        rotMatrix = np.zeros((3,3), float)
-
-        rotMatrix[0,0] = 2 * (q[0]**2 + q[1]**2) - 1
-        rotMatrix[0,1] = 2 * (q[1]*q[2] - q[0]*q[3])
-        rotMatrix[0,2] = 2 * (q[1]*q[3] + q[0]*q[2])
-        
-        rotMatrix[1,0] = 2 * (q[1]*q[2] + q[0]*q[3])
-        rotMatrix[1,1] = 2 * (q[0]**2 + q[2]**2) - 1
-        rotMatrix[1,2] = 2 * (q[2]*q[3] - q[0]*q[1])
-
-        rotMatrix[2,0] = 2 * (q[1]*q[3] - q[0]*q[2])
-        rotMatrix[2,1] = 2 * (q[2]*q[3] + q[0]*q[1])
-        rotMatrix[2,2] = 2 * (q[0]**2 + q[3]**2) - 1
-
-        return rotMatrix
-    
-
-    def sphereAngs2Quaternion(sphereAngs:list[float], axis:str='x') -> np.array:
-
-        referenceAxis = np.zeros(3, float)
-
-        match axis:
-            case 'x':
-                n = 0
-            case 'y':
-                n = 1
-            case 'z':
-                n = 2
-
-        referenceAxis[n] = 1
-
-        # what is the new axis?
-        newAxis = np.zeros(3, float)
-        newAxis[0] = sin(sphereAngs[0]) * cos(sphereAngs[1])
-        newAxis[1] = sin(sphereAngs[0]) * sin(sphereAngs[1])
-        newAxis[2] = cos(sphereAngs[0])
-
-        # get the axis and angle of rotation
-        if (newAxis == referenceAxis).all():
-            rotAxis = np.array([1,0,0], float)
-        else:
-            rotAxis = np.cross(referenceAxis, newAxis)
-            rotAxis /= norm(rotAxis) # normalise the vector
-        
-        #angle = acos(np.dot(referenceAxis, newAxis) / (norm(referenceAxis) * norm(newAxis)))
-        return ReferenceFrame.axisAngle2Quaternion(rotAxis, getAngleUnsigned(referenceAxis, newAxis))
-
-    
-    # TODO: add the third mode, rotation within the parent frame (including rotation of translation vector)
-    def move(self, axis:np.array=np.array([1,0,0], float), ang:float=0, translation:np.array=np.array([0,0,0], float), reference:str='local') -> None:
-        """Moves the reference frame according to a rotation and translation, in either local or parent frame's reference."""
-
-        axis /= norm(axis) # normalise the axis (so that we can pass any axis of rotation into the function)
-
-        if reference == 'parent':
-
-            qConv = deepcopy(self.q)
-            qConv[1:] *= -1.0
+    #         qConv = deepcopy(self.q)
+    #         qConv[1:] *= -1.0
             
-            axis = rotateQuaternion(axis, qConv)
+    #         axis = rotateQuaternion(axis, qConv)
 
-            q = np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)], float)
-            q /= norm(q) # renormalise q here to prevent drift
+    #         q = np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)], float)
+    #         q /= norm(q) # renormalise q here to prevent drift
 
-            self.q = grassmann(self.q, q)
-            self.translation += translation
+    #         self.q = grassmann(self.q, q)
+    #         self.translation += translation
 
-        elif reference == 'local':
+    #     elif reference == 'local':
 
-            q = np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)], float)
-            q /= norm(q) # prevent drift
+    #         q = np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)], float)
+    #         q /= norm(q) # prevent drift
 
-            # chain the rotations, but apply the translation within the original frame
-            translation = self.local2parent(translation, incTranslation=False)
-            self.q = grassmann(self.q, q)
-            self.translation += translation
+    #         # chain the rotations, but apply the translation within the original frame
+    #         translation = self.local2parent(translation, incTranslation=False)
+    #         self.q = grassmann(self.q, q)
+    #         self.translation += translation
 
-        else:
-            print("reference keyword invalid: please use either local or parent")
+    #     else:
+    #         print("reference keyword invalid: please use either local or parent")
 
 
-    def moveAbout(self, origin:np.array, axis:np.array=np.array([1,0,0], float), ang:float=0, transIn:np.array=np.zeros((3), float), frame:str='local') -> None:
-        """
-        Moves the reference frame about a specified origin relative to the frame. The origin can be specified in either local or parent frames.
+    def moveFrame(self, origin:np.array=np.zeros(3, float), axis:np.array=None, ang:float=None, trans:np.array=None, originFrame:str='local', moveFrame:str='parent') -> None:
+        """This function moves the reference frame about a specified origin by a rotation and translation. The origin may be expressed in local or parent
+           frames, as can the movement working frame."""
         
-        If no origin is specified, the object will:
-        - in parent frame, rotate about its own origin but about axes parallel to the parent axes
-        - in local frame, rotate about its own origin about its own axes
-        """
+        if originFrame == 'local':
+            origin = self.local2parent(origin, incTranslation=True)
 
-        axis = unit(axis)
+        if moveFrame == 'local':
+            axis = self.local2parent(axis, incTranslation=False)
+            trans = self.local2parent(trans, incTranslation=True)
 
-        if frame == 'parent':
+        qRot = np.array([1,0,0,0], float)
 
-            if origin is not None:
-                tRot = self.translation - origin
-                qT = np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)], float)
-                self.translation = origin + rotateQuaternion(tRot, qT) + transIn
-            else:
-                self.translation += transIn
+        if axis is not None:
 
-            qConv = deepcopy(self.q)
-            qConv[1:] *= -1.0
-            axis = rotateQuaternion(axis, qConv)
+            axis = unit(axis)
+            if originFrame == 'local':
+                axis = self.local2parent(axis, incTranslation=False)
 
-            qIn = np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)], float)
-            qIn /= norm(qIn) # renormalise q here to prevent drift
+            qRot = np.r_[cos(ang / 2), sin(ang / 2)*axis]
+            self.q = unit(grassmann(qRot, self.q))
 
-            self.q = grassmann(self.q, qIn)
+        if trans is not None:
+            self.translation = origin + rotateQuaternion(self.translation - origin, qRot)
 
-        elif frame == 'local':
+        # if frame == 'parent':
+        #     if origin is not None:
+        #         tRot = self.translation - origin
+        #         qT = np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)], float)
+        #         self.translation = origin + rotateQuaternion(tRot, qT) + trans
+        #     else:
+        #         self.translation += trans
 
-            if origin is not None: 
-                axisT = rotateQuaternion(axis, self.q)
-                qT = np.array([cos(ang/2), axisT[0]*sin(ang/2), axisT[1]*sin(ang/2), axisT[2]*sin(ang/2)], float)
+        #     qConv = deepcopy(self.q)
+        #     qConv[1:] *= -1.0
+        #     axis = rotateQuaternion(axis, qConv)
 
-                op = self.local2parent(origin, incTranslation=True)
-                tRot = self.translation - op
-                self.translation = op + rotateQuaternion(tRot, qT)
+        #     qIn = np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)], float)
+        #     qIn /= norm(qIn) # renormalise q here to prevent drift
 
-            else:
-                self.translation += self.local2parent(transIn, incTranslation=False)
+        #     self.q = grassmann(self.q, qIn)
 
-            qIn = np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)], float)
-            qIn /= norm(qIn) # prevent drift
-            self.q = grassmann(self.q, qIn)
+        # elif frame == 'local':
 
-        else:
-            print(f"'{frame}' is not a valid keyword for moveAbout")
+        #     if origin is not None: 
+        #         axisT = rotateQuaternion(axis, self.q)
+        #         qT = np.array([cos(ang/2), axisT[0]*sin(ang/2), axisT[1]*sin(ang/2), axisT[2]*sin(ang/2)], float)
+
+        #         op = self.local2parent(origin, incTranslation=True)
+        #         tRot = self.translation - op
+        #         self.translation = op + rotateQuaternion(tRot, qT)
+
+        #     else:
+        #         self.translation += self.local2parent(trans, incTranslation=False)
+
+        #     qIn = np.array([cos(ang/2), axis[0]*sin(ang/2), axis[1]*sin(ang/2), axis[2]*sin(ang/2)], float)
+        #     qIn /= norm(qIn) # prevent drift
+        #     self.q = grassmann(self.q, qIn)
+
+        # else:
+        #     print(f"'{frame}' is not a valid keyword for moveAbout")
             
-
-    def invert(self) -> None:
-        """Inverts the transformation"""
-        self.q[1:] *= -1.0
-        self.translation = -self.translation
-
 
     def local2parent(self, vecIn:np.array, incTranslation:bool=True) -> np.array:
         """If the vector is described in the local coordinate system, this returns the same vector as expressed in the world coordinate system
@@ -236,22 +183,17 @@ class ReferenceFrame():
         qConv = deepcopy(self.q)
         qConv[1:] *= -1
         return rotateQuaternion(vecIn, qConv)
-        # return np.matmul(self.rotationMatrix.transpose(), vecIn)
     
 
-    # TODO: deprecate this, it's covered by local2parent
-    def align(self, vecIn:np.array) -> np.array:
-        """Maps a vector defined in this reference frame into the world frame BUT assumes that this reference frame shares an origin with the parent - pure rotation without translation"""
-        return rotateQuaternion(vecIn, self.q)
-        #return np.matmul(self.rotationMatrix(), vecIn)
-    
+    def invert(self) -> None:
+        """Inverts the transformation"""
+        self.q[1:] *= -1.0
+        self.translation = -self.translation
+
     
     def chain(self, nextFrame:'ReferenceFrame'):
             """This combines two subsequent transformations together, in the order of self.transform, newTransform"""
-
-            chainedRotation = grassmann(self.q, nextFrame.q)
-
-            self.q = chainedRotation
+            self.q = grassmann(self.q, nextFrame.q)
             self.translation += nextFrame.translation
 
 

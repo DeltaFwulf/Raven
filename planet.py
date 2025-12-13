@@ -20,9 +20,9 @@ class Planet():
     def buildFrames(self, x0:np.array=np.zeros(3, float), az0:float=0.0) -> None:
         """Creates the planet's PCR and PCNR frames"""
         self.PCNR = ReferenceFrame(axis=np.array([0,0,1], float), ang=0.0, translation=x0)
-        self.PCNR.moveAbout(origin=np.zeros(3, float), axis=np.array([1,0,0], float), ang=self.tilt, frame='local')
+        self.PCNR.moveFrame(origin=np.zeros(3, float), axis=np.array([1,0,0], float), ang=self.tilt, frame='local')
         self.PCR = deepcopy(self.PCNR)
-        self.PCR.moveAbout(origin=np.zeros(3, float), axis=np.array([0,0,1], float), ang=az0, frame='local')
+        self.PCR.moveFrame(origin=np.zeros(3, float), axis=np.array([0,0,1], float), ang=az0, frame='local')
 
 
     def getAtmoProperties(self, z:float, selected:list['str']=['T', 'p', 'rho']) -> dict:
