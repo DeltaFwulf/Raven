@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Simulation/Planet Definition.md",
+                "file": "Simulaiton Technical Journal/Reference Frames.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Planet Definition"
+              "title": "Reference Frames"
             }
           }
         ]
@@ -166,12 +166,14 @@
   },
   "active": "e18913eadc89f65f",
   "lastOpenFiles": [
-    "Simulation/Overview.md",
-    "Simulation/Planet Definition.md",
-    "Physics Engine/Earth Atmosphere Model.md",
+    "Simulaiton Technical Journal/Planet Definition.md",
+    "Simulaiton Technical Journal/Overview.md",
+    "Simulaiton Technical Journal/Reference Frames.md",
+    "Simulaiton Technical Journal/Earth Atmosphere Model.md",
+    "Physics Engine/Reference Frames and Inertia Tensors.md",
+    "Simulaiton Technical Journal/Code Requirements",
     "pictures/coesa76/optimisation/interpolation.png",
     "pictures/coesa76/convergence study/compensated.png",
-    "Physics Engine/Reference Frames and Inertia Tensors.md",
     "Physics Engine/State Vector Representation.md",
     "pictures/coesa76/convergence study/prop 100 to 1000 km.png",
     "pictures/coesa76/convergence study/rms 100 to 1000 km.png",
@@ -193,7 +195,6 @@
     "pictures/coesa76/optimisation/Tau Calculation",
     "pictures/coesa76/optimisation",
     "pictures/coesa76",
-    "Physics Engine/New folder",
     "Welcome.md",
     "Rocket Definition/Modules.md",
     "Rocket Definition/Primitives/Conic Generalised.md",

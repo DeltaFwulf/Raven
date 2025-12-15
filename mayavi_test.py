@@ -145,8 +145,8 @@ def animPrimitives():
     primitives.update({'rect':RectangularPrism(x=1, y=1, z=1, material=Aluminium)})
 
     frames = {}
-    frames.update({'conic':ReferenceFrame(translation=np.array([0, 0, 0], float), axis=np.array([1,0,0], float), ang=pi/4)})
-    frames.update({'rect':ReferenceFrame(translation=np.array([5, 0, 0], float), axis=np.array([1,0,0], float), ang=pi/4)})
+    frames.update({'conic':ReferenceFrame(origin=np.array([0, 0, 0], float), axis=np.array([1,0,0], float), ang=pi/4)})
+    frames.update({'rect':ReferenceFrame(origin=np.array([5, 0, 0], float), axis=np.array([1,0,0], float), ang=pi/4)})
 
     # draw all primitives in the scene
     fig = mlab.figure()

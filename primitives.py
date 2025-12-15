@@ -1,4 +1,4 @@
-from math import pi, sin, cos
+from math import pi, sin, cos, sqrt
 import numpy as np
 
 from materials import *
@@ -31,6 +31,80 @@ class Primitive():
         return f"{self.name}({self.shape})"
     
 
+    def transformInertiaTensor(self, tensorIn, mass, com2ref:np.array=np.zeros(3)) -> np.array:
+        """Changes the reference frame of the mass moment of inertia tensor to that about a reference frame with this transform from the body aligned, CoM centered reference frame.
+        
+        For generalised parallel axis theorem, you can also specify translation (in parent coordinates) of the reference location from the object's centre of mass. If the tensor input is about the object's centre of mass,
+        do not put anything for initialTranslation. If the initial translation is non-zero, please put the translation in; the generalised parallel axis theorem method can take this into account.
+        """
+        
+        # FIXME: re-work all self calls, check for errors and redundant vector operations (should inherit from tested vector util methods)
+
+        rotating = self.q[0] != 1
+        translating = (self.translation != np.zeros((3), float)).any()
+
+        tensor = tensorIn
+
+        if rotating:
+            
+            i = np.array([1, 0, 0])
+            j = np.array([0, 1, 0])
+            k = np.array([0, 0, 1])
+
+            iNew = self.align(i)
+            jNew = self.align(j)
+            kNew = self.align(k)
+
+            def cosAng(vec1, vec2):
+                return np.dot(vec1, vec2) / sqrt(np.linalg.norm(vec1) * np.linalg.norm(vec2))
+            T = np.empty((3,3), float)
+        
+            T[0,0] = cosAng(iNew, i)
+            T[0,1] = cosAng(iNew, j)
+            T[0,2] = cosAng(iNew, k)
+
+            T[1,0] = cosAng(jNew, i)
+            T[1,1] = cosAng(jNew, j)
+            T[1,2] = cosAng(jNew, k)
+
+            T[2,0] = cosAng(kNew, i)
+            T[2,1] = cosAng(kNew, j)
+            T[2,2] = cosAng(kNew, k)
+
+            tensor = np.matmul(T, np.matmul(tensor, np.transpose(T)))
+
+        if translating:
+            """
+            This function uses a generalised form of the parallel axis theorem found here: https://doi.org/10.1119/1.4994835
+
+            I' = Iref + M[(R2,R2)] - 2M[(R2,C)]
+            """
+
+            def getSymmetricMatrix(a, b):
+
+                c = np.empty((3,3), float)
+
+                c[0,0] = a[1]*b[1] + a[2]*b[2]
+                c[0,1] = -0.5 * (a[0]*b[1] + a[1]*b[0])
+                c[0,2] = -0.5 * (a[0]*b[2] + a[2]*b[0])
+
+                c[1,0] = c[0,1]
+                c[1,1] = a[0]*b[0] + a[2]*b[2]
+                c[1,2] = -0.5 * (a[1]*b[2] + a[2]*b[1])
+
+                c[2,0] = c[0,2]
+                c[2,1] = c[1,2]
+                c[2,2] = a[0]*b[0] + a[1]*b[1]
+
+                return c
+
+            translation = self.translation
+
+            tensor += (mass * getSymmetricMatrix(translation, translation)) - (2 * mass * getSymmetricMatrix(translation, com2ref))
+                                                
+            return tensor
+    
+
 
 class Conic(Primitive):
 
@@ -57,7 +131,7 @@ class Conic(Primitive):
         self.mass = self.calcMass()
         self.com = self.calcCoM()
         
-        self.root2com = ReferenceFrame(translation=self.com) # XXX: this is basically storing no new information beyond the CoM position, maybe we should just use that
+        self.root2com = ReferenceFrame(origin=self.com) # XXX: this is basically storing no new information beyond the CoM position, maybe we should just use that
         
         # The primitive contains a monent of inetia tensor about its centre of mass, OR some other reference location with a known transform from the CoM
         self.com2ref = np.zeros(3) # this primitive has its reference frame at the centre of mass (also, offset is a pure translation, no rotation)
@@ -370,7 +444,7 @@ class RectangularPrism(Primitive):
         self.mass = self.material.density * x * y * z
         self.com = np.array([-x/2, 0, 0], float)
 
-        self.root2com = ReferenceFrame(translation=self.com)
+        self.root2com = ReferenceFrame(origin=self.com)
 
         # Inertia tensors
         self.com2ref = np.zeros(3) # the part's centre of mass is its point of reference

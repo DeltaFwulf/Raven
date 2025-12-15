@@ -139,9 +139,9 @@ class SolidMotor(Module):
 
         self.rootFrames.update({'casing':ReferenceFrame()})
         self.rootFrames.update({'fore-bulkhead':ReferenceFrame()})
-        self.rootFrames.update({'aft-bulkhead':ReferenceFrame(translation=np.array([-geometry['casing-length'] + geometry['casing-thickness'], 0, 0], float))})
-        self.rootFrames.update({'nozzle':ReferenceFrame(translation=np.array([-geometry['casing-length'], 0, 0], float))})
-        self.rootFrames.update({'grain':ReferenceFrame(translation=np.array([-geometry['casing-thickness'], 0, 0], float))})
+        self.rootFrames.update({'aft-bulkhead':ReferenceFrame(origin=np.array([-geometry['casing-length'] + geometry['casing-thickness'], 0, 0], float))})
+        self.rootFrames.update({'nozzle':ReferenceFrame(origin=np.array([-geometry['casing-length'], 0, 0], float))})
+        self.rootFrames.update({'grain':ReferenceFrame(origin=np.array([-geometry['casing-thickness'], 0, 0], float))})
 
         self.thrust = 0.0
         self.onTime = 0.0

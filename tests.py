@@ -38,42 +38,42 @@ def primitiveTest(primitive:Primitive):
 
 
 
-def frameTest():
-    """Uses the Transform class in different ways and outputs the result in a 3D plot to validate transform behaviour
+# def frameTest():
+#     """Uses the Transform class in different ways and outputs the result in a 3D plot to validate transform behaviour
     
-    Passed
-    """
+#     Passed
+#     """
 
-    worldFrame = ReferenceFrame() # this is just a trivial transform (no change from "true" origin)
+#     worldFrame = ReferenceFrame() # this is just a trivial transform (no change from "true" origin)
 
-    frame1 = deepcopy(worldFrame)
-    frame1.move(axis=np.array([0,1,0]), ang=pi/6, translation=np.array([1,0,0]))
+#     frame1 = deepcopy(worldFrame)
+#     frame1.move(axis=np.array([0,1,0]), ang=pi/6, translation=np.array([1,0,0]))
 
-    frame2 = deepcopy(frame1)
-    frame2.move(axis=np.array([0,0,1]), ang=pi, translation=np.array([0,0,1]))
+#     frame2 = deepcopy(frame1)
+#     frame2.move(axis=np.array([0,0,1]), ang=pi, translation=np.array([0,0,1]))
 
-    frame3 = deepcopy(frame1)
-    frame3.move(axis=np.array([0,0,1]), ang=pi, translation = np.array([3,0,0]), reference='parent')
+#     frame3 = deepcopy(frame1)
+#     frame3.move(axis=np.array([0,0,1]), ang=pi, translation = np.array([3,0,0]), reference='parent')
 
-    drawFrames([worldFrame, frame1, frame2, frame3])
+#     drawFrames([worldFrame, frame1, frame2, frame3])
 
 
 
-def chainTest():
-    """Chains multiple transformations together to make sure they behave as expected
+# def chainTest():
+#     """Chains multiple transformations together to make sure they behave as expected
     
-    Passed
-    """
+#     Passed
+#     """
 
-    worldFrame = ReferenceFrame()
+#     worldFrame = ReferenceFrame()
 
-    frame1 = ReferenceFrame(axisInit=np.array([1,0,0]), angInit=pi/6, transInit=np.array([5,0,0]))
-    frame2 = ReferenceFrame(transInit=np.array([0,1,0]))
+#     frame1 = ReferenceFrame(axisInit=np.array([1,0,0]), angInit=pi/6, transInit=np.array([5,0,0]))
+#     frame2 = ReferenceFrame(transInit=np.array([0,1,0]))
     
-    chain = deepcopy(frame1)
-    chain.chain(frame2)
+#     chain = deepcopy(frame1)
+#     chain.chain(frame2)
 
-    drawFrames([worldFrame, frame1, chain])
+#     drawFrames([worldFrame, frame1, chain])
 
 
 
@@ -115,9 +115,9 @@ def moduleTest():
 
     def drawFrame(frame:ReferenceFrame, sf:float, figure):
 
-        x = frame.translation[0]
-        y = frame.translation[1]
-        z = frame.translation[2]
+        x = frame.origin[0]
+        y = frame.origin[1]
+        z = frame.origin[2]
 
         cx = frame.local2parent(np.array([1,0,0], float), incTranslation=False)
         cy = frame.local2parent(np.array([0,1,0], float), incTranslation=False)
@@ -230,9 +230,9 @@ def angularTest():
     ax.set_ylabel('y')
     ax.set_zlabel('z')
 
-    linex, = ax.plot([objFrame.translation[0], objX[0]], [objFrame.translation[1], objX[1]], [objFrame.translation[2], objX[2]], '-r')
-    liney, = ax.plot([objFrame.translation[0], objY[0]], [objFrame.translation[1], objY[1]], [objFrame.translation[2], objY[2]], '-g')
-    linez, = ax.plot([objFrame.translation[0], objZ[0]], [objFrame.translation[0], objZ[1]], [objFrame.translation[2], objZ[2]], '-b')
+    linex, = ax.plot([objFrame.origin[0], objX[0]], [objFrame.origin[1], objX[1]], [objFrame.origin[2], objX[2]], '-r')
+    liney, = ax.plot([objFrame.origin[0], objY[0]], [objFrame.origin[1], objY[1]], [objFrame.origin[2], objY[2]], '-g')
+    linez, = ax.plot([objFrame.origin[0], objZ[0]], [objFrame.origin[0], objZ[1]], [objFrame.origin[2], objZ[2]], '-b')
 
     ax.set_aspect('equal')
 
@@ -245,18 +245,18 @@ def angularTest():
         objY = objFrame.local2parent(y)
         objZ = objFrame.local2parent(z)
 
-        linex.set_data([objFrame.translation[0], objX[0]], [objFrame.translation[1], objX[1]])
-        liney.set_data([objFrame.translation[0], objY[0]], [objFrame.translation[1], objY[1]])
-        linez.set_data([objFrame.translation[0], objZ[0]], [objFrame.translation[0], objZ[1]])
+        linex.set_data([objFrame.origin[0], objX[0]], [objFrame.origin[1], objX[1]])
+        liney.set_data([objFrame.origin[0], objY[0]], [objFrame.origin[1], objY[1]])
+        linez.set_data([objFrame.origin[0], objZ[0]], [objFrame.origin[0], objZ[1]])
 
-        linex.set_3d_properties([objFrame.translation[2], objX[2]])
-        liney.set_3d_properties([objFrame.translation[2], objY[2]])
-        linez.set_3d_properties([objFrame.translation[2], objZ[2]])
+        linex.set_3d_properties([objFrame.origin[2], objX[2]])
+        liney.set_3d_properties([objFrame.origin[2], objY[2]])
+        linez.set_3d_properties([objFrame.origin[2], objZ[2]])
 
         # keep the origin of the frame centred in the plot:
-        ax.set_xlim([objFrame.translation[0] - 1.2, objFrame.translation[0] + 1.2])
-        ax.set_ylim([objFrame.translation[1] - 1.2, objFrame.translation[1] + 1.2])
-        ax.set_zlim([objFrame.translation[2] - 1.2, objFrame.translation[2] + 1.2])
+        ax.set_xlim([objFrame.origin[0] - 1.2, objFrame.origin[0] + 1.2])
+        ax.set_ylim([objFrame.origin[1] - 1.2, objFrame.origin[1] + 1.2])
+        ax.set_zlim([objFrame.origin[2] - 1.2, objFrame.origin[2] + 1.2])
         
         ax.set_aspect('equal')
 
@@ -298,7 +298,7 @@ def physicsIntegration():
     #primitive = Conic(1.0, 1.0, 1.0, 0.5, 0.5, material=Aluminium)
     primitive = RectangularPrism(x=2.0, y=0.2, z=1, material=Aluminium)
     #primitive = Conic(length=1.0, dOuterRoot=4.0, dOuterEnd=4.0, dInnerRoot=2.0, dInnerEnd=2.0, material=Aluminium)
-    rootFrameInit = ReferenceFrame(translation=np.array([5, 0, 0], float), axis=np.array([1,0,0], float), ang=pi/4)
+    rootFrameInit = ReferenceFrame(origin=np.array([5, 0, 0], float), axis=np.array([1,0,0], float), ang=pi/4)
     pts, tris = primitive.getMeshData()
 
     comFrame = deepcopy(rootFrameInit)
@@ -315,10 +315,10 @@ def physicsIntegration():
     omega[0,:] = [0.1, 0, 1]
 
     tvec = np.zeros((t.size, 3), float)
-    tvec[0,:] = comFrame.translation
+    tvec[0,:] = comFrame.origin
 
     tRoot = np.zeros_like(tvec, float)
-    tRoot[0,:] = rootFrameInit.translation
+    tRoot[0,:] = rootFrameInit.origin
 
     v = np.zeros((t.size, 3), float)
     v[0,:] = [0, 0.0, 0]
@@ -333,7 +333,7 @@ def physicsIntegration():
         tvec[i,:], v[i,:] = tvec[i-1,:], v[i-1,:]
 
         comFrame.q = q[i,:]
-        comFrame.translation = tvec[i,:]
+        comFrame.origin = tvec[i,:]
 
         # update root frame position
         tRoot[i,:] = comFrame.local2parent(-primitive.com, incTranslation=True)
@@ -361,7 +361,7 @@ def physicsIntegration():
                 # TODO: this is not actually drawing about the centre of mass, but the root frame; change this
                 
                 f.q = q[i,:]
-                f.translation = tRoot[i,:]
+                f.origin = tRoot[i,:]
 
                 pts = f.local2parent(p.ptsLocal)
                 mesh.mlab_source.trait_set(x=pts[:,0], y=pts[:,1], z=pts[:,2])
@@ -377,77 +377,27 @@ def physicsIntegration():
 
 
 
-def drawFrames(frames:list[ReferenceFrame]) -> None:
+# def frameTest():
+#     """Move a frame in different ways and plot to visually verify the results"""
 
-    """This function takes in a list of frames and for each one plots a set of orthogonal axes according to their respective transforms."""
+#     rootFrame = ReferenceFrame(axis=np.array([1,0,0], float), ang=0, origin=np.array([0,0,0], float))
 
-    ax = plt.figure().add_subplot(projection='3d')
+#     testFrame = ReferenceFrame(axis=np.array([1,1,0], float), ang=10*pi/180, origin=np.array([1,0,0], float))
+#     globalMoved = deepcopy(testFrame)
+#     localMoved = deepcopy(testFrame)
+#     inverted = deepcopy(testFrame)
+#     chained = deepcopy(testFrame)
+#     globalMoved.move(axis=np.array([0,0,1], float), ang=pi, translation=np.array([1,0,0], float), reference='parent')
+#     localMoved.move(axis=np.array([0,0,1], float), ang=pi, translation=np.array([1,0,0], float), reference='local')
+#     inverted.invert()
+#     chained.chain(testFrame)
 
-    xMin = frames[0].translation[0]
-    xMax = frames[-1].translation[0]
-    yMin = frames[0].translation[1]
-    yMax = frames[-1].translation[1]
-    zMin = frames[0].translation[2]
-    zMax = frames[-1].translation[2]
+#     toAlign = np.array([1,0,0], float)
 
-    for frame in frames:
+#     aligned = chained.align(toAlign)
+#     print(f"local2parent: {chained.local2parent(toAlign)}, aligned: {aligned}")
 
-        x = frame.local2parent(np.array([1,0,0]))
-        y = frame.local2parent(np.array([0,1,0]))
-        z = frame.local2parent(np.array([0,0,1]))
-        o = frame.translation
-
-        # update plot limits
-        xMin = np.min(np.array([xMin, x[0], y[0], z[0]]))
-        xMax = np.max(np.array([xMax, x[0], y[0], z[0]]))
-
-        yMin = np.min(np.array([yMin, x[1], y[1], z[1]]))
-        yMax = np.max(np.array([yMax, x[1], y[1], z[1]]))
-
-        zMin = np.min(np.array([zMin, x[2], y[2], z[2]]))
-        zMax = np.max(np.array([zMax, x[2], y[2], z[2]]))
-        
-        ax.plot([o[0], x[0]], [o[1], x[1]], [o[2], x[2]], '-r')
-        ax.plot([o[0], y[0]], [o[1], y[1]], [o[2], y[2]], '-g')
-        ax.plot([o[0], z[0]], [o[1], z[1]], [o[2], z[2]], '-b')
-
-    # dynamically bound the plot based on the largest values of any terms in x, y, z
-    ax.set_xlim([xMin, xMax])
-    ax.set_ylim([yMin, yMax])
-    ax.set_zlim([zMin, zMax])
-
-    ax.set_box_aspect([xMax - xMin, yMax - yMin, zMax - zMin])
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_zlabel("z")
-
-    ax.legend(['x', 'y', 'z'])
-
-    plt.show()
-
-
-
-def frameTest():
-    """Move a frame in different ways and plot to visually verify the results"""
-
-    rootFrame = ReferenceFrame(axis=np.array([1,0,0], float), ang=0, translation=np.array([0,0,0], float))
-
-    testFrame = ReferenceFrame(axis=np.array([1,1,0], float), ang=10*pi/180, translation=np.array([1,0,0], float))
-    globalMoved = deepcopy(testFrame)
-    localMoved = deepcopy(testFrame)
-    inverted = deepcopy(testFrame)
-    chained = deepcopy(testFrame)
-    globalMoved.move(axis=np.array([0,0,1], float), ang=pi, translation=np.array([1,0,0], float), reference='parent')
-    localMoved.move(axis=np.array([0,0,1], float), ang=pi, translation=np.array([1,0,0], float), reference='local')
-    inverted.invert()
-    chained.chain(testFrame)
-
-    toAlign = np.array([1,0,0], float)
-
-    aligned = chained.align(toAlign)
-    print(f"local2parent: {chained.local2parent(toAlign)}, aligned: {aligned}")
-
-    drawFrames([rootFrame, testFrame, globalMoved, localMoved])
+#     drawFrames([rootFrame, testFrame, globalMoved, localMoved])
 
 
 

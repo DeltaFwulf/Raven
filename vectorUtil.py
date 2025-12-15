@@ -61,7 +61,7 @@ def sphereAngs2coords(inclination:float, azimuth:float) -> tuple[float, float]:
     return latitude, azimuth
 
 
-def getAngleSigned(vecA:np.array, vecB:np.array, normal:np.array) -> float:
+def getAngleSigned(vecA:np.array, vecB:np.array, normal:np.array) -> float:# TODO: consider removing normal, if vectors must be coplanar, direction (so normal) given by order of inputs
     """Gets the angle from vecA to vecB in the correct direction, given that they both lie on a known plane."""
     return atan2(np.dot(unit(normal), np.cross(vecA, vecB)), np.dot(vecA, vecB))
 
@@ -120,7 +120,6 @@ def unit(vec:np.array) -> np.array:
     return vec / norm(vec)
 
 
-
 def rotateAxisAngle(vecIn:np.array, axis:np.array, ang:float) -> np.array:
 
     axis = unit(axis)
@@ -129,41 +128,3 @@ def rotateAxisAngle(vecIn:np.array, axis:np.array, ang:float) -> np.array:
     q[1:] = sin(ang / 2)*axis
 
     return rotateQuaternion(vecIn, q)
-
-
-def axisAngle2Quaternion(axis:np.array, angle:float) -> np.array:
-        q = np.zeros(4, float)
-        q[0] = cos(angle / 2)
-        q[1:] = sin(angle/ 2)*axis
-
-        return q / norm(q)
-
-
-def sphereAngs2Quaternion(sphereAngs:list[float], axis:str='x') -> np.array:
-
-    referenceAxis = np.zeros(3, float)
-
-    match axis:
-        case 'x':
-            n = 0
-        case 'y':
-            n = 1
-        case 'z':
-            n = 2
-
-    referenceAxis[n] = 1
-
-    # what is the new axis?
-    newAxis = np.zeros(3, float)
-    newAxis[0] = sin(sphereAngs[0]) * cos(sphereAngs[1])
-    newAxis[1] = sin(sphereAngs[0]) * sin(sphereAngs[1])
-    newAxis[2] = cos(sphereAngs[0])
-
-    # get the axis and angle of rotation
-    if (newAxis == referenceAxis).all():
-        rotAxis = np.array([1,0,0], float)
-    else:
-        rotAxis = np.cross(referenceAxis, newAxis)
-        rotAxis /= norm(rotAxis) # normalise the vector
-    
-    return axisAngle2Quaternion(rotAxis, getAngleUnsigned(referenceAxis, newAxis))
