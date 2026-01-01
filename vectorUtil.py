@@ -1,11 +1,10 @@
 import numpy as np
 from numpy.linalg import norm
-from math import pi, cos, sin, atan2, asin, isnan
-from copy import deepcopy
+from math import pi, cos, sin, atan2, isnan
 
 
 
-def cartesian2spherical(vector:np.array) -> tuple[float, float, float]:
+def cartesian2spherical(vector:np.ndarray) -> tuple[float, float, float]:
     """Converts a cartesian vector to spherical coordinates (r, inc, az) following ISO convention"""
     r = norm(vector)
 
@@ -20,7 +19,17 @@ def cartesian2spherical(vector:np.array) -> tuple[float, float, float]:
     return r, inc, az
 
 
-def cartesian2coords(vector:np.array) -> tuple['float', 'float']:
+def spherical2cartesian(inc:float, az:float, r:float) -> np.ndarray:
+    """Returns the cartesian vector given spherical coordinates"""
+
+    if inc%(2*pi) > pi:
+        inc = 2*pi - inc%(2*pi)
+        az += pi
+
+    return r*np.r_[sin(inc)*cos(az), sin(inc)*sin(az), cos(inc)]
+
+   
+def cartesian2coords(vector:np.ndarray) -> tuple['float', 'float']:
     """ Calculates the latitude and longitude on a spherical body given a cartesian vector"""
     lat = pi / 2 - atan2(norm(vector[0:-1]), vector[2])
     if isnan(lat):
@@ -33,7 +42,7 @@ def cartesian2coords(vector:np.array) -> tuple['float', 'float']:
     return lat, long
 
 
-def coords2cartesian(lat:float, long:float, r:float) -> np.array:
+def coords2cartesian(lat:float, long:float, r:float) -> np.ndarray:
     """Returns a cartesian vector given latitude, longitude, and radius"""
     x = r*cos(lat)*cos(long)
     y = r*cos(lat)*sin(long)
@@ -42,89 +51,94 @@ def coords2cartesian(lat:float, long:float, r:float) -> np.array:
     return np.array([x, y, z], float)
 
 
-def sphereAngs2cartesian(inc:float, az:float, r:float) -> np.array:
-    """Returns the cartesian vector given spherical coordinates"""
-    x = r*sin(inc)*cos(az)
-    y = r*sin(inc)*sin(az)
-    z = r*cos(inc)
-
-    return np.array([x, y, z], float)
-
-
-def coords2sphereAngs(latitude, longitude) -> tuple[float, float]:
+def coords2spherical(lat, long) -> tuple[float, float]:
     """Converts latitude and longitude into spherical inclination and azimuth"""
-    return (pi/2) - latitude, longitude
+
+    inc = pi / 2 - lat
+    az = long
+
+    if inc % (2*pi) > pi:
+        inc = 2*pi - inc % (2*pi)
+        az += pi
+
+    return inc, az % (2*pi)
 
 
-def sphereAngs2coords(inclination:float, azimuth:float) -> tuple[float, float]:
-    latitude = pi/2 - inclination
-    return latitude, azimuth
+def spherical2coords(inc:float, az:float) -> tuple[float, float]:
+    """Returns latitude and longitude (East) given inclination and azimuth"""
+
+    if inc % (2*pi) > pi:
+        inc = 2*pi - inc % (2*pi)
+        az += pi
+
+    if az % (2*pi) > pi:
+        az -= 2*pi
+
+    return pi / 2 - inc, az
 
 
-def getAngleSigned(vecA:np.array, vecB:np.array, normal:np.array) -> float:# TODO: consider removing normal, if vectors must be coplanar, direction (so normal) given by order of inputs
+def getAngleSigned(vecA:np.ndarray, vecB:np.ndarray, normal:np.ndarray) -> float:# TODO: consider removing normal, if vectors must be coplanar, direction (so normal) given by order of inputs
     """Gets the angle from vecA to vecB in the correct direction, given that they both lie on a known plane."""
-    return atan2(np.dot(unit(normal), np.cross(vecA, vecB)), np.dot(vecA, vecB))
+    # check that the normal vector supplied is actually normal
+    normal = unit(normal)
+    rnorm = np.cross(vecA, vecB)
+    sinAng = np.dot(normal, rnorm)
+
+    if abs(abs(sinAng) - norm(rnorm)) > 1e-15: # tolerance accounts for floating point error
+        raise ValueError
+    elif norm(vecA) == 0 or norm(vecB) == 0: # XXX: it may be slightly faster to just sum vec**2 to save sqrt
+        raise ValueError
+    
+    return atan2(sinAng, np.dot(vecA, vecB))
 
 
 def getAngleUnsigned(vecA:np.array, vecB:np.array) -> float:
     """Returns the magnitude of the angle between two vectors, but cannot give the sign (direction) of the angle."""
+    if norm(vecA) == 0 or norm(vecB) == 0:
+        raise ValueError
+    
     return atan2(norm(np.cross(vecA, vecB)), np.dot(vecA, vecB))
 
 
-def projectVector(vecA:np.array, vecB:np.array, comp:str) -> np.array:
+def projectVector(vecA:np.ndarray, vecB:np.ndarray, normal:bool) -> np.ndarray:
     """Projects vector A along vector B, returns either 'parallel' or 'normal' component of vector A to vector B."""
-    bUnit = vecB / norm(vecB)
-    parallel = np.dot(vecA, bUnit) * bUnit
+    unitB = unit(vecB)
+    parallel = np.dot(vecA, unitB)*unitB
 
-    if comp == 'parallel':
+    if normal == False:
         return parallel
-    
-    else:
+    elif normal == True:
         return vecA - parallel
+    else:
+        raise ValueError
+
     
-
-def quaternion2euler(q:float, order:str='tait-bryan'):
+# def quaternion2euler(q:float, order:str='tait-bryan'):
     
-    if order=='tait-bryan':
-        # flight dynamics convention (heading, pitch, bank)
-        roll = atan2(2*(q[0]*q[1] + q[2]*q[3]), 1- 2*(q[1]**2 + q[2]**2))
-        pitch = asin(2*(q[0]*q[2] - q[1]*q[3]))
-        yaw = atan2(2*(q[0]*q[3] + q[1]*q[2]), 1 - 2*(q[2]**2 + q[3]**2))
+#     if order=='tait-bryan':
+#         # flight dynamics convention (heading, pitch, bank)
+#         roll = atan2(2*(q[0]*q[1] + q[2]*q[3]), 1- 2*(q[1]**2 + q[2]**2))
+#         pitch = asin(2*(q[0]*q[2] - q[1]*q[3]))
+#         yaw = atan2(2*(q[0]*q[3] + q[1]*q[2]), 1 - 2*(q[2]**2 + q[3]**2))
 
-    return roll, pitch, yaw
+#     return roll, pitch, yaw
 
 
-def grassmann(qA, qB):
+def grassmann(qA:np.ndarray, qB:np.ndarray) -> np.ndarray:
     """Returns the inner product of two quaternions (similar to dot-product but with orthogonal vectors)"""
-
-    qOut = np.zeros(4, float)
-
-    qOut[0] = qA[0] * qB[0] - np.dot(qA[1:],qB[1:])
-    qOut[1:] = qA[0]*qB[1:] + qA[1:]*qB[0] + np.cross(qA[1:], qB[1:])
-
-    return qOut
+    return np.r_[qA[0]*qB[0] - np.dot(qA[1:],qB[1:]), qA[0]*qB[1:] + qA[1:]*qB[0] + np.cross(qA[1:], qB[1:])]
 
 
-def rotateQuaternion(vecIn, q):
+def qRotate(vec:np.ndarray, q:np.ndarray) -> np.ndarray:
     # https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
 
-    qConv = deepcopy(q)
-    qConv[1:] *= -1.0
-
-    t = np.cross(2*q[1:], vecIn)
-    return(vecIn + q[0]*t + np.cross(q[1:], t))     
+    t = np.cross(2*q[1:], vec)
+    return vec + q[0]*t + np.cross(q[1:], t) 
 
 
 def unit(vec:np.array) -> np.array:
     """Returns a unit vector pointed in the same direction as the original vector""" 
+    if norm(vec) == 0:
+        raise ValueError
+
     return vec / norm(vec)
-
-
-def rotateAxisAngle(vecIn:np.array, axis:np.array, ang:float) -> np.array:
-
-    axis = unit(axis)
-    q = np.zeros(4, float)
-    q[0] = cos(ang / 2)
-    q[1:] = sin(ang / 2)*axis
-
-    return rotateQuaternion(vecIn, q)

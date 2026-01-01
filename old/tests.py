@@ -5,9 +5,9 @@ from matplotlib.animation import FuncAnimation
 from numpy.linalg import norm
 import mayavi.mlab as mlab
 
-from vectorUtil import ReferenceFrame, cartesian2spherical, coords2sphereAngs, rotateQuaternion, grassmann, sphereAngs2coords
+from vectorUtil import ReferenceFrame, cartesian2spherical, coords2spherical, qRotate, grassmann, spherical2coords
 from primitives import *
-from textUtil import arrFormat
+from temp.textUtil import arrFormat
 from modules import Module
 from motionSolvers import linearRK4, angularRK4
 
@@ -31,7 +31,7 @@ def primitiveTest(primitive:Primitive):
     print(f"Inertia Tensor:\n{arrFormat(primitive.moi, sigFigs=3, tabs=2)}")
     
     fig = mlab.figure()
-    pts, tris = primitive.getMeshData()
+    pts, tris = primitive.getMesh()
     mesh = mlab.triangular_mesh(pts[:,0], pts[:,1], pts[:,2], tris, figure=fig)
 
     mlab.show()
@@ -134,7 +134,7 @@ def moduleTest():
 
     for key in primitives:
         
-        pts, tris = primitives[key].getMeshData()
+        pts, tris = primitives[key].getMesh()
         pts = rootTransforms[key].local2parent(pts)
         mlab.triangular_mesh(pts[:,0], pts[:,1], pts[:,2], tris, opacity=0.25, figure=fig)
         drawFrame(rootTransforms[key], 0.25, fig)
@@ -299,7 +299,7 @@ def physicsIntegration():
     primitive = RectangularPrism(x=2.0, y=0.2, z=1, material=Aluminium)
     #primitive = Conic(length=1.0, dOuterRoot=4.0, dOuterEnd=4.0, dInnerRoot=2.0, dInnerEnd=2.0, material=Aluminium)
     rootFrameInit = ReferenceFrame(origin=np.array([5, 0, 0], float), axis=np.array([1,0,0], float), ang=pi/4)
-    pts, tris = primitive.getMeshData()
+    pts, tris = primitive.getMesh()
 
     comFrame = deepcopy(rootFrameInit)
     comFrame.moveFrame(origin=None, trans=primitive.com, frame='local')
@@ -409,10 +409,10 @@ def conversionTest():
     radius, inclination, azimuth = cartesian2spherical(cart)
     print(f"radius: {radius}, inclination: {inclination * 180 / pi}, azimuth: {azimuth * 180 / pi}")
 
-    latitude, longitude = sphereAngs2coords(inclination, azimuth)
+    latitude, longitude = spherical2coords(inclination, azimuth)
     print(f"latitude: {latitude * 180 / pi}, longitude {longitude * 180 / pi}")
 
-    inc2, az2 = coords2sphereAngs(latitude, longitude)
+    inc2, az2 = coords2spherical(latitude, longitude)
     print(f"returned inclination: {inc2 * 180 / pi}, returned azimuth: {az2 * 180 / pi}")
 
 
@@ -431,16 +431,16 @@ def rotationTests():
     frame = ReferenceFrame(axis=axis, ang=ang)
 
     vRotatedFrame = frame.local2parent(v)
-    vSingle = rotateQuaternion(v, q1)
+    vSingle = qRotate(v, q1)
 
     # Perform a 90 degree rotation by chaining two successive 45 degree rotations:
     q2 = grassmann(q1, q1)
-    vDouble = rotateQuaternion(v, q2)
+    vDouble = qRotate(v, q2)
 
     q3 = deepcopy(q1)
     q3[1:] *= -1
 
-    vOppo = rotateQuaternion(v, q3)
+    vOppo = qRotate(v, q3)
 
     print(f"\n Rotation Matrix: {vRotatedFrame}")
     print(f"\nSingle: {vSingle}")
