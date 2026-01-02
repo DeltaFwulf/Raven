@@ -7,72 +7,44 @@ from primitives import *
 
 
 
-class Module():
+class Module(RigidBody):
+    """The Module class represents an object composed of multiple primitives (or other compound objects), with functions for changing its properties to give dynamic
+       behaviours and act as subsystems on the rocket. These are joined together to form stages."""
 
-    """
-    The Module class represents an object composed of multiple primitives (or other compound objects), with functions for changing its properties to give dynamic
-    behaviours and act as subsystems on the rocket. These are joined together to form stages.
-    
-    We can parameterise these modules as well to make creation of different geometries easier i.e. parameterising a nosecone's shape can create and locate the required primitives to approximate desired geometry.
-    """
-
-    def __init__(self, primitives:dict, rootFrames:dict):
+    def __init__(self, primitives:dict, rootFrames:dict['ReferenceFrame']) -> None:
         
-        self.primitives = primitives # Each primitive or compound within the module is stored in this list
-        self.rootFrames = rootFrames # Stores a transform for each corresponding primitive (or compound) root from the module's root frame
+        self.primitives = primitives
+        self.rootFrames = rootFrames 
+        self.mass, self.com ,self. moi = self.calcInertial()
 
-        self.p2m = {}
 
-        self.mass = self.getMass()
-        self.com = self.getCoM()
-        self.moi = self.getMoI()
+    def calcInertial(self) -> tuple['float', 'np.ndarray', 'np.ndarray']:
 
+        m = sum(p.mass for p in self.primitives)
         
-    def getMass(self) -> float:
-        """Calculates the total mass of the module"""
-        mass = 0
-        
+        x = np.zeros(3)
         for key in self.primitives:
-            mass += self.primitives[key].mass
+            x += self.primitives[key].mass*self.rootFrames[key].local2parent(self.primitives[key].com)
         
-        return mass
-    
+        x /= m
 
-    def getCoM(self, recalcMass:bool=False) -> np.array:
-        """Calculates the centre of mass position of the module relative to its root frame"""
-
-        CoM = np.zeros(3)
-
-        if recalcMass:
-            self.mass = self.getMass()
-
+        I = np.zeros((3, 3), float)
         for key in self.primitives:
-            CoM += self.primitives[key].mass * self.rootFrames[key].local2parent(self.primitives[key].com) / self.mass
-       
-        return CoM
+            I += self.primitives[key].transformInertiaTensor(frame=self.rootFrames[key], ref=self.primitives[key].ref)
 
+        return m, x, I
 
-    def getMoI(self) -> np.array:
-        """Gets the moment of inertia tensor about the module centre of mass"""
-
-        MoI = np.zeros((3,3), float)
-
-        for key in self.primitives:
-
-            pcom2mcom = deepcopy(self.rootFrames[key])
-            pcom2mcom.translation += pcom2mcom.local2parent(self.primitives[key].com, incTranslation=False) - self.com # gives us (pcom - mcom)
-            pcom2mcom.invert() # now becomes mcom - pcom (what we wanted)
-            self.p2m.update({key:pcom2mcom.translation}) # TODO: remove this once testing is complete, or only generate in test modes, or somehow else get this
-            
-            # Transform this primitive's MoI by the pcom2mcom transform:
-            MoI += pcom2mcom.transformInertiaTensor(self.primitives[key].moi, self.primitives[key].mass, self.primitives[key].com2ref)
-
-        return MoI
     
 
-    def getForce(self) -> np.array:
-        return np.zeros((3), float)
-    
+class Nosecone(Module):
+    """Represents an aerodynamic nosecone, with a specified profile and geometry. This module can also split into several sections with a given ejection force to separate
+       i.e. when leaving the atmosphere."""
+
+    def __init__(self, profile:str, dBase:float, finenessRatio:float, thickness:float, density:float, **kwargs) -> None:
+        
+        
+        
+        pass
 
 
 class SolidMotor(Module):

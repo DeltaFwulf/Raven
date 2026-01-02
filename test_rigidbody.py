@@ -4,6 +4,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 from math import pi
 
 from primitives import Conic, RectangularPrism
+from referenceFrame import ReferenceFrame
 
 # TODO: somehow test the mesh (using low res mesh maybe?)
 
@@ -300,6 +301,49 @@ class RectPrismTests(unittest.TestCase):
                              x=1,
                              y=1,
                              z=-1)
+            
+
+
+class RigidBodyTests(unittest.TestCase):
+
+    def test_moveCuboid(self):
+
+        rect = RectangularPrism(density=1000,
+                                x=2,
+                                y=1,
+                                z=3)
+        
+        root = ReferenceFrame()
+        root.placeAxisAngle(axis=np.array([1, 0, 0], float), ang=pi / 2, origin=np.array([-5, 0, 0]))
+
+        moi_exp = np.zeros((3, 3), float)
+        moi_exp[0, 0] = 5000
+        moi_exp[1, 1] = 218500
+        moi_exp[2, 2] = 222500
+
+        assert_allclose(rect.transformInertiaTensor(root), moi_exp, atol=1e-12)
+        
+
+    def test_movetocom(self):
+        
+        rect = RectangularPrism(density=1000,
+                                x=2,
+                                y=1,
+                                z=3)
+        
+        root = ReferenceFrame()
+        root.placeAxisAngle(axis=np.array([1, 0, 0], float), ang=pi / 2, origin=np.array([1, 0, 0], float))
+
+        moi_exp = np.zeros((3, 3), float)
+        moi_exp[0, 0] = 5000
+        moi_exp[1, 1] = 2500
+        moi_exp[2, 2] = 6500
+
+        assert_allclose(rect.transformInertiaTensor(root), moi_exp, atol=1e-12)
+
+
+    def test_diffref(self): # this will be done with the TriangularPrism primitive, as I calculated from root not com?
+        pass
 
 
 if __name__ == '__main__':

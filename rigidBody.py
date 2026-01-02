@@ -1,6 +1,8 @@
 import numpy as np
-from numpy.linalg import norm
-from math import sqrt
+from copy import deepcopy
+
+from referenceFrame import ReferenceFrame
+
 
 
 class RigidBody():
@@ -12,73 +14,66 @@ class RigidBody():
         self.moi = np.zeros((3,3), float)
 
 
-    def transformInertiaTensor(self, tensor:np.ndarray, mass:float, **kwargs) -> np.ndarray:
-        """Changes the reference frame of the mass moment of inertia tensor to that about a reference frame with this transform from the body aligned, CoM centered reference frame.
+    def transformInertiaTensor(self, frame:ReferenceFrame, **kwargs) -> np.ndarray:
+        """This function allows the moment of inertia of a rigid body to be expressed in a new reference frame, given a frame of reference relative to the rigid body's root frame.
+           
+           Unless specified, the function assumes that I is about the body's centre of mass. To specify a different initial I reference point, a keyword argument, 'ref' may be input with the vector
+           from the object's original root frame to the reference point within the body local frame."""
         
-        For generalised parallel axis theorem, you can also specify translation (in parent coordinates) of the reference location from the object's centre of mass. If the tensor input is about the object's centre of mass,
-        do not put anything for initialTranslation. If the initial translation is non-zero, please put the translation in; the generalised parallel axis theorem method can take this into account.
-        """
+        ref = self.com if kwargs.get('ref') is None else kwargs.get('ref') # the point about which moi was calculated, in root frame
+        r = frame.parent2local(-ref, incTranslation=True) # from initial reference to frame origin
+        c = frame.parent2local(self.com - ref, incTranslation=False) # from initial reference to centre of mass
+        I = deepcopy(self.moi)
 
-        rotating = self.q[0] != 1
-        translating = (self.translation != np.zeros((3), float)).any()
-
-        if rotating:
+        if np.any(frame.q != np.array([1, 0, 0, 0], float)):
             
-            i = np.array([1, 0, 0])
-            j = np.array([0, 1, 0])
-            k = np.array([0, 0, 1])
+            i = np.array([1, 0, 0], float)
+            j = np.array([0, 1, 0], float)
+            k = np.array([0, 0, 1], float)
 
-            iNew = self.align(i)
-            jNew = self.align(j)
-            kNew = self.align(k)
+            u = frame.local2parent(np.array([1, 0, 0], float), incTranslation=False)
+            v = frame.local2parent(np.array([0, 1, 0], float), incTranslation=False)
+            w = frame.local2parent(np.array([0, 0, 1], float), incTranslation=False)
 
-            def cosAng(vec1, vec2):
-                return np.dot(vec1, vec2) / sqrt(norm(vec1) * norm(vec2))
-            T = np.empty((3,3), float)
-        
-            T[0,0] = cosAng(iNew, i)
-            T[0,1] = cosAng(iNew, j)
-            T[0,2] = cosAng(iNew, k)
+            T = np.zeros((3,3), float)
 
-            T[1,0] = cosAng(jNew, i)
-            T[1,1] = cosAng(jNew, j)
-            T[1,2] = cosAng(jNew, k)
+            T[0,0] = np.dot(i, u)
+            T[0,1] = np.dot(j, u)
+            T[0,2] = np.dot(k, u)
 
-            T[2,0] = cosAng(kNew, i)
-            T[2,1] = cosAng(kNew, j)
-            T[2,2] = cosAng(kNew, k)
+            T[1,0] = np.dot(i, v)
+            T[1,1] = np.dot(j, v)
+            T[1,2] = np.dot(k, v)
 
-            tensor = np.matmul(T, np.matmul(tensor, np.transpose(T)))
+            T[2,0] = np.dot(i, w)
+            T[2,1] = np.dot(j, w)
+            T[2,2] = np.dot(k, w)
 
-        if translating:
-            """
-            This function uses a generalised form of the parallel axis theorem found here: https://doi.org/10.1119/1.4994835
+            I = np.matmul(T, np.matmul(I, np.transpose(T)))
 
-            I' = Iref + M[(R2,R2)] - 2M[(R2,C)]
-            """
+        if np.any(r != np.zeros(3, float)):
+            """This function uses a generalised form of the parallel axis theorem found here: https://doi.org/10.1119/1.4994835"""
 
-            def getRelationalMatrix(veca, vecb):
 
-                c = np.empty((3,3), float)
+            def getRelationalMatrix(a:np.ndarray, b:np.ndarray) -> np.ndarray:
 
-                c[0,0] = veca[1]*vecb[1] + veca[2]*vecb[2]
-                c[0,1] = -0.5 * (veca[0]*vecb[1] + veca[1]*vecb[0])
-                c[0,2] = -0.5 * (veca[0]*vecb[2] + veca[2]*vecb[0])
+                M = np.zeros((3,3), float)
 
-                c[1,0] = c[0,1]
-                c[1,1] = veca[0]*vecb[0] + veca[2]*vecb[2]
-                c[1,2] = -0.5 * (veca[1]*vecb[2] + veca[2]*vecb[1])
+                M[0,0] = a[1]*b[1] + a[2]*b[2]
+                M[0,1] = -0.5*(a[0]*b[1] + a[1]*b[0])
+                M[0,2] = -0.5*(a[0]*b[2] + a[2]*b[0])
 
-                c[2,0] = c[0,2]
-                c[2,1] = c[1,2]
-                c[2,2] = veca[0]*vecb[0] + veca[1]*vecb[1]
+                M[1,0] = M[0,1]
+                M[1,1] = a[0]*b[0] + a[2]*b[2]
+                M[1,2] = -0.5*(a[1]*b[2] + a[2]*b[1])
 
-                return c
+                M[2,0] = M[0,2]
+                M[2,1] = M[1,2]
+                M[2,2] = a[0]*b[0] + a[1]*b[1]
 
-            translation = self.translation
+                return M
+            
 
-            com2ref = np.zeros(3, float) if kwargs.get('com2ref') is None else kwargs.get('com2ref')
-
-            tensor += (mass * getRelationalMatrix(translation, translation)) - (2 * mass * getRelationalMatrix(translation, com2ref))
+            I += self.mass*(getRelationalMatrix(r, r) - 2*getRelationalMatrix(r, c))
                                                 
-            return tensor
+        return I
