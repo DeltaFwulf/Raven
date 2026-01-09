@@ -41,9 +41,33 @@ class Nosecone(Module):
        i.e. when leaving the atmosphere."""
 
     def __init__(self, profile:str, dBase:float, finenessRatio:float, thickness:float, density:float, **kwargs) -> None:
+        pass
+
+
+    
+
+
+
+class Fin(Module):
+
+    def __init__(self, profile:str, thickness:float, **kwargs) -> None:
+
+        # give a higher level geometry input method (profile, dims)
+
+        # calculate the triangular prism mesh
+
+        # calculate inertial properties from newly created primitives
+
+        pass
+
+
+    def meshFin(self) -> tuple['TriangularPrism']:
+
+        # partition the fin into triangles
+
         
-        
-        
+        # return list of triangular primitives and root frames
+
         pass
 
 

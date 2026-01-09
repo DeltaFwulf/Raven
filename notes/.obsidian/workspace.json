@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Simulaiton Technical Journal/Reference Frames.md",
+                "file": "Simulaiton Technical Journal/Rigid Bodies.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Reference Frames"
+              "title": "Rigid Bodies"
             }
           }
         ]
@@ -166,9 +166,10 @@
   },
   "active": "e18913eadc89f65f",
   "lastOpenFiles": [
+    "Simulaiton Technical Journal/Reference Frames.md",
+    "Simulaiton Technical Journal/Rigid Bodies.md",
     "Simulaiton Technical Journal/Planet Definition.md",
     "Simulaiton Technical Journal/Overview.md",
-    "Simulaiton Technical Journal/Reference Frames.md",
     "Simulaiton Technical Journal/Earth Atmosphere Model.md",
     "Physics Engine/Reference Frames and Inertia Tensors.md",
     "Simulaiton Technical Journal/Code Requirements",

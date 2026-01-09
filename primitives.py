@@ -280,7 +280,6 @@ class RectangularPrism(Primitive):
 
 
     def getMeshData(self, x:float, y:float, z:float) -> tuple['np.ndarray', 'list']:
-        # XXX: make pts build better
         pts = np.zeros((8, 3), float)
         pts[:,0] = x*np.array([0, -1, -1, 0, 0, -1, -1, 0], float)
         pts[:,1] = y*np.array([-0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5], float)
@@ -294,3 +293,31 @@ class RectangularPrism(Primitive):
                 (4, 5, 6), (4, 6, 7)]
 
         return pts, tris
+    
+
+
+class TriangularPrism(Primitive):
+
+    # The root of this part is the first point passed into this part, at x = 0
+
+    def __init__(self, density:float, thickness:float, pts:np.ndarray, **kwargs) -> None:
+        """The 2d array pts specifies, by row, the y and z values in the trianglular profile."""
+        
+        self.name = 'unnamed' if kwargs.get('name') is None else kwargs.get('name')
+        self.mass = density*thickness*0.5*abs((pts[0,0] - pts[0,2])*(pts[1, 1] - pts[1, 0]) - (pts[0, 0] - pts[0, 1])*(pts[1, 2] - pts[1, 0]))
+        self.com = np.r_[-thickness / 2, np.reshape(np.sum(pts, 1) / 3, 3)]
+        self.moi = np.zeros((3, 3), float) # about centre of mass
+
+        if np.unique(pts[0,:], return_index=True).size < 3: # The triangle must be split
+
+            # get the middle point wrt y
+
+            # generate shared point
+
+            # generate both new triangles
+
+            # solve moi of each triangle
+
+            # use parallel axis theorem to reconstruct total triangular prism moi
+
+            pass
