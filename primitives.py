@@ -1,4 +1,4 @@
-from math import pi
+from math import pi, atan2
 import numpy as np
 
 from materials import *
@@ -297,27 +297,80 @@ class RectangularPrism(Primitive):
 
 
 class TriangularPrism(Primitive):
+    """Represents a triangular prism, with root frame located at the first triangular point, and x axis pointing out of a parallel face."""
 
-    # The root of this part is the first point passed into this part, at x = 0
-
-    def __init__(self, density:float, thickness:float, pts:np.ndarray, **kwargs) -> None:
-        """The 2d array pts specifies, by row, the y and z values in the trianglular profile."""
+    def __init__(self, density:float, thickness:float, pts:list['np.ndarray'], **kwargs) -> None:
+        """list of points contain y and z components relative to the root point (first point is np.array([0, 0], float))"""
+        # TODO: consider preventing a split by rotating the shape to left point, solving, then rotating back for final MoI
+        # TODO: try to change limits for a right point case such that no flip is even required. The y integral goes right to left in this case, but is otherwise identical
         
+
+        def solveLeftPoint(pts:list['np.ndarray'], density:float, thickness:float) -> tuple['float', 'np.ndarray', 'np.ndarray']:
+            
+            m = density*thickness*0.5*((pts[0][0] - pts[2][0])*(pts[1][1] - pts[0][1]) - (pts[0][0] - pts[1][0])*(pts[2][1] - pts[0][1]))
+
+            #m2 = density*thickness*0.5*(pts[0][0]*pts[1][1] - pts[0][0]*pts[0][1] + pts[1][0]*pts[2][1] - pts[2][0]*pts[0][1] + pts[2][0]*pts[0][1] - pts[2][0]*pts[1][1]) # NOTE: needs absolute value for non ccw point order
+            com = np.r_[-thickness / 2, np.reshape(np.sum(pts, 0) / 3, 2)] # use a list method here
+            pts = [pt - com[1:] for pt in pts] # get points relative to central axis
+            yo = pts[1][0]
+            yf = pts[0][0]
+            I = np.zeros((3, 3), float)
+            
+            # constants of integration
+            sf = (pts[0][1] - pts[1][1]) / (pts[0][0] - pts[1][0])
+            kf = pts[1][1] - sf*pts[1][0]
+            so = (pts[2][1] - pts[1][1]) / (pts[2][0] - pts[1][0])
+            ko = pts[1][1] - so*pts[1][0]
+            
+            F = thickness*((kf - ko)*(yf**3 - yo**3) / 3 + (sf - so)*(yf**4 - yo**4) / 4) # represents y contribution
+
+            Gb = (kf**3 *(yf - yo) / 3) if sf == 0 else ((kf + sf*yf)**4 - (kf + sf*yo)**4) / (12*sf)
+            Gd = (ko**3 *(yf - yo) / 3) if so == 0 else ((ko + so*yf)**4 - (ko + so*yo)**4) / (12*so)
+            G = thickness*(Gb - Gd) # represents z contribution
+            H = thickness**3 *((kf - ko)*(yf - yo) + 0.5*(sf - so)*(yf**2 - yo**2)) / 12 # represents x contribution
+            
+            I[0, 0] = density*(F + G) # y, z
+            I[1, 1] = density*(H + G) # x, z
+            I[2, 2] = density*(H + F) # x, y
+
+            return m, com, I
+        
+
         self.name = 'unnamed' if kwargs.get('name') is None else kwargs.get('name')
-        self.mass = density*thickness*0.5*abs((pts[0,0] - pts[0,2])*(pts[1, 1] - pts[1, 0]) - (pts[0, 0] - pts[0, 1])*(pts[1, 2] - pts[1, 0]))
-        self.com = np.r_[-thickness / 2, np.reshape(np.sum(pts, 1) / 3, 3)]
-        self.moi = np.zeros((3, 3), float) # about centre of mass
 
-        if np.unique(pts[0,:], return_index=True).size < 3: # The triangle must be split
+        if len(list(dict.fromkeys([pt[0] for pt in pts]))) == 3: # The triangle must be split
 
-            # get the middle point wrt y
+            ptsOrd = [pts[o] for o in np.argsort(np.array([pt[0] for pt in pts], float))]
+            ptsOrd.append(np.array([ptsOrd[1][0], ptsOrd[0][1] + (ptsOrd[1][0] - ptsOrd[0][0])*(ptsOrd[2][1] - ptsOrd[0][1]) / (ptsOrd[2][0] - ptsOrd[0][0])], float))
 
-            # generate shared point
+            if atan2(np.cross(ptsOrd[1] - ptsOrd[0], ptsOrd[2] - ptsOrd[1]), np.dot(ptsOrd[1] - ptsOrd[0], ptsOrd[2] - ptsOrd[1])) < 0:     # top peak case
+                pts_l = [ptsOrd[1], ptsOrd[0], ptsOrd[3]]
+                pts_r = [ptsOrd[1], np.array([2*ptsOrd[1][0] - ptsOrd[2][0], ptsOrd[2][1]], float), ptsOrd[3]]
+            else:                                                                                                   # bottom peak case
+                pts_l = [ptsOrd[3], ptsOrd[0], ptsOrd[1]]
+                pts_r = [ptsOrd[3], np.array([2*ptsOrd[1][0] - ptsOrd[2][0], ptsOrd[2][1]], float), ptsOrd[1]]
 
-            # generate both new triangles
+            ml, xl, Il = solveLeftPoint(pts_l, density, thickness)
+            mr, xr, Ir = solveLeftPoint(pts_r, density, thickness)
+            
+            self.mass = ml + mr
+            self.com = (xl*ml + np.r_[xr[0], 2*ptsOrd[1][0] - xr[1], xr[2]]*mr) / self.mass
+            self.moi = np.zeros((3, 3), float)
+            self.moi[0, 0] = Il[0, 0] + ml*((xl[1] - self.com[1])**2 + (xl[2] - self.com[2])**2) + Ir[0, 0] + mr*((xr[1] - self.com[1])**2 + (xr[2] - self.com[2])**2)
+            self.moi[1, 1] = Il[1, 1] + ml*(xl[2] - self.com[2])**2 + Ir[1, 1] + mr*(xr[2] - self.com[2])**2
+            self.moi[2, 2] = Il[2, 2] + ml*(xl[1] - self.com[1])**2 + Ir[2, 2] + mr*(xr[1] - self.com[1])**2
+        
+        else: # the triangle already contains a vertical line, no split necessary
+            y = [pt[0] for pt in pts]
+            y_common = [i for i in set(y) if y.count(i) > 1][0]
+            i_vert = [i for i, x in enumerate(y) if x == y_common]
+            i_mid = [i for i in [0, 1, 2] if i not in i_vert]
+            ind = [i_vert[0], i_mid, i_vert[1]] if pts[i_vert[0]][1] > pts[i_vert[1]][1] else [i_vert[1], i_mid, i_vert[0]]
+            pts_c = [pts[i] for i in ind]
+            flip = pts_c[1][0] > y_common
 
-            # solve moi of each triangle
+            if flip:
+                pts_c[1][0] = 2*y_common - pts_c[1][0]
 
-            # use parallel axis theorem to reconstruct total triangular prism moi
-
-            pass
+            self.mass, xl, self.moi = solveLeftPoint(pts_c, density, thickness)
+            self.com = xl if not flip else np.r_[xl[0], 2*y_common - xl[1], xl[2]]

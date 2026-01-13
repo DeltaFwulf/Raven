@@ -1,12 +1,10 @@
 import unittest
 import numpy as np
-from numpy.testing import assert_allclose, assert_array_equal
-from math import pi
+from numpy.testing import assert_allclose
+from math import pi, sqrt
 
-from primitives import Conic, RectangularPrism
+from primitives import Conic, RectangularPrism, TriangularPrism
 from referenceFrame import ReferenceFrame
-
-# TODO: somehow test the mesh (using low res mesh maybe?)
 
 
 
@@ -303,6 +301,23 @@ class RectPrismTests(unittest.TestCase):
                              z=-1)
             
 
+class TriangularPrismTests(unittest.TestCase):
+
+    def test_build(self):
+
+        pts = [np.zeros(2, float), np.array([0.5, sqrt(3) / 2], float), np.array([1, 0])]
+        tri = TriangularPrism(density=1000, thickness=1, pts=pts)
+
+        self.assertIsInstance(tri.name, str)
+        self.assertIsInstance(tri.mass, float)
+        self.assertIsInstance(tri.com, np.ndarray)
+        self.assertIsInstance(tri.moi, np.ndarray)
+
+        # calculate com, moi
+        self.assertAlmostEqual(tri.mass, 1000*sqrt(3) / 4, 9)
+        assert_allclose(tri.com, np.array([-0.5, 0.5, sqrt(3) / 6], float), atol=1e-9)
+
+            
 
 class RigidBodyTests(unittest.TestCase):
 

@@ -53,22 +53,26 @@ class Fin(Module):
     def __init__(self, profile:str, thickness:float, **kwargs) -> None:
 
         # give a higher level geometry input method (profile, dims)
+        pts = []
 
         # calculate the triangular prism mesh
+        self.meshFin(pts)
 
         # calculate inertial properties from newly created primitives
 
         pass
 
 
-    def meshFin(self) -> tuple['TriangularPrism']:
+    def meshFin(self, pts:list['np.ndarray']) -> tuple['TriangularPrism']:
 
-        # partition the fin into triangles
+        tris = [] # store triples of points by index in this list
 
-        
-        # return list of triangular primitives and root frames
+        # create simple polygon
 
-        pass
+        # greedy algorithm to create triangles
+
+        return tris
+
 
 
 class SolidMotor(Module):
