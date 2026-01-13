@@ -317,6 +317,20 @@ class TriangularPrismTests(unittest.TestCase):
         self.assertAlmostEqual(tri.mass, 1000*sqrt(3) / 4, 9)
         assert_allclose(tri.com, np.array([-0.5, 0.5, sqrt(3) / 6], float), atol=1e-9)
 
+    
+    def test_nosplit(self):
+        pass
+
+
+    def test_rightpoint(self):
+        pass
+
+
+    def test_nulledge(self):
+        pass
+
+
+
             
 
 class RigidBodyTests(unittest.TestCase):

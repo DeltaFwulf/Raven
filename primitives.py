@@ -307,26 +307,24 @@ class TriangularPrism(Primitive):
 
         def solveLeftPoint(pts:list['np.ndarray'], density:float, thickness:float) -> tuple['float', 'np.ndarray', 'np.ndarray']:
             
-            m = density*thickness*0.5*((pts[0][0] - pts[2][0])*(pts[1][1] - pts[0][1]) - (pts[0][0] - pts[1][0])*(pts[2][1] - pts[0][1]))
-
-            #m2 = density*thickness*0.5*(pts[0][0]*pts[1][1] - pts[0][0]*pts[0][1] + pts[1][0]*pts[2][1] - pts[2][0]*pts[0][1] + pts[2][0]*pts[0][1] - pts[2][0]*pts[1][1]) # NOTE: needs absolute value for non ccw point order
+            m = density*thickness*0.5*((pts[0][0] - pts[2][0])*(pts[1][1] - pts[0][1]) - (pts[0][0] - pts[1][0])*(pts[2][1] - pts[0][1])) # NOTE: if points no longer CCW, requires taking absolute value
             com = np.r_[-thickness / 2, np.reshape(np.sum(pts, 0) / 3, 2)] # use a list method here
             pts = [pt - com[1:] for pt in pts] # get points relative to central axis
             yo = pts[1][0]
             yf = pts[0][0]
             I = np.zeros((3, 3), float)
             
-            # constants of integration
             sf = (pts[0][1] - pts[1][1]) / (pts[0][0] - pts[1][0])
             kf = pts[1][1] - sf*pts[1][0]
             so = (pts[2][1] - pts[1][1]) / (pts[2][0] - pts[1][0])
             ko = pts[1][1] - so*pts[1][0]
             
-            F = thickness*((kf - ko)*(yf**3 - yo**3) / 3 + (sf - so)*(yf**4 - yo**4) / 4) # represents y contribution
+            # Gb = (kf**3 *(yf - yo) / 3) if sf == 0 else ((kf + sf*yf)**4 - (kf + sf*yo)**4) / (12*sf)
+            # Gd = (ko**3 *(yf - yo) / 3) if so == 0 else ((ko + so*yf)**4 - (ko + so*yo)**4) / (12*so)
+            # G = thickness*(Gb - Gd) # represents z contribution
 
-            Gb = (kf**3 *(yf - yo) / 3) if sf == 0 else ((kf + sf*yf)**4 - (kf + sf*yo)**4) / (12*sf)
-            Gd = (ko**3 *(yf - yo) / 3) if so == 0 else ((ko + so*yf)**4 - (ko + so*yo)**4) / (12*so)
-            G = thickness*(Gb - Gd) # represents z contribution
+            F = thickness*((kf - ko)*(yf**3 - yo**3) / 3 + (sf - so)*(yf**4 - yo**4) / 4) # represents y contribution
+            G = thickness*((kf**3 - ko**3)*(yf - yo) + 1.5*(sf*kf**2 - so*ko**2)*(yf**2 - yo**2) + (kf*sf**2 - ko*so**2)*(yf**3 - yo**3) + 0.25*(sf**3 - so**3)*(yf**4 - yo**4)) / 3 # represents z contribution
             H = thickness**3 *((kf - ko)*(yf - yo) + 0.5*(sf - so)*(yf**2 - yo**2)) / 12 # represents x contribution
             
             I[0, 0] = density*(F + G) # y, z
