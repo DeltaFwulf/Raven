@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Simulaiton Technical Journal/Rigid Bodies.md",
+                "file": "Raven Technical Journal/Primitives/Triangular Prism.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Rigid Bodies"
+              "title": "Triangular Prism"
             }
           }
         ]
@@ -164,25 +164,30 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "e18913eadc89f65f",
+  "active": "bb2d28d4afeb0714",
   "lastOpenFiles": [
-    "Simulaiton Technical Journal/Reference Frames.md",
-    "Simulaiton Technical Journal/Rigid Bodies.md",
-    "Simulaiton Technical Journal/Planet Definition.md",
-    "Simulaiton Technical Journal/Overview.md",
-    "Simulaiton Technical Journal/Earth Atmosphere Model.md",
-    "Physics Engine/Reference Frames and Inertia Tensors.md",
+    "Raven Technical Journal/Primitives",
+    "archive",
+    "Raven Technical Journal/Reference Frames.md",
+    "Raven Technical Journal/Planet Definition.md",
+    "Raven Technical Journal/Primitives/Triangular Prism.md",
+    "Raven Technical Journal/Overview.md",
+    "Raven Technical Journal/Earth Atmosphere Model.md",
+    "archive/Rocket Definition/Primitives/Conic Generalised.md",
+    "archive/Rocket Definition/Primitives/Conic Full.md",
+    "archive/Rocket Definition/Modules.md",
+    "archive/Physics Engine/Reference Frames and Inertia Tensors.md",
     "Simulaiton Technical Journal/Code Requirements",
     "pictures/coesa76/optimisation/interpolation.png",
     "pictures/coesa76/convergence study/compensated.png",
-    "Physics Engine/State Vector Representation.md",
+    "archive/Physics Engine/State Vector Representation.md",
     "pictures/coesa76/convergence study/prop 100 to 1000 km.png",
     "pictures/coesa76/convergence study/rms 100 to 1000 km.png",
     "pictures/coesa76/convergence study/rms 86 to 100 km.png",
     "pictures/coesa76/convergence study/86 to 100 km.png",
     "pictures/coesa76/convergence study/wtf.png",
     "pictures/coesa76/convergence study/rms vs resolution.png",
-    "Physics Engine/Chapter 4. 3D Rotations.md",
+    "archive/Physics Engine/Chapter 4. 3D Rotations.md",
     "Untitled.canvas",
     "Untitled 1.canvas",
     "Untitled.base",
@@ -195,16 +200,12 @@
     "pictures/coesa76/optimisation/Tau Calculation/pressure density fixed z 100m inline.png",
     "pictures/coesa76/optimisation/Tau Calculation",
     "pictures/coesa76/optimisation",
-    "pictures/coesa76",
     "Welcome.md",
-    "Rocket Definition/Modules.md",
-    "Rocket Definition/Primitives/Conic Generalised.md",
     "Kinematics/Reference Frames and Inertia Tensors.md",
     "Kinematics/State Vector Representation.md",
-    "Rocket Definition/Primitives/Primitives.md",
-    "Rocket Definition/Primitives/Conic Full.md",
+    "archive/Rocket Definition/Primitives/Primitives.md",
     "Rocket Definition/Primitives/Rectangular Prism.md",
-    "Rocket Definition/Primitives/Custom Primitive.md",
+    "archive/Rocket Definition/Primitives/Custom Primitive.md",
     "Primitives/Conic Full.md",
     "Kinematics/Frame Transformation.md",
     "Kinematics/Chapter 4. 3D Rotations.md",

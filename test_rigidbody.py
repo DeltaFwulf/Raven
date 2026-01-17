@@ -301,6 +301,7 @@ class RectPrismTests(unittest.TestCase):
                              z=-1)
             
 
+
 class TriangularPrismTests(unittest.TestCase):
 
     def test_build(self):
@@ -313,25 +314,86 @@ class TriangularPrismTests(unittest.TestCase):
         self.assertIsInstance(tri.com, np.ndarray)
         self.assertIsInstance(tri.moi, np.ndarray)
 
-        # calculate com, moi
+        
+    def test_positiveCase(self):
+
+        pts = [np.zeros(2, float), np.array([0.5, sqrt(3) / 2], float), np.array([1, 0])]
+        tri = TriangularPrism(density=1000, thickness=1, pts=pts)
+
         self.assertAlmostEqual(tri.mass, 1000*sqrt(3) / 4, 9)
         assert_allclose(tri.com, np.array([-0.5, 0.5, sqrt(3) / 6], float), atol=1e-9)
 
+        I = np.zeros((3, 3), float)
+        I[0, 0] = 2
+        I[1, 1] = 3
+        I[2, 2] = 3
+        I *= 125 / (4*sqrt(3))
+
+        assert_allclose(tri.moi, I, atol=1e-9)
+        
     
-    def test_nosplit(self):
+    def test_negativeCase(self):
+        
+        pts = [np.zeros(2, float), np.array([0.5, -sqrt(3) / 2], float), np.array([1, 0])]
+        tri = TriangularPrism(density=1000, thickness=1, pts=pts)
+
+        self.assertAlmostEqual(tri.mass, 1000*sqrt(3) / 4, 9)
+        assert_allclose(tri.com, np.array([-0.5, 0.5, -sqrt(3) / 6], float), atol=1e-9)
+
+        I = np.zeros((3, 3), float)
+        I[0, 0] = 2
+        I[1, 1] = 3
+        I[2, 2] = 3
+        I *= 125 / (4*sqrt(3))
+
+        assert_allclose(tri.moi, I, atol=1e-9)
+
+
+
+    def test_rootAtLineOfAction(self): # points do not have to have a 'root' point
         pass
 
 
-    def test_rightpoint(self):
-        pass
+    def test_nullEdge(self):
+
+        pts = [np.array([0, 0], float), np.array([0.5, sqrt(3) / 2], float), np.array([0, 0], float)]
+        
+        with self.assertRaises(ValueError):
+            TriangularPrism(density=1000, thickness=1, pts=pts)
+
+    
+    def test_zeroThickness(self):
+        
+        pts = [np.zeros(2, float), np.array([0.5, sqrt(3) / 2], float), np.array([1, 0])]
+        
+        with self.assertRaises(ValueError):
+            TriangularPrism(density=1000, thickness=0, pts=pts)
+
+    
+    def test_negativeThickness(self):
+        
+        pts = [np.zeros(2, float), np.array([0.5, sqrt(3) / 2], float), np.array([1, 0])]
+        
+        with self.assertRaises(ValueError):
+            TriangularPrism(density=1000, thickness=-1, pts=pts)
 
 
-    def test_nulledge(self):
-        pass
+    def test_zeroDensity(self):
+        
+        pts = [np.zeros(2, float), np.array([0.5, sqrt(3) / 2], float), np.array([1, 0])]
+        
+        with self.assertRaises(ValueError):
+            TriangularPrism(density=0, thickness=1, pts=pts)
 
 
+    def test_negativeDensity(self):
+        
+        pts = [np.zeros(2, float), np.array([0.5, sqrt(3) / 2], float), np.array([1, 0])]
+        
+        with self.assertRaises(ValueError):
+            TriangularPrism(density=-1000, thickness=1, pts=pts)
 
-            
+
 
 class RigidBodyTests(unittest.TestCase):
 
