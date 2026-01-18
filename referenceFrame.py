@@ -3,7 +3,7 @@ from math import sin, cos, pi
 
 from vectorUtil import qRotate, grassmann, unit, projectVector, getAngleSigned
 
-# TODO: apply chain in a better way, with arrays of successive parents
+
 
 class ReferenceFrame():
     """This class represents the transformation between two reference frames. Use this class to map vectors or points between different axis systems.

@@ -4,7 +4,10 @@ import numpy as np
 from copy import deepcopy
 from math import pi, sin, cos
 from numpy.testing import assert_allclose, assert_array_equal
+import sys
+import os
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from referenceFrame import ReferenceFrame
 from vectorUtil import grassmann, qRotate
 

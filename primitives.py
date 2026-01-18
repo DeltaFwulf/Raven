@@ -320,7 +320,6 @@ class TriangularPrism(Primitive):
             so = (pts[2][1] - pts[1][1]) / (yf - yo)
             ko = pts[1][1] - so*yo
             
-            #F = thickness*((kf - ko)*(yf**3 - yo**3) / 3 + (sf - so)*(yf**4 - yo**4) / 4) # represents y contribution
             F = h*thickness*(3*yf**3 - yo*yf**2 - yf*yo**2 - yo**3) / 12 # represents y contribution
             G = thickness*((kf**3 - ko**3)*(yf - yo) + 1.5*(sf*kf**2 - so*ko**2)*(yf**2 - yo**2) + (kf*sf**2 - ko*so**2)*(yf**3 - yo**3) + 0.25*(sf**3 - so**3)*(yf**4 - yo**4)) / 3 # represents z contribution
             H = h*thickness**3 *(yf - yo) / 24 # represents x contribution

@@ -1,10 +1,12 @@
 import unittest
 import numpy as np
-from math import pi, sin, cos
+from math import pi, sin, cos, sqrt
 from numpy.testing import assert_allclose
+import sys
+import os
 
-from vectorUtil import *
-
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from vectorUtil import cartesian2spherical, spherical2cartesian, cartesian2coords, coords2cartesian, spherical2coords, coords2spherical, getAngleSigned, getAngleUnsigned, projectVector, grassmann, qRotate, unit
 
 
 
@@ -74,29 +76,18 @@ class test_vector_util(unittest.TestCase):
 
 
     def test_sphere2cart_zeroradius(self):
-
-        inc = 0
-        az = 0
-        r = 0
-
-        assert_allclose(spherical2cartesian(inc, az, r), np.zeros(3, float), atol=1e-9)
+        assert_allclose(spherical2cartesian(inc=0, az=0, r=0), np.zeros(3, float), atol=1e-9)
 
     
-    def test_cart2coord(self):
+    def test_cartesian2coords(self):
 
-        latExp = pi / 6
-        longExp = -pi / 4
-        rExp = 1.0
+        lat, long = cartesian2coords(np.r_[sqrt(3/8), -sqrt(3/8), 0.5])
 
-        vec = rExp*np.r_[cos(latExp)*cos(longExp), cos(latExp)*sin(longExp), sin(latExp)]
-
-        lat, long = cartesian2coords(vec)
-
-        self.assertAlmostEqual(lat, latExp ,places=9)
-        self.assertAlmostEqual(long, longExp, places=9)
+        self.assertAlmostEqual(lat, pi / 6 ,places=9)
+        self.assertAlmostEqual(long, -pi / 4, places=9)
 
     
-    def test_cart2coord_nullvec(self):
+    def test_cartesian2coords_nullvec(self):
 
         lat, long = cartesian2coords(np.zeros(3, float))
 
@@ -104,18 +95,16 @@ class test_vector_util(unittest.TestCase):
         self.assertAlmostEqual(long, 0, places=9)
 
 
+    def test_coords2cartesian(self):
+        pass
+
+
     def test_sphere2coord(self):
 
-        inc = pi / 6
-        az = pi / 10
+        lat, long = spherical2coords(pi / 6, pi / 10)
 
-        latExp = pi / 3
-        longExp = pi / 10
-
-        lat, long = spherical2coords(inc, az)
-
-        self.assertAlmostEqual(lat, latExp, places=9)
-        self.assertAlmostEqual(long, longExp, places=9)
+        self.assertAlmostEqual(lat, pi / 3, places=9)
+        self.assertAlmostEqual(long, pi / 10, places=9)
 
 
     def test_sphere2coord_biginc(self):

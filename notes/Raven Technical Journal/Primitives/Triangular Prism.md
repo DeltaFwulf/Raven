@@ -38,6 +38,9 @@ The total tensor is expressed as:
 
 $$I = \rho\begin{bmatrix}F + G & 0 & 0\\0 & G + H & 0\\0 & 0 & F + H\end{bmatrix}$$
 
+
+- write out integral and method for calculation (triple integral, z limits as function of y)
+
 where the integrals F, G, and H represent x, y, and z moi contributions:
 
 $$ F = t\left[\frac{k_f - k_0}{3} \left(y_f^3 - y_0^3\right) + \frac{s_f - s_0}{4}\left(y_f^4 - y_0^4\right)\right]$$
@@ -64,5 +67,6 @@ This can be used to simplify several terms, for example:
 $$ \left(k_f - k_0\right)\left(y_f - y_0\right) = y_0\left(z_3 - z_1\right) $$
 $$ \left(s_f - s_0\right)\left(y_f^2 - y_0^2\right) = \left(z_1 - z_3\right)\left(y_f + y_0\right)$$
 
-Hence, the integrals can also be simplified:
+The constants of integration can be removed to use only the limits in the integrals:
+$$ F = \frac{t}{12}\left(z_1 - z_3\right)\left(3y_f^3 - y_0y_f^2 - y_0^2y_f - y_0^3\right) $$
 $$ H = \frac{t^3}{24}\left(z_1 - z_3\right)\left(y_f - y_0\right) $$

@@ -24,3 +24,8 @@ $$ \vec{v}_{rot} = \vec{\omega} \times \vec{r}$$
 The velocity of the object is then subtracted from this velocity for the relative velocity. It is important that the frame is kept consistent between the two velocities. For Raven, the PCNR frame is used, meaning that the velocity of the planet must be subtracted from the velocity of the object.
 $$ \vec{v}_{rel} = \vec{v}_{rot} - \vec{v}_{obj} $$
 It is important to remember that the result is the velocity of the air from the perspective of the vehicle. This was chosen as the majority of times this function is called will be for drag calculations; this gives the velocity vector in the same direction as the drag force. If this is not wanted, then the relative velocity will instead be changed to $\vec{v}_{rel} = \vec{v}_{obj} - \vec{v}_{rot}$ .
+
+
+## Rotate point on Planet into Orbital Plane
+
+- explain pre-rotation here

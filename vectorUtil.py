@@ -112,17 +112,6 @@ def projectVector(vecA:np.ndarray, vecB:np.ndarray, normal:bool) -> np.ndarray:
     else:
         raise ValueError
 
-    
-# def quaternion2euler(q:float, order:str='tait-bryan'):
-    
-#     if order=='tait-bryan':
-#         # flight dynamics convention (heading, pitch, bank)
-#         roll = atan2(2*(q[0]*q[1] + q[2]*q[3]), 1- 2*(q[1]**2 + q[2]**2))
-#         pitch = asin(2*(q[0]*q[2] - q[1]*q[3]))
-#         yaw = atan2(2*(q[0]*q[3] + q[1]*q[2]), 1 - 2*(q[2]**2 + q[3]**2))
-
-#     return roll, pitch, yaw
-
 
 def grassmann(qA:np.ndarray, qB:np.ndarray) -> np.ndarray:
     """Returns the inner product of two quaternions (similar to dot-product but with orthogonal vectors)"""

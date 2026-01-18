@@ -1,5 +1,4 @@
 import numpy as np
-from copy import deepcopy
 from math import sqrt
 
 from referenceFrame import ReferenceFrame
@@ -14,9 +13,11 @@ class Module(RigidBody):
     def __init__(self, primitives:dict, rootFrames:dict['ReferenceFrame']) -> None:
         
         self.primitives = primitives
-        self.rootFrames = rootFrames 
-        self.mass, self.com ,self. moi = self.calcInertial()
-
+        self.rootFrames = rootFrames
+        self.mass = 0.0
+        self.com = np.zeros(3, float)
+        self.moi = np.zeros((3, 3), float)
+        
 
     def calcInertial(self) -> tuple['float', 'np.ndarray', 'np.ndarray']:
 
@@ -60,16 +61,16 @@ class Fin(Module):
 
         # calculate inertial properties from newly created primitives
 
-        pass
-
-
+     
     def meshFin(self, pts:list['np.ndarray']) -> tuple['TriangularPrism']:
 
         tris = [] # store triples of points by index in this list
 
-        # create simple polygon
+        # split into monotonic polygons
 
-        # greedy algorithm to create triangles
+        # solve each polygon
+
+        # combine solutions
 
         return tris
 
