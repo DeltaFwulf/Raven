@@ -1,6 +1,6 @@
 This shape is the generalised form of the conic shape (we remove the assumption that the shape is solid, as in the [[Conic Full]] shape. The constraint placed on the internal profile of the object is that it must be definable by a line segment with a range of {$0, \check R(x)$} with its ends at {$x_0, x_f$} This prevents the shape from having negative volume. 
 
-## Mass
+# Mass
 The mass of the general conic shape is given by a boolean operation of two conic full shapes as:
 
 $$
@@ -11,7 +11,7 @@ which factorises to
 $$
 \frac{\pi\rho l}{3}\left((\hat{R}_f^2 - \check{R}_f^2) + (\hat{R}_0\hat{R}_f - \check{R}_0\check{R}_f) + (\hat{R}_0^2 - \check{R}_0^2)\right)
 $$
-## Centre of Mass
+# Centre of Mass
 
 The centre of mass of the object can be found similarly by sweeping an annulus from x = 0 to x = l:
 
@@ -24,7 +24,7 @@ $$
 
 \right)
 $$
-## Inertia Tensor
+# Moment of Inertia
 
 The inertia tensor can be calculated from two locations.
 
@@ -63,7 +63,7 @@ $$ $$
 $$
 ### $I_{yy}, I_{zz}$
 
-Similarly, from inspection of the inertia tensor of the conic full section, the derivation is equivalent to subtracting the smaller full conic from the larger conic, which is valid so long as the shapes have the same limits in x (we can choose these limits arbitrarily along the x axis). 
+Similarly, from inspection of the inertia tensor of the conic full section, the derivation is equivalent to subtracting the smaller full conic from the larger conic.
  $$I_{yy} = \rho(\hat A - \check A + \hat B - \check B)$$
 or more simply:
 
@@ -93,4 +93,8 @@ $$
 
 $x_0$ and $x_f$ are relative to the combined shape's centre of mass. As this shape is axisymmetric, we can also say that $I_{zz} = I_{yy}$.
 
-NOTE: in hindsight I'm pretty sure the x limits don't have to be the same at all...
+
+
+# A Method of Two Cones
+
+- using two cones, all properties may be found potentially more simply

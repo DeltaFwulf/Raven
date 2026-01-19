@@ -1,7 +1,7 @@
 import numpy as np
 from math import sin, cos, pi
 
-from vectorUtil import qRotate, grassmann, unit, projectVector, getAngleSigned
+from .vectorUtil import qRotate, grassmann, unit, projectVector, getAngleSigned
 
 
 
@@ -29,19 +29,19 @@ class ReferenceFrame():
         """A sequence of one or two named base vectors are used to define this frame's orientation.
            If the second vector is not supplied normal to the first, it is projected normal"""
         
+        if np.any(np.linalg.norm(vectors) == 0) or len(seq) != len(vectors) or len(seq) > 2: # cannot have zero length vectors or parallel
+            raise ValueError
+   
         self.origin = origin
         baseVecs = {'x':np.array([1,0,0], float), 'y':np.array([0,1,0], float), 'z':np.array([0,0,1], float)}
-        axis = unit(np.cross(baseVecs[seq[0]], vectors[0]))
-        ang = getAngleSigned(baseVecs[seq[0]], vectors[0], axis)
-        self.q = grassmann(np.r_[cos(ang / 2), sin(ang / 2)*axis], self.q)
+        axis = np.cross(baseVecs[seq[0]], vectors[0])
+
+        if np.linalg.norm(axis) > 0:
+            ang = getAngleSigned(baseVecs[seq[0]], vectors[0], axis)
+            self.q = grassmann(np.r_[cos(ang / 2), sin(ang / 2)*unit(axis)], self.q)
 
         if len(seq) > 1:
             vectors[1] = projectVector(vectors[1], vectors[0], normal=True)
-
-            if np.any(np.linalg.norm(vectors) == 0): # cannot have zero length vectors or parallel
-                raise ValueError
-            elif len(seq) > len(vectors):
-                raise ValueError # TODO: provide a useful note for why
 
             axis = qRotate(baseVecs[seq[0]], self.q)
             target = qRotate(baseVecs[seq[1]], self.q)

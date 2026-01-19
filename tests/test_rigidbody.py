@@ -6,8 +6,8 @@ from numpy.testing import assert_allclose
 from math import pi
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from rigidBody import RigidBody
-from referenceFrame import ReferenceFrame
+from raven.rigidBody import RigidBody
+from raven.referenceFrame import ReferenceFrame
 
 class RigidBodyTests(unittest.TestCase):
 

@@ -1,9 +1,8 @@
-from math import pi, atan2, sin, cos
+from math import pi, atan2
 import numpy as np
 from numpy.linalg import norm
 
-from materials import *
-from rigidBody import RigidBody
+from .rigidBody import RigidBody
 
 
 
@@ -323,10 +322,7 @@ class TriangularPrism(Primitive):
             F = h*thickness*(3*yf**3 - yo*yf**2 - yf*yo**2 - yo**3) / 12 # represents y contribution
             G = thickness*((kf**3 - ko**3)*(yf - yo) + 1.5*(sf*kf**2 - so*ko**2)*(yf**2 - yo**2) + (kf*sf**2 - ko*so**2)*(yf**3 - yo**3) + 0.25*(sf**3 - so**3)*(yf**4 - yo**4)) / 3 # represents z contribution
             H = h*thickness**3 *(yf - yo) / 24 # represents x contribution
-            
-            I[0, 0] = density*(F + G) # y, z
-            I[1, 1] = density*(H + G) # x, z
-            I[2, 2] = density*(H + F) # x, y
+            I = density*np.array([[F + G, 0, 0], [0, H + G, 0], [0, 0, F + H]], float)
 
             return m, com, I
         
@@ -344,40 +340,3 @@ class TriangularPrism(Primitive):
         self.mass, self.com, self.moi = solveLeftPoint([np.matmul(R[1:, 1:], pt) for pt in pts], density, thickness)                                            
         self.com = np.matmul(np.transpose(R), self.com)                                                                             
         self.moi = np.matmul(np.transpose(R), np.matmul(self.moi, R))
-
-        # if len(list(dict.fromkeys([pt[0] for pt in pts]))) == 3: # The triangle must be split
-
-        #     ptsOrd = [pts[o] for o in np.argsort(np.array([pt[0] for pt in pts], float))]
-        #     ptsOrd.append(np.array([ptsOrd[1][0], ptsOrd[0][1] + (ptsOrd[1][0] - ptsOrd[0][0])*(ptsOrd[2][1] - ptsOrd[0][1]) / (ptsOrd[2][0] - ptsOrd[0][0])], float))
-
-        #     if atan2(np.cross(ptsOrd[1] - ptsOrd[0], ptsOrd[2] - ptsOrd[1]), np.dot(ptsOrd[1] - ptsOrd[0], ptsOrd[2] - ptsOrd[1])) < 0:     # top peak case
-        #         pts_l = [ptsOrd[1], ptsOrd[0], ptsOrd[3]]
-        #         pts_r = [ptsOrd[1], np.array([2*ptsOrd[1][0] - ptsOrd[2][0], ptsOrd[2][1]], float), ptsOrd[3]]
-        #     else:                                                                                                   # bottom peak case
-        #         pts_l = [ptsOrd[3], ptsOrd[0], ptsOrd[1]]
-        #         pts_r = [ptsOrd[3], np.array([2*ptsOrd[1][0] - ptsOrd[2][0], ptsOrd[2][1]], float), ptsOrd[1]]
-
-        #     ml, xl, Il = solveLeftPoint(pts_l, density, thickness)
-        #     mr, xr, Ir = solveLeftPoint(pts_r, density, thickness)
-            
-        #     self.mass = ml + mr
-        #     self.com = (xl*ml + np.r_[xr[0], 2*ptsOrd[1][0] - xr[1], xr[2]]*mr) / self.mass
-        #     self.moi = np.zeros((3, 3), float)
-        #     self.moi[0, 0] = Il[0, 0] + ml*((xl[1] - self.com[1])**2 + (xl[2] - self.com[2])**2) + Ir[0, 0] + mr*((xr[1] - self.com[1])**2 + (xr[2] - self.com[2])**2)
-        #     self.moi[1, 1] = Il[1, 1] + ml*(xl[2] - self.com[2])**2 + Ir[1, 1] + mr*(xr[2] - self.com[2])**2
-        #     self.moi[2, 2] = Il[2, 2] + ml*(xl[1] - self.com[1])**2 + Ir[2, 2] + mr*(xr[1] - self.com[1])**2
-        
-        # else: # the triangle already contains a vertical line, no split necessary
-        #     y = [pt[0] for pt in pts]
-        #     y_common = [i for i in set(y) if y.count(i) > 1][0]
-        #     i_vert = [i for i, x in enumerate(y) if x == y_common]
-        #     i_mid = [i for i in [0, 1, 2] if i not in i_vert]
-        #     ind = [i_vert[0], i_mid, i_vert[1]] if pts[i_vert[0]][1] > pts[i_vert[1]][1] else [i_vert[1], i_mid, i_vert[0]]
-        #     pts_c = [pts[i] for i in ind]
-        #     flip = pts_c[1][0] > y_common
-
-        #     if flip:
-        #         pts_c[1][0] = 2*y_common - pts_c[1][0]
-
-        #     self.mass, xl, self.moi = solveLeftPoint(pts_c, density, thickness)
-        #     self.com = xl if not flip else np.r_[xl[0], 2*y_common - xl[1], xl[2]]

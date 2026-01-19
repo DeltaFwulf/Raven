@@ -6,13 +6,13 @@ import sys
 import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from vectorUtil import cartesian2spherical, spherical2cartesian, cartesian2coords, coords2cartesian, spherical2coords, coords2spherical, getAngleSigned, getAngleUnsigned, projectVector, grassmann, qRotate, unit
+from raven.vectorUtil import cartesian2spherical, spherical2cartesian, cartesian2coords, coords2cartesian, spherical2coords, coords2spherical, getAngleSigned, getAngleUnsigned, projectVector, grassmann, qRotate, unit
 
 
 
 class test_vector_util(unittest.TestCase):
 
-    # coordinate transformations
+
     def test_cart2sphere(self):
 
         incExp = pi / 6
@@ -53,7 +53,7 @@ class test_vector_util(unittest.TestCase):
         self.assertEqual(az, 0)
 
 
-    def test_sphere2cart(self):
+    def test_spherical2cartesian(self):
 
         inc = pi / 4
         az = pi / 6
@@ -66,7 +66,7 @@ class test_vector_util(unittest.TestCase):
         assert_allclose(spherical2cartesian(inc, az, r), vecExp, atol=1e-9)
 
     
-    def test_sphere2cart_biginc(self):
+    def test_spherical2cartesian_biginc(self):
         
         inc = 5*pi / 4
         az = pi / 4
@@ -75,7 +75,7 @@ class test_vector_util(unittest.TestCase):
         assert_allclose(spherical2cartesian(inc, az, r), vecExp, atol=1e-9)
 
 
-    def test_sphere2cart_zeroradius(self):
+    def test_spherical2cartesian_zeroradius(self):
         assert_allclose(spherical2cartesian(inc=0, az=0, r=0), np.zeros(3, float), atol=1e-9)
 
     
@@ -96,7 +96,26 @@ class test_vector_util(unittest.TestCase):
 
 
     def test_coords2cartesian(self):
-        pass
+        
+        lat = pi / 3
+        long = pi / 6
+        r = 1.0
+
+        x = cos(lat)*cos(long)
+        y = cos(lat)*sin(long)
+        z = sin(lat)
+        expected = r*np.r_[x, y, z]
+
+        assert_allclose(coords2cartesian(lat, long, r), expected, atol=1e-9)
+
+
+    def test_coords2cartesian_bigLat(self):
+        
+        lat = 5*pi / 4
+        az = pi / 4
+        r = 1
+        vecExp = np.r_[cos(-pi / 4)*cos(5*pi / 4), cos(-pi / 4)*sin(5*pi / 4), sin(-pi / 4)]
+        assert_allclose(spherical2cartesian(lat, az, r), vecExp, atol=1e-9)
 
 
     def test_sphere2coord(self):

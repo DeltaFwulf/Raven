@@ -62,3 +62,8 @@ By doing so, the atmosphere model can return any value within 1 millisecond for 
 ![[interpolation.png]]
 
 
+# Using a Quartic
+
+- replace this method with quartic solution
+
+

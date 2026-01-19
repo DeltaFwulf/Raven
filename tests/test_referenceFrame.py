@@ -8,8 +8,8 @@ import sys
 import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from referenceFrame import ReferenceFrame
-from vectorUtil import grassmann, qRotate
+from raven.referenceFrame import ReferenceFrame
+from raven.vectorUtil import grassmann, qRotate
 
 
 # NOTE: to trust these test results, vector utils test cases must all have passed first since last change
@@ -96,19 +96,19 @@ class FrameTests(unittest.TestCase):
             frame.placeAxisAngle(axis=axis, ang=ang, origin=origin)
 
 
-    def testBaseVecsSingle(self):
+    def test_placeBaseVectors_oneVector(self):
 
         frame = ReferenceFrame()
         frame.placeBaseVectors(seq = ['x'], vectors=[np.array([cos(pi / 4), 0, sin(pi / 4)], float)])
 
-        expectedQ = np.r_[cos(pi / 8), 0, -sin(pi / 8), 0]
-        expectedOrigin = np.zeros(3, float)
+        q_exp = np.r_[cos(pi / 8), 0, -sin(pi / 8), 0]
+        o_exp = np.zeros(3, float)
 
-        assert_allclose(frame.q, expectedQ, atol=1e-9)
-        assert_allclose(frame.origin, expectedOrigin, atol=1e-9)
+        assert_allclose(frame.q, q_exp, atol=1e-9)
+        assert_allclose(frame.origin, o_exp, atol=1e-9)
 
     
-    def testBaseVecsDoubleNormal(self):
+    def test_placeBaseVectors_twoVectors(self):
 
         frame = ReferenceFrame()
 
@@ -116,15 +116,25 @@ class FrameTests(unittest.TestCase):
         vecB = np.array([1, 0, 0], float)
 
         frame.placeBaseVectors(seq = ['x', 'y'], vectors=[vecA, vecB])
+   
+        assert_allclose(frame.q, np.r_[0, np.array([cos(pi/4), sin(pi/4), 0], float)], atol=1e-9)
+        assert_allclose(frame.origin, np.zeros(3, float), atol=1e-9)
+
+
+    def test_placeBaseVectors_parallelToTarget(self):
         
-        expectedQ = np.r_[cos(pi / 2), sin(pi / 2)*np.array([cos(pi/4), sin(pi/4), 0], float)]
-        expectedOrigin = np.zeros(3, float)
+        frame = ReferenceFrame()
 
-        assert_allclose(frame.q, expectedQ, atol=1e-9)
-        assert_allclose(frame.origin, expectedOrigin, atol=1e-9)
+        vecA = np.array([1, 0, 0], float)
+        vecB = np.array([0, 1, 0], float)
 
-    
-    def testBaseVecsDoubleAcute(self):
+        frame.placeBaseVectors(seq=['x', 'y'], vectors=[vecA, vecB])
+
+        assert_allclose(frame.q, np.array([1, 0, 0, 0], float), atol=1e-9)
+        assert_allclose(frame.origin, np.zeros(3, float), atol=1e-9)
+
+
+    def test_placeBaseVectors_acuteAngle(self):
 
         frame = ReferenceFrame()
 
@@ -133,7 +143,7 @@ class FrameTests(unittest.TestCase):
 
         frame.placeBaseVectors(seq=['x','y'], vectors=[vecA, vecB])
         
-        expectedQ = np.r_[cos(pi / 2), sin(pi / 2)*np.array([cos(pi/4), sin(pi/4), 0], float)]
+        expectedQ = np.r_[0, np.array([cos(pi/4), sin(pi/4), 0], float)]
         expectedOrigin = np.zeros(3, float)
 
         assert_allclose(frame.q, expectedQ, atol=1e-9)

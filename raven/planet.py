@@ -5,7 +5,6 @@ from numpy.linalg import norm
 
 from vectorUtil import cartesian2coords, coords2cartesian, unit, rotateAxisAngle
 from referenceFrame import ReferenceFrame
-from atmosphere.COESA76 import coesa76
 
 class Planet():
 
@@ -143,8 +142,8 @@ class Earth(Planet):
         self.buildFrames(x0, az0)
 
 
-    def getAtmoProperties(self, z:float, props:list['str']=['T', 'p', 'rho']) -> dict:
-        return coesa76(z_m=z, outputs=props, mode='quick')
+    # def getAtmoProperties(self, z:float, props:list['str']=['T', 'p', 'rho']) -> dict:
+    #     return coesa76(z_m=z, outputs=props, mode='quick')
     
 
 

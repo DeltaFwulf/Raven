@@ -77,19 +77,20 @@ def spherical2coords(inc:float, az:float) -> tuple[float, float]:
     return pi / 2 - inc, az
 
 
-def getAngleSigned(vecA:np.ndarray, vecB:np.ndarray, normal:np.ndarray) -> float:# TODO: consider removing normal, if vectors must be coplanar, direction (so normal) given by order of inputs
+def getAngleSigned(vecA:np.ndarray, vecB:np.ndarray, normal:np.ndarray) -> float:
     """Gets the angle from vecA to vecB in the correct direction, given that they both lie on a known plane."""
-    # check that the normal vector supplied is actually normal
-    normal = unit(normal)
-    rnorm = np.cross(vecA, vecB)
-    sinAng = np.dot(normal, rnorm)
 
-    if abs(abs(sinAng) - norm(rnorm)) > 1e-15: # tolerance accounts for floating point error
-        raise ValueError
-    elif norm(vecA) == 0 or norm(vecB) == 0: # XXX: it may be slightly faster to just sum vec**2 to save sqrt
+    if norm(vecA) == 0 or norm(vecB) == 0 or norm(normal) == 0:
         raise ValueError
     
-    return atan2(sinAng, np.dot(vecA, vecB))
+    vecA /= norm(vecA)
+    vecB /= norm(vecB)
+    normal /= norm(normal)
+    
+    if norm((vecA + vecB)*normal) > 1e-12: # vectors must be coplanar and no vector may have zero-length
+        raise ValueError
+
+    return atan2(np.dot(np.cross(vecA, vecB), normal), np.dot(vecA, vecB))
 
 
 def getAngleUnsigned(vecA:np.array, vecB:np.array) -> float:

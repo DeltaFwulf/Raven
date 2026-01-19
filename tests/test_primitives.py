@@ -6,8 +6,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from primitives import Conic, RectangularPrism, TriangularPrism
-from referenceFrame import ReferenceFrame
+from raven.primitives import Conic, RectangularPrism, TriangularPrism
 
 
 
