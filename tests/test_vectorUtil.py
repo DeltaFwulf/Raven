@@ -316,7 +316,7 @@ class test_vector_util(unittest.TestCase):
         
         assert_allclose(qRotate(vec, q), np.array([1, -1, -1], float), atol=1e-9)
 
-
+    
     def test_qRotate_nullvec(self):
 
         vec = np.zeros(3, float)

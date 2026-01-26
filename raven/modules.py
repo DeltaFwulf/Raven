@@ -53,7 +53,13 @@ class Fin(Module):
 
         tris = [] # store triples of points by index in this list
 
+        
+
+
         # find monotonic polygons
+
+        # do any adjacent point lines intersect the current horizontal line 
+        # as it sweeps down the shape? (if more than 2 intersections, a split is required)
 
 
         # add a meshing file with 2d (and maybe later 3d) meshing algorithms

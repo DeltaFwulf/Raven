@@ -311,7 +311,6 @@ class TriangularPrism(Primitive):
             pts = [pt - com[1:] for pt in pts] # change reference to principal axes
             yo = pts[1][0]
             yf = pts[0][0]
-            I = np.zeros((3, 3), float)
             h = pts[0][1] - pts[2][1]
             
             sf = (pts[0][1] - pts[1][1]) / (yf - yo)
