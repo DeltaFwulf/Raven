@@ -8,7 +8,7 @@
         "type": "tabs",
         "children": [
           {
-            "id": "e18913eadc89f65f",
+            "id": "784f5f1b67be818e",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -20,23 +20,8 @@
               "icon": "lucide-file",
               "title": "Triangular Prism"
             }
-          },
-          {
-            "id": "d7e3940f023aadfd",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Raven Technical Journal/Planet Definition.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Planet Definition"
-            }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -179,14 +164,14 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "d7e3940f023aadfd",
+  "active": "784f5f1b67be818e",
   "lastOpenFiles": [
-    "Raven Technical Journal/Reference Frames.md",
-    "Raven Technical Journal/Primitives/Conic Generalised.md",
-    "Raven Technical Journal/Primitives/Triangular Prism.md",
     "Raven Technical Journal/Earth Atmosphere Model.md",
-    "Raven Technical Journal/Planet Definition.md",
     "Raven Technical Journal/Overview.md",
+    "Raven Technical Journal/Planet Definition.md",
+    "Raven Technical Journal/Reference Frames.md",
+    "Raven Technical Journal/Primitives/Triangular Prism.md",
+    "Raven Technical Journal/Primitives/Conic Generalised.md",
     "archive/Rocket Definition/Primitives/Conic Full.md",
     "archive/Rocket Definition/Primitives/Primitives.md",
     "archive/Rocket Definition/Primitives/Custom Primitive.md",
