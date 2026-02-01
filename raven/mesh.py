@@ -2,97 +2,135 @@ import numpy as np
 
 
 
-def mesh2d(pts:list['np.ndarray']) -> list['int']:
-    """Calculates a triangular mesh for a polygon defined by adjacent points"""
+def mesh2d(pts:list[np.ndarray]) -> list[int]:
+    """Calculates a triangular mesh for a polygon defined by adjacent points, in ascending order for CCW representation."""
+  
+    shapes = []
+    newShapes = [[i for i in range(len(pts))],]
 
-    monotonics = []
+    # using a global points set, shapes are represented by their set of indices within the point set
+    while len(newShapes) != len(shapes):
+
+        shapes = newShapes
+        newShapes = []
+
+        for shape in shapes:
+            newShapes += splitShape(pts=pts, ind=shape)
+ 
+    # triangulate each monotonic polygon and combine meshes
     tris = []
-
-    # define sweep bounds
-    xMin = 0
-    xMax = 0
-    yMin = 0
-    yMax = 0
-
-    for pt in pts:
-        xMin = min(pt[0], xMin)
-        xMax = max(pt[0], xMax)
-        yMin = min(pt[1], yMin)
-        yMax = max(pt[1], yMax)
-
-    sweeper = [np.array([xMin, yMax], float), np.array([xMax, yMax], float)]
-
-    # for each point's y, check for intersections between all polygon lines
-    
-
-    # if this is detected, the shape must be split to make monotonic
-    # at which nodes should the shape be split?
-
-    # start sweep for truncated shape from new top
-
-    # triangulate each monotonic polygon
-    tris = []
-    for m in monotonics:
+    for m in shapes:
         tris += triangulate(m)
 
     return tris
 
 
 
-# TODO: solve for vertical lines (include a unit test)
-def intersects(pts:list[np.ndarray], ia:list[int], ib:list[int]) -> bool:
-    """Given a set of points and two sets of connections (expressed by index), 
-       calculates whether at least one intersection exists between the two sets of lines."""
+def splitShape(pts_global:list[np.ndarray], ind:list[int]) -> list[list[int]]:
+    """Given some polygon, splits the shape into a monotonic subshape and remaining shapes, returning the new set of shapes.
+       If the shape is already monotonic, returns only the input shape."""
     
-    for a in range(len(ia)):
-        for b in range(len(ib)):
+    # Create the subset of points and edges within this shape
+    N = len(ind)
+    edges = [[ind[i], ind[(i + 1) % N]] for i in range(N)]
+    corners = [pts_global[i] for i in ind]
+ 
+    x0 = 0
+    xf = 0
+    for corner in corners: # sweep line width (x)
+        x0 = min(corner[0], x0)
+        xf = max(corner[0], xf)
+
+    cy = np.argsort([cn[1] for cn in corners])
+    subs = []
+    
+    for i in range(N):
+
+        c = cy[i]
+        pt_set = corners + [np.array([x0, corners[c][1]], float), np.array([xf, corners[c][1]], float)]
+        intersectingEdges = intersects(pts=pt_set, set_a = [[-2, -1],], set_b=edges)
+
+        if len(intersectingEdges) > 2: # shape is not monotonic, split along all previous points and current point
+            
+            pt_left = cy[i - 1]
+            pt_right = intersectingEdges[-1][1]
+            
+            if len(intersects(pts=corners, set_a=[[c, pt_right],], set_b=edges)) > 0:
+                pt_right = intersectingEdges[-1][0]
+                # FIXME: catch double block case
+
+            subs.append([u for u in range(pt_left)] + [u for u in range(pt_left, pt_right)] + [u for u in range(pt_right, -1)]) # upper shape
+            subs.append([u for u in range(pt_left, c)]) # left side bottom shape
+            subs.append([u for u in range(pt_right, -1)]) # right side bottom shape
+
+        else:
+            subs.append(edges)
+
+    return subs
+
+    
+
+def intersects(pts:list[np.ndarray], set_a:list[int], set_b:list[int]) -> list[list[int]]:
+    """Given a set of points and two sets of edges (expressed by point index),
+       return the subset of edges in b that intersect with at least one edge in a."""
+    
+    intersections = []
+    
+    for a in set_a:
+        for b in set_b:
 
             la = a[0] if pts[a[0]][0] < pts[a[1]][0] else a[1]
-            ra = a[1] if a == a[0] else a[0]
+            ra = a[1] if la == a[0] else a[0]
             lb = b[0] if pts[b[0]][0] < pts[b[1]][0] else b[1]
-            rb = b[1] if b == b[0] else b[0]
+            rb = b[1] if lb == b[0] else b[0]
 
-            if ra < lb or la > rb: # overlap cannot occur
+            if pts[ra][0] < pts[lb][0] or pts[la][0] > pts[rb][0]: # lines cannot cross
                 continue
 
-            il = max(la, lb)
-            ir = min(ra, rb)
+            # define overlap boundary
+            xla = pts[la][0]
+            xlb = pts[lb][0]
+            xl = max(xla, xlb)
 
-            xl = pts[il][0]
-            xr = pts[ir][0]
-      
+            xra = pts[ra][0]
+            xrb = pts[rb][0]
+            xr = min(xra, xrb)
+
             if pts[la][0] == pts[ra][0]:
                 pla = pts[la]
                 pra = pts[ra]
 
             else:
-                pla = pts[la] if il == la else pts[la] + (pts[ra] - pts[la])*(pts[la][0] - xl) / (xr - xl)
-                pra = pts[ra] if ir == ra else pts[ra] + (pts[ra] - pts[la])*(pts[ra][0] - xr) / (xr - xl)
-            
+                pla = pts[la] if xl == xla else pts[la] + (pts[ra] - pts[la])*(pts[ra][0] - xl) / (pts[ra][0] - pts[la][0])
+                pra = pts[la] if xr == xra else pts[ra] + (pts[la] - pts[ra])*(pts[la][0] - xr) / (pts[la][0] - pts[ra][0])
+
             if pts[lb][0] == pts[rb][0]:
                 plb = pts[lb]
                 prb = pts[rb]
             
             else:
-                plb = pts[lb] if il == lb else pts[lb] + (pts[rb] - pts[lb])*(pts[lb][0] - xl) / (xr - xl)
-                prb = pts[ra] if ir == rb else pts[rb] + (pts[rb] - pts[lb])*(pts[rb][0] - xr) / (xr - xl)
+                plb = pts[lb] if xl == xlb else pts[lb] + (pts[rb] - pts[lb])*(pts[rb][0] - xl) / (pts[rb][0] - pts[lb][0])
+                prb = pts[rb] if xr == xrb else pts[rb] + (pts[lb] - pts[rb])*(pts[lb][0] - xr) / (pts[lb][0] - pts[rb][0])
 
             dl = pla - plb
             dr = pra - prb
             
             if np.dot(dl, dr) <= 0:
-                return True
+                intersections.append(b)
             
-    return False
+    return intersections
 
 
 
-# TODO: determine if ccw always works, or if descending monotonic height required
 def triangulate(pts:list[np.ndarray]) -> tuple[int]:
     """Given a monotonic polygon, split into triangles."""
 
     N = len(pts)
     edges = [[i, (i + 1) % N] for i in range(N)] # stores edges of polygon perimeter
+    
+    if N == 3: # the polygon is already a triangle
+        return [edges[i][0] for i in range(N)]
+    
     branches = [] # stores non-adjacent connections
     dead = [] # corners are 'dead' if they can no longer form connections
     tris = []
@@ -108,7 +146,7 @@ def triangulate(pts:list[np.ndarray]) -> tuple[int]:
 
             branch = [i, (i + j) % N]
 
-            if not intersects(pts=pts, ia=branch, ib=edges + branches):
+            if intersects(pts=pts, set_a=branch, set_b=edges + branches) == 0:
                 branches.insert(-2, branch)
                 cons.append(branch)
 

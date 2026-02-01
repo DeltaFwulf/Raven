@@ -38,34 +38,10 @@ class Fin(Module):
 
     def __init__(self, profile:str, thickness:float, **kwargs) -> None:
 
-        # give a higher level geometry input method (profile, dims)
-        pts = []
-
-        # calculate the triangular prism mesh
-        self.buildMesh(pts)
-
-        # build and solve inertial properties of prisms
-
-        # combine for total inertial properties
+        pass
 
      
-    def buildMesh(self, pts:list['np.ndarray']) -> tuple['list']:
 
-        tris = [] # store triples of points by index in this list
-
-        
-
-
-        # find monotonic polygons
-
-        # do any adjacent point lines intersect the current horizontal line 
-        # as it sweeps down the shape? (if more than 2 intersections, a split is required)
-
-
-        # add a meshing file with 2d (and maybe later 3d) meshing algorithms
-        # split into make monotonic, choose next point, etc.
-
-        return tuple(tris)
 
 
 
