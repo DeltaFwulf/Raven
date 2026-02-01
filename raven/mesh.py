@@ -1,5 +1,5 @@
 import numpy as np
-
+from collections import OrderedDict
 
 
 def mesh2d(pts:list[np.ndarray]) -> list[int]:
@@ -30,6 +30,10 @@ def splitShape(pts_global:list[np.ndarray], ind:list[int]) -> list[list[int]]:
     """Given some polygon, splits the shape into a monotonic subshape and remaining shapes, returning the new set of shapes.
        If the shape is already monotonic, returns only the input shape."""
     
+    # FIXME: only check edges that are at or below the point in question
+    # FIXME: do not count non-monotonic if any line is horizontal (this will fail currently)
+
+
     # Create the subset of points and edges within this shape
     N = len(ind)
     edges = [[ind[i], ind[(i + 1) % N]] for i in range(N)]
@@ -101,16 +105,16 @@ def intersects(pts:list[np.ndarray], set_a:list[int], set_b:list[int]) -> list[l
                 pra = pts[ra]
 
             else:
-                pla = pts[la] if xl == xla else pts[la] + (pts[ra] - pts[la])*(pts[ra][0] - xl) / (pts[ra][0] - pts[la][0])
-                pra = pts[la] if xr == xra else pts[ra] + (pts[la] - pts[ra])*(pts[la][0] - xr) / (pts[la][0] - pts[ra][0])
-
+                pla = pts[la] if xl == xla else pts[la] + (pts[ra] - pts[la])*(xl - xla) / (xra - xla)
+                pra = pts[ra] if xr == xra else pts[ra] + (pts[la] - pts[ra])*(xr - xra) / (xla - xra)
+    
             if pts[lb][0] == pts[rb][0]:
                 plb = pts[lb]
                 prb = pts[rb]
             
             else:
-                plb = pts[lb] if xl == xlb else pts[lb] + (pts[rb] - pts[lb])*(pts[rb][0] - xl) / (pts[rb][0] - pts[lb][0])
-                prb = pts[rb] if xr == xrb else pts[rb] + (pts[lb] - pts[rb])*(pts[lb][0] - xr) / (pts[lb][0] - pts[rb][0])
+                plb = pts[lb] if xl == xlb else pts[lb] + (pts[rb] - pts[lb])*(xl - xlb) / (xrb - xlb)
+                prb = pts[rb] if xr == xrb else pts[rb] + (pts[lb] - pts[rb])*(xr - xrb) / (xlb - xrb)
 
             dl = pla - plb
             dr = pra - prb
@@ -122,7 +126,7 @@ def intersects(pts:list[np.ndarray], set_a:list[int], set_b:list[int]) -> list[l
 
 
 
-def triangulate(pts:list[np.ndarray]) -> tuple[int]:
+def triangulate(pts:list[np.ndarray]) -> tuple[list[int]]:
     """Given a monotonic polygon, split into triangles."""
 
     N = len(pts)
@@ -136,22 +140,20 @@ def triangulate(pts:list[np.ndarray]) -> tuple[int]:
     tris = []
 
     for i in range(N):
-
         cons = [edges[i], edges[i - 1]]
         
-        for j in range(1, N - 1):
+        for j in [a % N for a in range(i + 2, i + N - 1)]:
 
             if j in dead:
                 continue
 
-            branch = [i, (i + j) % N]
+            branch = [i, j]
 
-            if intersects(pts=pts, set_a=branch, set_b=edges + branches) == 0:
-                branches.insert(-2, branch)
-                cons.append(branch)
-
-            for k in range(i, (i + N) % N): # TODO: decide if this is worth doing, and cross over point when to skip
+            if len(intersects(pts=pts, set_a=[branch,], set_b=edges + branches)) == 4:
+                branches.append(branch)
+                cons.insert(-1, branch)
                 
+            for k in [(i + n) % N for n in range(N)]:
                 inTri = False
                 inBranch = False
 
@@ -165,14 +167,28 @@ def triangulate(pts:list[np.ndarray]) -> tuple[int]:
                         inBranch = True
                         break
                 
-                if inTri and not inBranch:
+                if inTri and not inBranch and k not in dead:
                     dead.append(k)
 
-        for j in range(len(cons) - 1): # form triangles from consecutive branches
-            b3 = [cons[j][1], cons[j + 1][1]]
-            if b3 not in branches and [b3[1], b3[0]] not in branches:
-                branches.append(b3)
-           
-            tris.append((i, b3[0], b3[1]))
+        if len(cons) < 3:
+            continue
 
-    return tris
+        for j in range(len(cons) - 1): # form triangles from consecutive branches
+
+            adj = cons[j] + cons[j + 1] # adjacent connections
+            b3 = [p for p in adj if adj.count(p) == 1]
+
+            if (b3 not in branches) and (b3 not in edges) and ([b3[1], b3[0]] not in branches) and ([b3[1], b3[0]] not in edges):
+                branches.append(b3)
+
+            newTri = (i, b3[0], b3[1])
+            triIsNew = True
+            for tri in tris:
+                if all(k in tri for k in newTri):
+                    triIsNew = False
+                    break
+
+            if triIsNew:
+                tris.append(newTri)
+
+    return tuple(tris)

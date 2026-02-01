@@ -42,9 +42,9 @@ class Test_intersects(unittest.TestCase):
         
         pts = [np.array([0, 0], float), np.array([1, 0], float), np.array([1, 1], float)]
         set_a = [[0, 1],]
-        set_b = [[0, 2], [1, 2]]
+        set_b = [[1, 2],]
 
-        self.assertSequenceEqual(intersects(pts=pts, set_a=set_a, set_b=set_b), [[0, 2],])
+        self.assertSequenceEqual(intersects(pts=pts, set_a=set_a, set_b=set_b), [[1, 2],])
 
 
     def test_sameLine(self): # a line intersects with itself
@@ -64,6 +64,17 @@ class Test_intersects(unittest.TestCase):
 
         self.assertSequenceEqual(intersects(pts=pts, set_a=set_a, set_b=set_b), [[2, 3], [2, 3]])
 
+
+
+class Test_triangulate(unittest.TestCase):
+
+    def test_nominal(self): # triangulate a square
+
+        pts = [np.array([0, 0], float), np.array([1, 0], float), np.array([1, 1], float), np.array([0, 1], float)]
+        
+        expected = ((0, 1, 2), (0, 2, 3))
+
+        self.assertSequenceEqual(triangulate(pts), expected)
 
 
 if __name__ == '__main__':
