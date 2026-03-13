@@ -27,5 +27,3 @@ $$\Delta_l = (0, y_a(x_l) - y_b(x_l))$$
 $$\Delta_r = (0, y_a(x_r) - y_b(x_r))$$
 
 If the lines do not intersect, then over the overlap boundary, one line must stay either above or below the other without crossing. Therefore, the dot product between the two difference vectors must be > 0, as they are parallel vectors. If the lines touch at exactly the boundary, one difference vector will be 0. Otherwise, the vectors will be facing opposite directions, giving a negative dot product. Therefore, lines intersect if $\Delta_a \cdot \Delta_b \le 0$.
-
-

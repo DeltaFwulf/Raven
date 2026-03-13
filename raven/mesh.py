@@ -1,5 +1,5 @@
 import numpy as np
-from collections import OrderedDict
+
 
 
 def mesh2d(pts:list[np.ndarray]) -> list[int]:
@@ -15,64 +15,95 @@ def mesh2d(pts:list[np.ndarray]) -> list[int]:
         newShapes = []
 
         for shape in shapes:
-            newShapes += splitShape(pts=pts, ind=shape)
+            newShapes += splitShape(pts=pts, c=shape)
  
     # triangulate each monotonic polygon and combine meshes
     tris = []
     for m in shapes:
         tris += triangulate(m)
 
-    return tris
+    return tuple(tris)
 
 
 
-def splitShape(pts_global:list[np.ndarray], ind:list[int]) -> list[list[int]]:
+def splitShape(pts_global:list[np.ndarray], c:list[int]) -> list[list[int]]:
     """Given some polygon, splits the shape into a monotonic subshape and remaining shapes, returning the new set of shapes.
        If the shape is already monotonic, returns only the input shape."""
     
-    # FIXME: only check edges that are at or below the point in question
-    # FIXME: do not count non-monotonic if any line is horizontal (this will fail currently)
+    # c is the set of points, counterclockwise from the start point.
+    N = len(c)
+    pts = [pts_global[i] for i in c]
+    
+    cy = np.flip(np.argsort([float(pt[1]) for pt in pts])) # the order in which to access c array to give descending y values of points in sub shape
+    edges = [[c[i], c[(i + 1) % N]] for i in range(N)]
+    
+    x0 = pts[0][0] # ensures the bounds are contained within the shape's true bounds (not strictly necessary tbh) (learned from drawFrames)
+    xf = pts[0][0]
+    for pt in pts: # sweep line width (x)
+        x0 = min(pt[0], x0)
+        xf = max(pt[0], xf)
 
-
-    # Create the subset of points and edges within this shape
-    N = len(ind)
-    edges = [[ind[i], ind[(i + 1) % N]] for i in range(N)]
-    corners = [pts_global[i] for i in ind]
- 
-    x0 = 0
-    xf = 0
-    for corner in corners: # sweep line width (x)
-        x0 = min(corner[0], x0)
-        xf = max(corner[0], xf)
-
-    cy = np.argsort([cn[1] for cn in corners])
-    subs = []
+    subshapes = []
     
     for i in range(N):
 
-        c = cy[i]
-        pt_set = corners + [np.array([x0, corners[c][1]], float), np.array([xf, corners[c][1]], float)]
-        intersectingEdges = intersects(pts=pt_set, set_a = [[-2, -1],], set_b=edges)
+        ky = cy[i]
+        y = pts[ky][1]
+
+        edges_low = []
+        for edge in edges:
+            if pts[edge[0]][1] < y or pts[edge[1]][1] < y:
+                edges_low.append(edge)
+
+        pts_sweep = pts_global + [np.array([x0, y], float), np.array([xf, y], float)]
+        intersectingEdges = intersects(pts=pts_sweep, set_a=[[-2, -1],], set_b=edges_low)
 
         if len(intersectingEdges) > 2: # shape is not monotonic, split along all previous points and current point
             
-            pt_left = cy[i - 1]
-            pt_right = intersectingEdges[-1][1]
-            
-            if len(intersects(pts=corners, set_a=[[c, pt_right],], set_b=edges)) > 0:
-                pt_right = intersectingEdges[-1][0]
-                # FIXME: catch double block case
+            l0 = c[ky]
+            r0 = c[ky]
 
-            subs.append([u for u in range(pt_left)] + [u for u in range(pt_left, pt_right)] + [u for u in range(pt_right, -1)]) # upper shape
-            subs.append([u for u in range(pt_left, c)]) # left side bottom shape
-            subs.append([u for u in range(pt_right, -1)]) # right side bottom shape
+            lf = l0 - 2
+            rf = r0 + 2
 
-        else:
-            subs.append(edges)
+            # one direction must join a point with higher index (c) and the other lower index (c) than ky
+            # target is the next value above c[ky] that is lower in cy
+            leftConnected = False
+            rightConnected = False
 
-    return subs
+            while not leftConnected:
+                for j in range(l0 - 2, -1, -1):
+                    if cy[j] < ky:
+                        lf = j
 
-    
+                if len(intersects(pts=pts_global, set_a=[[l0, lf],], set_b=edges)) == 4:
+                    leftConnected = True
+                else:
+                    l0 -= 1
+
+            while not rightConnected:
+                for j in range(l0 + 2, N):
+                    if cy[j] < ky:
+                        rf = j
+
+                if len(intersects(pts=pts_global, set_a=[[r0, rf],], set_b=edges)) == 4:
+                    rightConnected = True
+                else:
+                    r0 += 1
+
+            # uppper shape ########################################################################################################
+            subshapes.append([lf,] + [u for u in range(l0, r0 + 1)] + [u % N for u in range(rf, N + lf)])
+            subshapes.append([u for u in range(lf, l0 + 1)])
+            subshapes.append([u for u in range(r0, rf + 1)])
+        
+            return subshapes # only make the split once per function run
+
+    if subshapes == []:
+        subshapes.append(c)
+
+    return subshapes
+
+        
 
 def intersects(pts:list[np.ndarray], set_a:list[int], set_b:list[int]) -> list[list[int]]:
     """Given a set of points and two sets of edges (expressed by point index),
@@ -126,7 +157,7 @@ def intersects(pts:list[np.ndarray], set_a:list[int], set_b:list[int]) -> list[l
 
 
 
-def triangulate(pts:list[np.ndarray]) -> tuple[list[int]]:
+def triangulate(pts:list[np.ndarray]) -> list[list[int]]:
     """Given a monotonic polygon, split into triangles."""
 
     N = len(pts)
@@ -191,4 +222,4 @@ def triangulate(pts:list[np.ndarray]) -> tuple[list[int]]:
             if triIsNew:
                 tris.append(newTri)
 
-    return tuple(tris)
+    return tris

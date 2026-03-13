@@ -72,9 +72,52 @@ class Test_triangulate(unittest.TestCase):
 
         pts = [np.array([0, 0], float), np.array([1, 0], float), np.array([1, 1], float), np.array([0, 1], float)]
         
-        expected = ((0, 1, 2), (0, 2, 3))
+        expected = [(0, 1, 2), (0, 2, 3)]
 
         self.assertSequenceEqual(triangulate(pts), expected)
+
+
+
+class Test_split(unittest.TestCase):
+
+    def test_nosplit(self):
+        pts = [np.array([1, 5], float), np.array([0, 3], float), np.array([0, 1], float), np.array([1, 0], float), np.array([2, 2], float), np.array([2, 4], float)]
+        c = [0, 1, 2, 3, 4, 5]
+
+        out = splitShape(pts_global=pts, c=c)
+
+        self.assertEqual(len(out), 1)
+        self.assertSequenceEqual(out, [c,])
+
+
+    def test_inflection(self):
+        pts = [np.array([1, 4], float), np.array([0, 2], float), np.array([0.5, 2.5], float), np.array([1, 0], float), np.array([2, 3], float)]
+        c = [0, 1, 2, 3, 4]
+
+        out = splitShape(pts_global=pts, c=c)
+
+        self.assertEqual(len(out), 3)
+        self.assertSequenceEqual(out, [[0, 2, 4], [0, 1, 2], [2, 3, 4]])
+
+
+    def test_horizontal(self): # horizontal lines should not incur a split
+        
+        pts = [np.array([0, 0], float), np.array([1, 0], float), np.array([1, 1], float), np.array([0, 1], float)]
+        c = [0, 1, 2, 3]
+
+        out = splitShape(pts_global=pts, c=c)
+
+        self.assertEqual(len(out), 1)
+        self.assertSequenceEqual(out, [c,])
+
+
+
+class Test_mesh2d(unittest.TestCase):
+
+    def meshSquare(self):
+        
+        pts = [np.array([0, 0], float), np.array([])]
+
 
 
 if __name__ == '__main__':
