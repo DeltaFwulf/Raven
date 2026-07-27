@@ -1,56 +1,41 @@
 {
   "main": {
-    "id": "4e990cfba13a2a0f",
+    "id": "6e895423975b0283",
     "type": "split",
     "children": [
       {
-        "id": "de568b162abcbdc9",
+        "id": "4fd199a8ea20eaf6",
         "type": "tabs",
         "children": [
           {
-            "id": "e18913eadc89f65f",
+            "id": "2140b08db0d47342",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Raven Technical Journal/Primitives/Triangular Prism.md",
+                "file": "Raven Technical Journal/2D Triangular Mesh.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Triangular Prism"
-            }
-          },
-          {
-            "id": "d7e3940f023aadfd",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Raven Technical Journal/Planet Definition.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Planet Definition"
+              "title": "2D Triangular Mesh"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
   },
   "left": {
-    "id": "31987aba5d9e6d78",
+    "id": "13c115a42e693089",
     "type": "split",
     "children": [
       {
-        "id": "db55bb192c23b449",
+        "id": "04ec3b3b7af08742",
         "type": "tabs",
         "children": [
           {
-            "id": "bb2d28d4afeb0714",
+            "id": "7c9e1c05fab29f14",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -63,7 +48,7 @@
             }
           },
           {
-            "id": "142ab0977bde3f76",
+            "id": "d861d6e5a980fd25",
             "type": "leaf",
             "state": {
               "type": "search",
@@ -80,7 +65,7 @@
             }
           },
           {
-            "id": "255f5780cec95b62",
+            "id": "99333246e492cdb8",
             "type": "leaf",
             "state": {
               "type": "bookmarks",
@@ -93,23 +78,23 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200
+    "width": 300
   },
   "right": {
-    "id": "87859a8e9a6c50b9",
+    "id": "87d2343c10268915",
     "type": "split",
     "children": [
       {
-        "id": "9da15c53a45c04c5",
+        "id": "09170502a35f0949",
         "type": "tabs",
         "children": [
           {
-            "id": "a4b72d7061474230",
+            "id": "e36fe4a3f7452919",
             "type": "leaf",
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Simulation Definition/Raven Overview.md",
+                "file": "Raven Technical Journal/2D Triangular Mesh.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -119,46 +104,51 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for Raven Overview"
+              "title": "Backlinks for 2D Triangular Mesh"
             }
           },
           {
-            "id": "974e6f4b8d6c86ed",
+            "id": "558ab54d5175b4e6",
             "type": "leaf",
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Rocket Definition/Primitives/Conic Generalised.md",
+                "file": "Raven Technical Journal/2D Triangular Mesh.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from Conic Generalised"
+              "title": "Outgoing links from 2D Triangular Mesh"
             }
           },
           {
-            "id": "ca0b719f1998b37f",
+            "id": "ae89248e296c9704",
             "type": "leaf",
             "state": {
               "type": "tag",
               "state": {
                 "sortOrder": "frequency",
-                "useHierarchy": true
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
               },
               "icon": "lucide-tags",
               "title": "Tags"
             }
           },
           {
-            "id": "fcfb2877f0ba82c0",
+            "id": "b49123d6cf5dcfd2",
             "type": "leaf",
             "state": {
               "type": "outline",
               "state": {
-                "file": "Rocket Definition/Primitives/Conic Generalised.md"
+                "file": "Raven Technical Journal/2D Triangular Mesh.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of Conic Generalised"
+              "title": "Outline of 2D Triangular Mesh"
             }
           }
         ]
@@ -170,59 +160,20 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "bases:Create new base": false,
       "switcher:Open quick switcher": false,
       "graph:Open graph view": false,
       "canvas:Create new canvas": false,
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
-      "command-palette:Open command palette": false
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
     }
   },
-  "active": "d7e3940f023aadfd",
+  "active": "2140b08db0d47342",
   "lastOpenFiles": [
+    "2026-01-26.md",
+    "Raven Technical Journal/2D Triangular Mesh.md",
     "Raven Technical Journal/Reference Frames.md",
-    "Raven Technical Journal/Primitives/Conic Generalised.md",
-    "Raven Technical Journal/Primitives/Triangular Prism.md",
-    "Raven Technical Journal/Earth Atmosphere Model.md",
-    "Raven Technical Journal/Planet Definition.md",
-    "Raven Technical Journal/Overview.md",
-    "archive/Rocket Definition/Primitives/Conic Full.md",
-    "archive/Rocket Definition/Primitives/Primitives.md",
-    "archive/Rocket Definition/Primitives/Custom Primitive.md",
-    "Raven Technical Journal/Primitives",
-    "archive",
-    "archive/Rocket Definition/Modules.md",
-    "archive/Physics Engine/Reference Frames and Inertia Tensors.md",
-    "Simulaiton Technical Journal/Code Requirements",
-    "pictures/coesa76/optimisation/interpolation.png",
-    "pictures/coesa76/convergence study/compensated.png",
-    "archive/Physics Engine/State Vector Representation.md",
-    "pictures/coesa76/convergence study/prop 100 to 1000 km.png",
-    "pictures/coesa76/convergence study/rms 100 to 1000 km.png",
-    "pictures/coesa76/convergence study/rms 86 to 100 km.png",
-    "pictures/coesa76/convergence study/86 to 100 km.png",
-    "pictures/coesa76/convergence study/wtf.png",
-    "pictures/coesa76/convergence study/rms vs resolution.png",
-    "archive/Physics Engine/Chapter 4. 3D Rotations.md",
-    "Untitled.canvas",
-    "Untitled 1.canvas",
-    "Untitled.base",
-    "pictures/coesa76/convergence study/RMS vs resolution.png",
-    "pictures",
-    "Physics Engine/Untitled.base",
-    "Untitled 1.base",
-    "pictures/coesa76/convergence study",
-    "Physics Engine/coesa76/New folder",
-    "pictures/coesa76/optimisation/Tau Calculation/pressure density fixed z 100m inline.png",
-    "pictures/coesa76/optimisation/Tau Calculation",
-    "Welcome.md",
-    "Kinematics/Reference Frames and Inertia Tensors.md",
-    "Kinematics/State Vector Representation.md",
-    "Rocket Definition/Primitives/Rectangular Prism.md",
-    "Primitives/Conic Full.md",
-    "Kinematics/Frame Transformation.md",
-    "Kinematics/Chapter 4. 3D Rotations.md",
-    "Rocket Definition/Coordinate Systems.md"
+    "Raven Technical Journal/Primitives/Triangular Prism.md"
   ]
 }

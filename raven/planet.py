@@ -1,137 +1,17 @@
-import numpy as np
+"""Planet definitions and helper functions."""
+
 from copy import deepcopy
 from math import pi
+import numpy as np
 from numpy.linalg import norm
 
 from vectorUtil import cartesian2coords, coords2cartesian, unit, rotateAxisAngle
 from referenceFrame import ReferenceFrame
 
-class Planet():
+class Earth():
+    """Represents the planet Earth.
 
-    def __init__(self, x0, az0):
-        self.mu = 0.0
-        self.r = 0.0
-        self.v = np.zeros(3, float)
-        self.omega = 0.0
-        self.tilt = 0.0
-        self.buildFrames(x0, az0)
-
-    def buildFrames(self, x0:np.array=np.zeros(3, float), az0:float=0.0) -> None:
-        """Creates the planet's PCR and PCNR frames"""
-        self.PCNR = ReferenceFrame(axis=np.array([0,0,1], float), ang=0.0, origin=x0)
-        self.PCNR.moveFrame(origin=np.zeros(3, float), axis=np.array([1,0,0], float), ang=self.tilt, frame='local')
-        self.PCR = deepcopy(self.PCNR)
-        self.PCR.moveFrame(origin=np.zeros(3, float), axis=np.array([0,0,1], float), ang=az0, frame='local')
-
-
-    def getAtmoProperties(self, z:float, selected:list['str']=['T', 'p', 'rho']) -> dict:
-        """Returns selected atmospheric properties as a dictionary"""
-        return {'T':0.0, 'p':0.0, 'rho':0.0}
-    
-    
-    def getAcceleration(self, x:np.array, inputFrame:str='parent', outputFrame:str='parent') -> np.array:
-        """Calculates the gravitational acceleration vector given a position relative to the planet.
-           Inputs and outputs can be specified in one of three frames: parent, pcr, or pcnr."""
-
-        if inputFrame == 'parent':
-            xloc = self.PCR.parent2local(x, incTranslation=True)
-        elif inputFrame == 'pcr':
-            xloc = x
-        elif inputFrame == 'pcnr':
-            xloc = self.PCR.parent2local(self.PCNR.local2parent(x, incTranslation=True), incTranslation=True)
-
-        aloc = self.mu*xloc / norm(xloc)**3
-
-        if outputFrame == 'parent':
-            aloc = self.PCR.local2parent(aloc, incTranslation=False)
-        elif outputFrame == 'pcnr':
-            aloc = self.PCNR.parent2local(self.PCR.local2parent(aloc, incTranslation=False))
-        
-        return aloc
-    
-
-    def getZSL(self, x:np.array, inputFrame:str='parent') -> float:
-        """Returns altitude above mean sea level"""
-
-        if inputFrame == 'parent':
-            xloc = self.PCR.parent2local(x, incTranslation=True)
-        elif inputFrame == 'pcr':
-            xloc = x
-        elif inputFrame == 'pcnr':
-            xloc = self.PCR.parent2local(self.PCNR.local2parent(x, incTranslation=False), incTranslation=False)
-
-        return norm(xloc) - self.r
-    
-
-    def getCoordinates(self, x:np.array, inputFrame:str='parent') -> tuple['float', 'float']:
-        """Given a relative location to the planet, returns PCR latitude and longitude"""
-
-        if inputFrame == 'parent':
-            xloc = self.PCR.parent2local(x, incTranslation=True)
-        elif inputFrame == 'pcr':
-            xloc = x
-        elif inputFrame == 'pcnr':
-            xloc = self.PCR.parent2local(self.PCNR.local2parent(x, incTranslation=False), incTranslation=False)
-
-        lat, long = cartesian2coords(xloc)
-
-        return lat, long
-    
-
-    def xFromCoordinates(self, lat:float, long:float, r:float, outputFrame:str='parent') -> np.array:
-        """Returns the position vector that gives an object the specified coordinates on the planet"""
-
-        x = coords2cartesian(lat, long, r)
-
-        if outputFrame == 'parent':
-            x = self.PCR.local2parent(x, incTranslation=True)
-        elif outputFrame == 'pcnr':
-            x = self.PCNR.parent2local(self.PCR.local2parent(x, incTranslation=False), incTranslation=False)
-    
-        return x
-
-    def getPointingVector(self, x:np.array, pitch:float, heading:float, inputFrame:str='parent', outputFrame:str='parent') -> np.array:
-        """Returns a unit vector with desired pitch and compass heading"""
-
-        if inputFrame == 'parent':
-            xloc = self.PCR.parent2local(x, incTranslation=True)
-        elif inputFrame == 'pcr' or inputFrame == 'pcnr':
-            xloc = x
-     
-        up = xloc # XXX: this assumes spherical planet, must be changed when this is no longer true
-        east = norm(up, np.array([0,0,1], float))
-        p = rotateAxisAngle(east, up, (pi / 2 - heading) % (2*pi)) # apply heading
-        a = np.cross(p, up) # pitch rotation axis
-        p = unit(rotateAxisAngle(p, a, pitch)) # apply pitch
-
-        return p
-    
-
-    def getLocalVelocity(self, x:np.array, v:np.array, inputFrame:str='parent', outputFrame:str='parent') -> np.array:
-        """Returns the relative velocity between an object and a stationary point with same position within the PCR frame
-           Note that if the local point's velocity is required, feeding in a velocity of 0 achieves this."""
-        
-        if inputFrame == 'parent':
-            v_pcnr = self.PCNR.parent2local(v - self.v, incTranslation=False)
-            x_pcnr = self.PCNR.parent2local(x, incTranslation=True)
-        elif inputFrame == 'pcr':
-            return v
-        elif inputFrame == 'pcnr':
-            v_pcnr = v
-            x_pcnr = x
-
-        vRel = np.cross(self.omega*np.array([0,0,1], float), x_pcnr) - v_pcnr
- 
-        if outputFrame == 'parent':
-            vRel = self.PCNR.local2parent(vRel, incTranslation=False)
-        elif outputFrame == 'local':
-            vRel = self.PCR.parent2local(self.PCNR.local2parent(vRel, incTranslation=False), incTranslation=False)
-
-        return vRel
-
-
-
-class Earth(Planet):
+    Stores the planet's state and contains planet methods used by the simulation."""
 
     def __init__(self, x0, az0):
         self.mu = 3.986e14
@@ -139,35 +19,100 @@ class Earth(Planet):
         self.v = np.zeros(3, float)
         self.omega = 7.292115024e-5
         self.tilt = 0.4090926295
-        self.buildFrames(x0, az0)
+
+        self.pci = ReferenceFrame(axis=np.array([0,0,1], float), ang=0.0, origin=x0)
+        self.pci.moveFrame(origin=np.zeros(3, float), axis=np.array([1,0,0], float), ang=self.tilt, frame='local')
+        self.pcf = deepcopy(self.pci)
+        self.pcf.moveFrame(origin=np.zeros(3, float), axis=np.array([0,0,1], float), ang=az0, frame='local')
 
 
-    # def getAtmoProperties(self, z:float, props:list['str']=['T', 'p', 'rho']) -> dict:
-    #     return coesa76(z_m=z, outputs=props, mode='quick')
-    
+    def convert_frame(self, frame_in:str, frame_out:str, vec:np.ndarray, inc_translation:bool=True) -> np.ndarray:
+        """Maps the input vector into the desired planet vector."""
+
+        if frame_in == frame_out:
+            return vec
+
+        # convert to parent frame
+        match frame_in:
+            case 'pcf':
+                vec = self.pcf.local2parent(vec, inc_translation)
+            case 'pci':
+                vec = self.pci.local2parent(vec, inc_translation)
+
+        match frame_out:
+            case 'pcf':
+                vec = self.pcf.parent2local(vec, inc_translation)
+            case 'pci':
+                vec = self.pci.parent2local(vec, inc_translation)
+
+        return vec
 
 
-def testMethods():
-    earth = Earth(np.zeros(3, float), az0=pi/2)
+    def gravity(self, x:np.array, frame_in:str='parent', frame_out:str='parent') -> np.array:
+        """Calculates the gravitational acceleration vector given a position relative to the planet.
+           Inputs and outputs can be specified in one of three frames: parent, pcr, or pcnr."""
 
-    # place the rocket on the planet to satisfy coordinates:
-    lat = pi / 4
-    long = pi / 4
-    r = earth.r
+        xloc = self.convert_frame(frame_in, 'pcf', x, inc_translation=False)
+        return self.convert_frame('pcf', frame_out, self.mu*xloc / norm(xloc)**3, inc_translation=False)
 
-    rocketFrame = 'parent'
-    outputFrame= 'parent'
 
-    x = earth.xFromCoordinates(lat, long, r, outputFrame=rocketFrame)
-    v = np.array([0, 0, 0], float)
+    def get_altitude(self, x:np.array, frame_in:str='parent') -> float:
+        """Returns altitude above mean sea level"""
 
-    altitude = earth.getZSL(x, inputFrame=rocketFrame)
-    lat, long = earth.getCoordinates(x, inputFrame=rocketFrame)
-    acceleration = earth.getAcceleration(x, inputFrame=rocketFrame, outputFrame=outputFrame)
-    airspeed = earth.getLocalVelocity(x, v, inputFrame=rocketFrame, outputFrame=outputFrame)
+        return norm(self.convert_frame(frame_in, 'pcf', x, inc_translation=False)) - self.r
 
-    print(f"Rocket frame: {rocketFrame}, Working frame: {outputFrame}")
-    print(f"Altitude: {'%.3f' % altitude}")
-    print(f"latitude: {'%.3f' % (lat * 180 / pi)} deg, longitude: {'%.3f' % (long * 180 / pi)} deg")
-    print(f"Gravitational Acceleration: {'%.3f' % norm(acceleration)} m/s^2")
-    print(f"Airspeed: {'%.3f' % norm(airspeed)} m/s")
+
+    def position2coords(self, x:np.array, frame_in:str='parent') -> tuple['float', 'float']:
+        """Given a relative location to the planet, returns PCR latitude and longitude"""
+
+        return cartesian2coords(self.convert_frame(frame_in, 'pcf', x, inc_translation=True))
+
+
+    def coords2position(self, lat:float, long:float, r:float, frame_out:str='parent') -> np.array:
+        """Returns the position vector that gives an object the specified coordinates on the planet"""
+
+        x = coords2cartesian(lat, long, r)
+        return self.convert_frame('pcf', frame_out, x, inc_translation=frame_out == 'parent')
+
+
+    def pointing_vector(self, x:np.array, pitch:float, heading:float, frame_in:str='parent') -> np.array:
+        """Returns a unit vector with desired pitch and compass heading"""
+
+        if frame_in == 'parent':
+            xloc = self.pcf.parent2local(x, incTranslation=True)
+        elif frame_in == 'pcr' or frame_in == 'pcnr':
+            xloc = x
+        else:
+            raise ValueError("frame_in must be either parent, pcr, or pcnr.")
+
+        up = xloc
+        east = norm(up, np.array([0,0,1], float))
+        p = rotateAxisAngle(east, up, (pi / 2 - heading) % (2*pi)) # apply heading
+        a = np.cross(p, up) # pitch rotation axis
+        p = unit(rotateAxisAngle(p, a, pitch)) # apply pitch
+
+        return p
+
+
+    def relative_velocity(self, x:np.array, v:np.array, frame_in:str='parent', frame_out:str='parent') -> np.array:
+        """Returns the relative velocity between an object and the local fixed point in the PCF frame."""
+
+        if frame_in == 'parent':
+            v_pci = self.pci.parent2local(v - self.v, incTranslation=False)
+            x_pci = self.pci.parent2local(x, incTranslation=True)
+        elif frame_in == 'pcr':
+            return v
+        elif frame_in == 'pcnr':
+            v_pci = v
+            x_pci = x
+        else:
+            raise ValueError("frame_in must be either parent, pcr, or pcnr")
+
+        vrel = np.cross(self.omega*np.array([0,0,1], float), x_pci) - v_pci
+
+        if frame_out == 'parent':
+            vrel = self.pci.local2parent(vrel, incTranslation=False)
+        elif frame_out == 'local':
+            vrel = self.pcf.parent2local(self.pci.local2parent(vrel, incTranslation=False), incTranslation=False)
+
+        return vrel

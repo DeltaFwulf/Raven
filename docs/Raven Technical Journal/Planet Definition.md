@@ -26,6 +26,9 @@ $$ \vec{v}_{rel} = \vec{v}_{rot} - \vec{v}_{obj} $$
 It is important to remember that the result is the velocity of the air from the perspective of the vehicle. This was chosen as the majority of times this function is called will be for drag calculations; this gives the velocity vector in the same direction as the drag force. If this is not wanted, then the relative velocity will instead be changed to $\vec{v}_{rel} = \vec{v}_{obj} - \vec{v}_{rot}$ .
 
 
+<<<<<<< Updated upstream:docs/Raven Technical Journal/Planet Definition.md
 ## Rotate point on Planet into Orbital Plane
 
 - explain pre-rotation here
+=======
+>>>>>>> Stashed changes:notes/Simulaiton Technical Journal/Planet Definition.md
