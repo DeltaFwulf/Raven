@@ -1,6 +1,8 @@
+"""Utility functions for 3D vectors."""
+
+from math import pi, cos, sin, atan2, isnan
 import numpy as np
 from numpy.linalg import norm
-from math import pi, cos, sin, atan2, isnan
 
 
 
@@ -28,7 +30,7 @@ def spherical2cartesian(inc:float, az:float, r:float) -> np.ndarray:
 
     return r*np.r_[sin(inc)*cos(az), sin(inc)*sin(az), cos(inc)]
 
-   
+
 def cartesian2coords(vector:np.ndarray) -> tuple['float', 'float']:
     """ Calculates the latitude and longitude on a spherical body given a cartesian vector"""
     lat = pi / 2 - atan2(norm(vector[0:-1]), vector[2])
@@ -77,53 +79,61 @@ def spherical2coords(inc:float, az:float) -> tuple[float, float]:
     return pi / 2 - inc, az
 
 
-def getAngleSigned(vecA:np.ndarray, vecB:np.ndarray, normal:np.ndarray) -> float:
+def angle_signed(a:np.ndarray, b:np.ndarray, normal:np.ndarray) -> float:
     """Gets the angle from vecA to vecB in the correct direction, given that they both lie on a known plane."""
 
-    if norm(vecA) == 0 or norm(vecB) == 0 or norm(normal) == 0:
+    if norm(a) == 0 or norm(b) == 0 or norm(normal) == 0:
         raise ValueError
-    
-    vecA /= norm(vecA)
-    vecB /= norm(vecB)
+
+    a /= norm(a)
+    b /= norm(b)
     normal /= norm(normal)
-    
-    if norm((vecA + vecB)*normal) > 1e-12: # vectors must be coplanar and no vector may have zero-length
+
+    if norm((a + b)*normal) > 1e-12: # vectors must be coplanar and no vector may have zero-length
         raise ValueError
 
-    return atan2(np.dot(np.cross(vecA, vecB), normal), np.dot(vecA, vecB))
+    return atan2(np.dot(np.cross(a, b), normal), np.dot(a, b))
 
 
-def getAngleUnsigned(vecA:np.array, vecB:np.array) -> float:
+def angle_unsigned(a:np.ndarray, b:np.ndarray) -> float:
     """Returns the magnitude of the angle between two vectors, but cannot give the sign (direction) of the angle."""
-    if norm(vecA) == 0 or norm(vecB) == 0:
+    if norm(a) == 0 or norm(b) == 0:
         raise ValueError
-    
-    return atan2(norm(np.cross(vecA, vecB)), np.dot(vecA, vecB))
+
+    return atan2(norm(np.cross(a, b)), np.dot(a, b))
 
 
-def projectVector(vecA:np.ndarray, vecB:np.ndarray, normal:bool) -> np.ndarray:
+def project_vector(a:np.ndarray, b:np.ndarray, normal:bool) -> np.ndarray:
     """Projects vector A along vector B, returns either 'parallel' or 'normal' component of vector A to vector B."""
-    unitB = unit(vecB)
-    parallel = np.dot(vecA, unitB)*unitB
+    unit_b = unit(b)
+    parallel = np.dot(a, unit_b)*unit_b
 
-    if normal == False:
-        return parallel
-    elif normal == True:
-        return vecA - parallel
-    else:
-        raise ValueError
+    if normal:
+        return a - parallel
+
+    return parallel
 
 
-def grassmann(qA:np.ndarray, qB:np.ndarray) -> np.ndarray:
+def grassmann(qa:np.ndarray, qb:np.ndarray) -> np.ndarray:
     """Returns the inner product of two quaternions (similar to dot-product but with orthogonal vectors)"""
-    return np.r_[qA[0]*qB[0] - np.dot(qA[1:],qB[1:]), qA[0]*qB[1:] + qA[1:]*qB[0] + np.cross(qA[1:], qB[1:])]
+    return np.r_[qa[0]*qb[0] - np.dot(qa[1:],qb[1:]), qa[0]*qb[1:] + qa[1:]*qb[0] + np.cross(qa[1:], qb[1:])]
 
 
-def qRotate(vec:np.ndarray, q:np.ndarray) -> np.ndarray:
-    # https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+def rotate_quaternion(vec:np.ndarray, q:np.ndarray) -> np.ndarray:
+    """Rotates a vector given a unit quaternion.
+    
+    Source of equation: 
+    https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles"""
 
     t = np.cross(2*q[1:], vec)
-    return vec + q[0]*t + np.cross(q[1:], t) 
+    return vec + q[0]*t + np.cross(q[1:], t)
+
+
+def rotate_axis_angle(vec:np.ndarray, axis:np.ndarray, ang:float) -> np.ndarray:
+    """Rotates the input vector by ang about the axis of rotation."""
+
+    q = np.r_[cos(ang / 2), unit(axis)*sin(ang / 2)]
+    return rotate_quaternion(vec, q)
 
 
 def unit(vec:np.array) -> np.array:

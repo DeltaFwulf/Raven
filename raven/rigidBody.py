@@ -1,7 +1,7 @@
 import numpy as np
 from copy import deepcopy
 
-from .referenceFrame import ReferenceFrame
+from .reference_frame import ReferenceFrame
 
 
 
@@ -52,7 +52,7 @@ class RigidBody():
             I = np.matmul(T, np.matmul(I, np.transpose(T)))
 
         if np.any(r != np.zeros(3, float)):
-            """This function uses a generalised form of the parallel axis theorem found here: https://doi.org/10.1119/1.4994835"""
+            # This function uses a generalised form of the parallel axis theorem found here: https://doi.org/10.1119/1.4994835
 
 
             def getRelationalMatrix(a:np.ndarray, b:np.ndarray) -> np.ndarray:

@@ -9,6 +9,7 @@ from raven.planet import Earth
 def simulate(config:dict) -> dict:
     """Simulates a rocket's flight from launch to touchdown."""
 
+    # tracked variables
     t = np.arange(0.0, config['tf'], config['dt'])
     x = np.zeros((1, 3), float)
     v = np.zeros((1, 3), float)

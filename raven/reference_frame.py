@@ -52,9 +52,9 @@ class ReferenceFrame():
             self.q = grassmann(np.r_[cos(ang / 2), sin(ang / 2)*axis], self.q)
 
 
-    def moveFrame(self, origin:np.array=np.zeros(3, float), axis:np.array=None, ang:float=None, trans:np.array=None, originFrame:str='local', moveFrame:str='parent') -> None:
+    def move(self, origin:np.array=np.zeros(3, float), axis:np.array=None, ang:float=None, trans:np.array=None, originFrame:str='local', moveFrame:str='parent') -> None:
         """This function moves the reference frame about a specified origin by a rotation and translation. The origin may be expressed in local or parent
-           frame, as can the movement working frame."""    
+           frame, as can the movement working frame."""
 
         if axis is not None and ang != 0:
             if originFrame == 'local':

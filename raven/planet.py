@@ -5,8 +5,8 @@ from math import pi
 import numpy as np
 from numpy.linalg import norm
 
-from vectorUtil import cartesian2coords, coords2cartesian, unit, rotateAxisAngle
-from referenceFrame import ReferenceFrame
+from .vectors import cartesian2coords, coords2cartesian, unit, rotate_axis_angle
+from .reference_frame import ReferenceFrame
 
 class Earth():
     """Represents the planet Earth.
@@ -20,10 +20,12 @@ class Earth():
         self.omega = 7.292115024e-5
         self.tilt = 0.4090926295
 
-        self.pci = ReferenceFrame(axis=np.array([0,0,1], float), ang=0.0, origin=x0)
-        self.pci.moveFrame(origin=np.zeros(3, float), axis=np.array([1,0,0], float), ang=self.tilt, frame='local')
+        self.pci = ReferenceFrame()
+        self.pci.place_axis_angle(axis=np.array([0,0,1], float), ang=0.0, origin=x0)
+        self.pci.move(axis=np.array([1,0,0], float), ang=self.tilt, moveFrame='local')
+
         self.pcf = deepcopy(self.pci)
-        self.pcf.moveFrame(origin=np.zeros(3, float), axis=np.array([0,0,1], float), ang=az0, frame='local')
+        self.pcf.move(axis=np.array([0,0,1], float), ang=az0, moveFrame='local')
 
 
     def convert_frame(self, frame_in:str, frame_out:str, vec:np.ndarray, inc_translation:bool=True) -> np.ndarray:
@@ -80,16 +82,16 @@ class Earth():
 
         if frame_in == 'parent':
             xloc = self.pcf.parent2local(x, incTranslation=True)
-        elif frame_in == 'pcr' or frame_in == 'pcnr':
+        elif frame_in in ('pci', 'pcf'):
             xloc = x
         else:
-            raise ValueError("frame_in must be either parent, pcr, or pcnr.")
+            raise ValueError("frame_in must be either parent, pci, or pcf.")
 
         up = xloc
         east = norm(up, np.array([0,0,1], float))
-        p = rotateAxisAngle(east, up, (pi / 2 - heading) % (2*pi)) # apply heading
+        p = rotate_axis_angle(east, up, (pi / 2 - heading) % (2*pi)) # apply heading
         a = np.cross(p, up) # pitch rotation axis
-        p = unit(rotateAxisAngle(p, a, pitch)) # apply pitch
+        p = unit(rotate_axis_angle(p, a, pitch)) # apply pitch
 
         return p
 
