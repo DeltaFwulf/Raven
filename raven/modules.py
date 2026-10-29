@@ -1,40 +1,33 @@
+"""Contains module species and module-specific functions."""
+
 import numpy as np
 
-from .referenceFrame import ReferenceFrame
-from .primitives import RigidBody
-
-class Module(RigidBody):
-    """The Module class represents an object composed of multiple primitives (or other compound objects), with functions for changing its properties to give dynamic
-       behaviours and act as subsystems on the rocket. These are joined together to form stages."""
-
-    def __init__(self, primitives:dict, rootFrames:dict['ReferenceFrame']) -> None:
-        
-        self.primitives = primitives
-        self.rootFrames = rootFrames
-        self.mass = 0.0
-        self.com = np.zeros(3, float)
-        self.moi = np.zeros((3, 3), float)
-        
-
-    def calcInertial(self) -> tuple['float', 'np.ndarray', 'np.ndarray']:
-
-        m = sum(p.mass for p in self.primitives)
-        
-        x = np.zeros(3)
-        for key in self.primitives:
-            x += self.primitives[key].mass*self.rootFrames[key].local2parent(self.primitives[key].com)
-        
-        x /= m
-
-        I = np.zeros((3, 3), float)
-        for key in self.primitives:
-            I += self.primitives[key].transformInertiaTensor(frame=self.rootFrames[key], ref=self.primitives[key].ref)
-
-        return m, x, I
+from .reference_frame import Frame
+from .primitives import Conic
 
 
 
-class Fin(Module):
+def get_properties(primitives:list, roots:list) -> tuple[float, np.ndarray, np.ndarray]:
+    """Returns rigid body properties of the module."""
+
+    m = sum(p.mass for p in primitives)
+    x = np.zeros(3, float)
+    moi = np.zeros((3, 3), float)
+
+    for k, p in primitives.items():
+        x += p.mass*roots[k].local2parent(p.com)
+        moi += p.transformInertiaTensor(frame=roots[k], ref=p.ref)
+
+    x /= m
+
+    return m, x, moi
+
+
+
+class Fin():
+    """Represents an aerodynamic fin.
+
+    These can take different shapes, by a profile string and parameters."""
 
     def __init__(self, profile:str, thickness:float, **kwargs) -> None:
 
@@ -42,30 +35,46 @@ class Fin(Module):
         pts = []
 
         # calculate the triangular prism mesh
-        self.buildMesh(pts)
+        self.solve_mesh(pts)
 
         # build and solve inertial properties of prisms
 
         # combine for total inertial properties
 
-     
-    def buildMesh(self, pts:list['np.ndarray']) -> tuple['list']:
+
+    def solve_mesh(self, pts:list[np.ndarray]) -> tuple['list']:
+        """Calculates the fin's inertial properties by solving a triangular mesh."""
 
         tris = [] # store triples of points by index in this list
-
-        
-
 
         # find monotonic polygons
 
         # do any adjacent point lines intersect the current horizontal line 
         # as it sweeps down the shape? (if more than 2 intersections, a split is required)
 
-
         # add a meshing file with 2d (and maybe later 3d) meshing algorithms
         # split into make monotonic, choose next point, etc.
 
         return tuple(tris)
+
+
+
+class Tube():
+    """A hollow, cylindrical tube of constant thickness."""
+
+    def __init__(self, diameter:float, thickness:float, length:float, density:float) -> None:
+
+        self.tags = ('aero',)
+
+        d_inner = diameter - 2*thickness
+        tube = Conic(density=density,
+                     length=length,
+                     dOuterRoot=diameter,
+                     dOuterEnd=diameter,
+                     dInnerRoot=d_inner,
+                     dInnerEnd=d_inner)
+
+        self.m, self.x, self.moi = get_properties([tube,], [Frame(),])
 
 
 
@@ -131,11 +140,11 @@ class Fin(Module):
 #                                              material=propellant)})
                     
 
-#         self.rootFrames.update({'casing':ReferenceFrame()})
-#         self.rootFrames.update({'fore-bulkhead':ReferenceFrame()})
-#         self.rootFrames.update({'aft-bulkhead':ReferenceFrame(origin=np.array([-geometry['casing-length'] + geometry['casing-thickness'], 0, 0], float))})
-#         self.rootFrames.update({'nozzle':ReferenceFrame(origin=np.array([-geometry['casing-length'], 0, 0], float))})
-#         self.rootFrames.update({'grain':ReferenceFrame(origin=np.array([-geometry['casing-thickness'], 0, 0], float))})
+#         self.rootFrames.update({'casing':Frame()})
+#         self.rootFrames.update({'fore-bulkhead':Frame()})
+#         self.rootFrames.update({'aft-bulkhead':Frame(origin=np.array([-geometry['casing-length'] + geometry['casing-thickness'], 0, 0], float))})
+#         self.rootFrames.update({'nozzle':Frame(origin=np.array([-geometry['casing-length'], 0, 0], float))})
+#         self.rootFrames.update({'grain':Frame(origin=np.array([-geometry['casing-thickness'], 0, 0], float))})
 
 #         self.thrust = 0.0
 #         self.onTime = 0.0

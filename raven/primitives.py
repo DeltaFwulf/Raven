@@ -2,26 +2,9 @@ from math import pi, atan2
 import numpy as np
 from numpy.linalg import norm
 
-from .rigidBody import RigidBody
 
 
-
-class Primitive(RigidBody):
-    
-    def __init__(self, **kwargs): # TODO: use this for part indexing later, we could create a dictionary of named parts in each module?
-        self.name = 'unnamed' if kwargs.get('name') is None else kwargs.get('name')
-        self.mass = 0.0
-        self.com = np.zeros((3), float)
-        self.moi = np.zeros((3,3), float)
-        self.pts, self.tris = self.getMesh()
-
-    
-    def getMesh(self) -> tuple['np.ndarray', 'list']:
-        pass
-
-
-
-class Conic(Primitive):
+class Conic():
     """This primitive represents a generalised conic frustum shape, with straight edges and two parallel ends. The shape is defined by 5 parameters: the length,
        the root outer diameter, the end outer diameter, the root inner diameter, and the end inner diameter. The shape is constrained such that up to one outer diameter
        may be zero, and that the inner diameters cannot exceed the outer diameters, but they may be equal."""
@@ -259,7 +242,7 @@ class Conic(Primitive):
 
 
 
-class RectangularPrism(Primitive):
+class RectangularPrism():
 
     def __init__(self, density:float, x:float, y:float, z:float, **kwargs) -> None:
 
@@ -296,7 +279,7 @@ class RectangularPrism(Primitive):
     
 
 
-class TriangularPrism(Primitive):
+class TriangularPrism():
     """Represents a triangular prism, with root frame located at the first triangular point, and x axis pointing out of a parallel face."""
 
     def __init__(self, density:float, thickness:float, pts:list['np.ndarray'], **kwargs) -> None:

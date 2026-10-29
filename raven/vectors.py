@@ -142,3 +142,13 @@ def unit(vec:np.array) -> np.array:
         raise ValueError
 
     return vec / norm(vec)
+
+
+def v_rotation(x:np.ndarray, omega:np.ndarray) -> np.ndarray:
+    """Gives the velocity of a point within a rotating reference frame.
+    
+    x is defined relative to the frame's origin, in parent coordinates.
+    omega is likewise defined about the origin, in parent coordinates.
+    """
+
+    return np.cross(x, omega)

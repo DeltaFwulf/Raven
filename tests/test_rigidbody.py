@@ -29,7 +29,7 @@ class RigidBodyTests(unittest.TestCase):
         moi_exp[1, 1] = 218500
         moi_exp[2, 2] = 222500
 
-        assert_allclose(rb.transformInertiaTensor(root), moi_exp, atol=1e-12)
+        assert_allclose(rb.map_inertia_tensor(root), moi_exp, atol=1e-12)
         
 
     def test_transformInertiaTensor_toPrincipalAxes(self): # if the reference frame is moved to the CoM, moi should be same as in solution
@@ -50,7 +50,7 @@ class RigidBodyTests(unittest.TestCase):
         moi_exp[1, 1] = 2500
         moi_exp[2, 2] = 6500
 
-        assert_allclose(rb.transformInertiaTensor(root), moi_exp, atol=1e-12)
+        assert_allclose(rb.map_inertia_tensor(root), moi_exp, atol=1e-12)
 
 
     def test_diffref(self): # set the initial reference some distance from the CoM

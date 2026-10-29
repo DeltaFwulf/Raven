@@ -5,8 +5,8 @@ from math import pi
 import numpy as np
 from numpy.linalg import norm
 
-from .vectors import cartesian2coords, coords2cartesian, unit, rotate_axis_angle
-from .reference_frame import ReferenceFrame
+from .vectors import unit, rotate_axis_angle
+from .reference_frame import Frame
 
 class Earth():
     """Represents the planet Earth.
@@ -20,12 +20,12 @@ class Earth():
         self.omega = 7.292115024e-5
         self.tilt = 0.4090926295
 
-        self.pci = ReferenceFrame()
+        self.pci = Frame()
         self.pci.place_axis_angle(axis=np.array([0,0,1], float), ang=0.0, origin=x0)
-        self.pci.move(axis=np.array([1,0,0], float), ang=self.tilt, moveFrame='local')
+        self.pci.move(axis=np.array([1,0,0], float), ang=self.tilt, move_frame='local')
 
         self.pcf = deepcopy(self.pci)
-        self.pcf.move(axis=np.array([0,0,1], float), ang=az0, moveFrame='local')
+        self.pcf.move(axis=np.array([0,0,1], float), ang=az0, move_frame='local')
 
 
     def convert_frame(self, frame_in:str, frame_out:str, vec:np.ndarray, inc_translation:bool=True) -> np.ndarray:
@@ -64,17 +64,17 @@ class Earth():
         return norm(self.convert_frame(frame_in, 'pcf', x, inc_translation=False)) - self.r
 
 
-    def position2coords(self, x:np.array, frame_in:str='parent') -> tuple['float', 'float']:
-        """Given a relative location to the planet, returns PCR latitude and longitude"""
+    # def position2coords(self, x:np.array, frame_in:str='parent') -> tuple['float', 'float']:
+    #     """Given a relative location to the planet, returns PCR latitude and longitude"""
 
-        return cartesian2coords(self.convert_frame(frame_in, 'pcf', x, inc_translation=True))
+    #     return cartesian2coords(self.convert_frame(frame_in, 'pcf', x, inc_translation=True))
 
 
-    def coords2position(self, lat:float, long:float, r:float, frame_out:str='parent') -> np.array:
-        """Returns the position vector that gives an object the specified coordinates on the planet"""
+    # def coords2position(self, lat:float, long:float, r:float, frame_out:str='parent') -> np.array:
+    #     """Returns the position vector that gives an object the specified coordinates on the planet"""
 
-        x = coords2cartesian(lat, long, r)
-        return self.convert_frame('pcf', frame_out, x, inc_translation=frame_out == 'parent')
+    #     x = coords2cartesian(lat, long, r)
+    #     return self.convert_frame('pcf', frame_out, x, inc_translation=frame_out == 'parent')
 
 
     def pointing_vector(self, x:np.array, pitch:float, heading:float, frame_in:str='parent') -> np.array:
@@ -94,27 +94,3 @@ class Earth():
         p = unit(rotate_axis_angle(p, a, pitch)) # apply pitch
 
         return p
-
-
-    def relative_velocity(self, x:np.array, v:np.array, frame_in:str='parent', frame_out:str='parent') -> np.array:
-        """Returns the relative velocity between an object and the local fixed point in the PCF frame."""
-
-        if frame_in == 'parent':
-            v_pci = self.pci.parent2local(v - self.v, incTranslation=False)
-            x_pci = self.pci.parent2local(x, incTranslation=True)
-        elif frame_in == 'pcr':
-            return v
-        elif frame_in == 'pcnr':
-            v_pci = v
-            x_pci = x
-        else:
-            raise ValueError("frame_in must be either parent, pcr, or pcnr")
-
-        vrel = np.cross(self.omega*np.array([0,0,1], float), x_pci) - v_pci
-
-        if frame_out == 'parent':
-            vrel = self.pci.local2parent(vrel, incTranslation=False)
-        elif frame_out == 'local':
-            vrel = self.pcf.parent2local(self.pci.local2parent(vrel, incTranslation=False), incTranslation=False)
-
-        return vrel

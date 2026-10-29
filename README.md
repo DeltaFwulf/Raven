@@ -1,6 +1,6 @@
 # Raven Flight Simulator
 
- A fully three-dimensional flight simulation and mission planner, based upon the principle of modular vehicle definition.
+ A fully three-dimensional flight simulation and mission planner, based upon the principle of modular vehicle definition. Multistage rockets may be constructed and simulated through different scenarios, from simple model rocket launches to fully guided orbital launches (and maybe landing in future..?)
 
  **Key Features**
  - Modular spacecraft construction with hierarchy
@@ -12,10 +12,14 @@
  - Flight save and TOML files for quick analysis of previous simulations
 
 
-## Rocket Definition
+**Required Libraries for Developers**
+- numpy 1.26.x
+- matplotlib
+- pyvista
+- numpy-stl
 
-**Stages**
-Stages are the next step down from 'rockets'. These are generally to be made as a collection of components, including a propulsion system, some form of control, and structure. Stages may be dropped throughout flight i.e. when propellant is expended, and their unpowered trajectory tracked until they collide with the ground or time runs out.
+
+## Rocket Definition
 
 **Modules**
 Modules are generally made up from a collection of primitives. The purpose of components is to provide functionality within stages. Modules are to be defined as parametric classes with methods. For example, the 'solid rocket motor' module can provide a thrust vector which can be oriented wrt to the module frame by accepting control inputs at each timestep. The 'fixed-fin' object may be simpler, building itself to a desired contour and providing aerodynamic information to be used within barrowman (or other aerodynamic force function) calculations.

@@ -1,7 +1,8 @@
-import numpy as np
-from copy import deepcopy
 
-from .reference_frame import ReferenceFrame
+from copy import deepcopy
+import numpy as np
+
+from .reference_frame import Frame
 
 
 
@@ -14,19 +15,19 @@ class RigidBody():
         self.moi = np.zeros((3,3), float)
 
 
-    def transformInertiaTensor(self, frame:ReferenceFrame, **kwargs) -> np.ndarray:
+    def map_inertia_tensor(self, frame:Frame, **kwargs) -> np.ndarray:
         """This function allows the moment of inertia of a rigid body to be expressed in a new reference frame, given a frame of reference relative to the rigid body's root frame.
            
            Unless specified, the function assumes that I is about the body's centre of mass. To specify a different initial I reference point, a keyword argument, 'ref' may be input with the vector
            from the object's original root frame to the reference point within the body local frame."""
-        
+
         ref = self.com if kwargs.get('ref') is None else kwargs.get('ref') # the point about which moi was calculated, in root frame
         r = frame.parent2local(-ref, incTranslation=True) # from initial reference to frame origin
         c = frame.parent2local(self.com - ref, incTranslation=False) # from initial reference to centre of mass
         I = deepcopy(self.moi)
 
         if np.any(frame.q != np.array([1, 0, 0, 0], float)):
-            
+
             i = np.array([1, 0, 0], float)
             j = np.array([0, 1, 0], float)
             k = np.array([0, 0, 1], float)
@@ -72,8 +73,8 @@ class RigidBody():
                 M[2,2] = a[0]*b[0] + a[1]*b[1]
 
                 return M
-            
+
 
             I += self.mass*(getRelationalMatrix(r, r) - 2*getRelationalMatrix(r, c))
-                                                
+
         return I
