@@ -4,7 +4,7 @@ from math import sin, cos, pi
 from copy import deepcopy
 import numpy as np
 
-from .vectors import rotate_quaternion, grassmann, unit, project_vector, angle_signed
+from .vectors import rotate_quaternion, hamilton, unit, project_vector, angle_signed
 
 
 
@@ -42,7 +42,7 @@ class Frame():
 
         if np.linalg.norm(axis) > 0:
             ang = angle_signed(base_vectors[seq[0]], vectors[0], axis)
-            self.q = grassmann(np.r_[cos(ang / 2), sin(ang / 2)*unit(axis)], self.q)
+            self.q = hamilton(np.r_[cos(ang / 2), sin(ang / 2)*unit(axis)], self.q)
 
         if len(seq) > 1:
             vectors[1] = project_vector(vectors[1], vectors[0], normal=True)
@@ -50,7 +50,7 @@ class Frame():
             axis = rotate_quaternion(base_vectors[seq[0]], self.q)
             target = rotate_quaternion(base_vectors[seq[1]], self.q)
             ang = angle_signed(vectors[1], target, axis)
-            self.q = grassmann(np.r_[cos(ang / 2), sin(ang / 2)*axis], self.q)
+            self.q = hamilton(np.r_[cos(ang / 2), sin(ang / 2)*axis], self.q)
 
 
     def move(self, origin:np.array=np.zeros(3, float), axis:np.array=None, ang:float=None, trans:np.array=None, origin_frame:str='local', move_frame:str='parent') -> None:
@@ -70,7 +70,7 @@ class Frame():
             if trans is not None:
                 self.origin += self.local2parent(trans, incTranslation=False) if move_frame == 'local' else trans            
 
-            self.q = unit(grassmann(qr, self.q))
+            self.q = unit(hamilton(qr, self.q))
 
 
     def local2parent(self, xLoc:np.array, incTranslation:bool=True) -> np.array:

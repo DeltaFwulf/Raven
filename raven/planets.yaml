@@ -1,0 +1,19 @@
+# Stores planet property sets
+
+earth:
+  m: 5.97217e+24
+  r: 6.378e+6
+  I: [8.034e+37, 8.034e+37, 8.034e+37] # assumes spherical body
+  omega: [0.0, 0.0, 7.292115024e-5] # Expressed within body frame (PCI, PCPF)
+  q_pci: [0.979153239, 0.203122953, 0.0, 0.0] # Expressed in universal frame
+  atmosphere: 'coesa76'
+  orbital_parameters: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0] # w.r.t. parent body, in universal frame
+
+luna:
+  m: 7.346e+22
+  r: 1.7374e+6
+  I: [8.712e+34, 8.712e+34, 8.712e+34]
+  omega: [0.0, 0.0, 0.0]
+  q_pci: [0.0, 0.0, 0.0, 1.0]
+  atmosphere: 'none'
+  orbital_parameters: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]

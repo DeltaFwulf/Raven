@@ -1,52 +1,123 @@
+"""Contains motion solvers for Raven."""
 
+from enum import Enum
 import numpy as np
 from numpy.linalg import norm
 
-from .vectors import v_rotation
+from .vectors import hamilton, rotate_quaternion
 
-# TODO: Calculate relative velocity within vectors, not planet.
-# TODO: incorporate rotation to rk4
+class State(Enum):
+    """Indices within a body's state array."""
+    X = 0
+    XDOT = 0
+    V = 3
+    A = 3
+    Q = 6
+    W = 10
+    M = 13
 
-def rk4(x_rocket:np.ndarray, x_planet:np.ndarray, h:float, m:float, mu:float, r_planet:float, cda:float=0.0, dm:float=0.0, atmo_model:str='none') -> np.ndarray:
-    """Updates body state using RK4.
-    
-    State vectors (x) are given in the form: (x_x, x_y, x_z, v_x, v_y, v_z, ω_x, ω_y, ω_z)
+class Prop(Enum):
+    """Indices within a body's property array."""
+    F = 0
+    T = 3
+    I = 6
+    MDOT = 9
+    C = 10
 
-    Assumptions:
-    - gravity from one planet only
-    - state vectors expressed in a common frame
-    """
+class BodyTypes(Enum):
+    """Body class codes."""
+    ROCKET = 1
 
-    def diff(x:np.ndarray, m:float) -> np.ndarray:
-        """Differentiates the state vector.
 
-        returns dx, of form: (v_x, v_y, v_z, a_x, a_y, a_z)
-        for now, rotation is neglected.
-        """
+def rk4(state_in:np.ndarray, props:np.ndarray, h:float) -> np.ndarray:
+    """Solves for new system state using RK4."""
 
-        dx = np.zeros(6, float)
-        dx[:3] = x[3:6]
+    state_len = 14
+    pert_len = 11
+    n = round(state_in.size / state_len)
 
-        # spherical gravity acceleration
-        r = x_rocket[:3] - x_planet[:3]
-        dx[3:6] = -mu*r / norm(r)**3
+    # differentiate the state vector
+    def diff_state(h:float, x:np.ndarray, p:np.ndarray) -> np.ndarray:
+        """Differentiates the state array."""
 
-        if atmo_model != 'none':
-            v_rel = x[3:6] - x_planet[3:6] - v_rotation(r, x_planet[6:9])
-            rho = 0.0
-            dx[3:6] -= 0.5*rho*norm(v_rel)*v_rel*cda / m
+        dx = np.zeros_like(x, float)
 
-        # TODO: include rotation
+        # FIXME: sum cumulative effects
+        # FIXME: calculate for body A, only calculates once per object in this case
+
+        for i in range(n):
+
+            sa = i*state_len
+            pa = i*pert_len
+            ca = p[pa + Prop.C.value]
+            ma = x[sa + State.M.value] + p[pa + Prop.MDOT.value]*h
+
+            # velocity
+            dx[sa + State.XDOT.value:sa + State.XDOT.value + 3] = x[sa + State.V.value:sa + State.V.value + 3]
+
+            # rotation
+            q = x[sa + State.Q.value:sa + State.Q.value + 4]
+            omega = x[sa + State.W.value:sa + State.W.value + 3]
+            dx[sa + State.Q.value:sa+ State.Q.value + 4] += 0.5*hamilton(q, np.r_[0, omega])
+
+            I = np.diag(p[pa + Prop.I.value:pa + Prop.I.value + 3])
+            torque = p[pa + Prop.T.value:pa + Prop.T.value + 3]
+            dx[sa + State.W.value:sa + State.W.value + 3] += np.matmul(np.linalg.inv(I), torque - np.cross(omega, np.matmul(I, omega)))
+
+            # uncoupled loads
+            force = rotate_quaternion(p[pa + Prop.F.value:pa + Prop.F.value + 3], q*np.array([1, -1, -1, -1])) # get into universal frame
+            dx[sa + State.A.value:sa + State.A.value + 3] = force / ma
+
+            # change in mass
+            dx[sa + State.M.value] = p[pa + Prop.MDOT.value]
+
+            # coupled effects
+            for j in range(n):
+
+                if i == j:
+                    continue
+
+                # We calculate body b's diff vector
+                sb = j*state_len
+                pb = j*pert_len
+                cb = p[pb + Prop.C.value]
+                mb = x[sb + State.M.value] + p[pb + Prop.MDOT.value]*h
+
+                # gravitational acceleration
+                s = x[sa + State.X.value:sa + State.X.value + 3] - x[sb + State.X.value:sb + State.X.value + 3]
+                dx[sa + State.A.value:sa + State.A.value + 3] -= 6.67408e-11*mb*s / norm(s)**3
+
+                # aerodynamics
+                if ca == 0 and cb == BodyTypes.ROCKET.value:
+                    pass
 
         return dx
 
-    # XXX: verify dm implementation (not sure)
-    k1 = diff(x_rocket, m)
-    k2 = diff(x_rocket + 0.5*k1*h, m + 0.5*h*dm)
-    k3 = diff(x_rocket + 0.5*k2*h, m + 0.5*h*dm)
-    k4 = diff(x_rocket + k3*h, m + h*dm)
+    k1 = diff_state(0.0, state_in, props)
+    k2 = diff_state(h / 2, state_in + k1*0.5*h, props)
+    k3 = diff_state(h / 2, state_in + k2*0.5*h, props)
+    k4 = diff_state(h, state_in + k3*h, props)
 
-    return x_rocket + (h / 6)*(k1 + 2*(k2 + k3) + k4)
+    return state_in + h*(k1 + 2*(k2 + k3) + k4) / 6
+
+
+def symplectic_4th_order(x:np.ndarray, v:np.ndarray, h:float, x_planet:np.ndarray, mu:float) -> None:
+    """Updates vehicle orbital position using a 4th-order symplectic integrator.
+    
+    NOTE: for now, I do not know how to incorporate rotations.
+    
+    - Atmosphere is ignored here, use for long term orbital simulation."""
+
+    k = 2**(1/3)
+    c = 0.5 / (2 - k)*np.array([1, 1 - k, 1 - k, 1])
+    d = 1 / (2 - k)*np.array([1, -k, 1, 0])
+
+    for i in range(4):
+        a = -mu*(x - x_planet) / norm(x - x_planet)**3
+        v += h*c[i]*a
+        x += h*d[i]*v
+
+    return x, v
 
 
 # def angularRK4(q0:np.array, omega0:np.array, I:np.array, t0:float, h:float, torqueFn):
@@ -59,7 +130,7 @@ def rk4(x_rocket:np.ndarray, x_planet:np.ndarray, h:float, m:float, mu:float, r_
 #     def qAcc(q, qDot, t, I, torqueFn):
 
 #         qConj = deepcopy(q)
-#         qConj[1:] *= -1 
+#         qConj[1:] *= -1
 
 #         omega = 2 * grassmann(qConj, qDot)[1:] # vector
 #         torque = torqueFn(t, q, omega) # pseudovector

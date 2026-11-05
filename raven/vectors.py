@@ -95,6 +95,7 @@ def angle_signed(a:np.ndarray, b:np.ndarray, normal:np.ndarray) -> float:
     return atan2(np.dot(np.cross(a, b), normal), np.dot(a, b))
 
 
+# XXX: Can we not use a simpler formula, like just from dot product?
 def angle_unsigned(a:np.ndarray, b:np.ndarray) -> float:
     """Returns the magnitude of the angle between two vectors, but cannot give the sign (direction) of the angle."""
     if norm(a) == 0 or norm(b) == 0:
@@ -114,7 +115,7 @@ def project_vector(a:np.ndarray, b:np.ndarray, normal:bool) -> np.ndarray:
     return parallel
 
 
-def grassmann(qa:np.ndarray, qb:np.ndarray) -> np.ndarray:
+def hamilton(qa:np.ndarray, qb:np.ndarray) -> np.ndarray:
     """Returns the inner product of two quaternions (similar to dot-product but with orthogonal vectors)"""
     return np.r_[qa[0]*qb[0] - np.dot(qa[1:],qb[1:]), qa[0]*qb[1:] + qa[1:]*qb[0] + np.cross(qa[1:], qb[1:])]
 
@@ -132,10 +133,11 @@ def rotate_quaternion(vec:np.ndarray, q:np.ndarray) -> np.ndarray:
 def rotate_axis_angle(vec:np.ndarray, axis:np.ndarray, ang:float) -> np.ndarray:
     """Rotates the input vector by ang about the axis of rotation."""
 
-    q = np.r_[cos(ang / 2), unit(axis)*sin(ang / 2)]
+    q = np.r_[cos(ang / 2), axis*sin(ang / 2) / norm(axis)]
     return rotate_quaternion(vec, q)
 
 
+# XXX: This isn't really necessary
 def unit(vec:np.array) -> np.array:
     """Returns a unit vector pointed in the same direction as the original vector""" 
     if norm(vec) == 0:
@@ -144,6 +146,7 @@ def unit(vec:np.array) -> np.array:
     return vec / norm(vec)
 
 
+# XXX: This isn't really necessary
 def v_rotation(x:np.ndarray, omega:np.ndarray) -> np.ndarray:
     """Gives the velocity of a point within a rotating reference frame.
     

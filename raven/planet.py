@@ -8,6 +8,11 @@ from numpy.linalg import norm
 from .vectors import unit, rotate_axis_angle
 from .reference_frame import Frame
 
+
+# TODO: rearrange planets into dictionaries storing only planet properties, in a YAML?
+# TODO: planet general functions should be separated out into planet functions file or here
+
+
 class Earth():
     """Represents the planet Earth.
 
