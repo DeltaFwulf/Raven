@@ -1,20 +1,18 @@
 """Orbit determination and simulation code."""
 
-from os import getcwd
 from os.path import join
 import numpy as np
-from numpy.linalg import norm
-import pyvista as pv
 import yaml
 
-from raven.motion import rk4
-from raven.vectors import hamilton
+from .motion import rk4
+from .vectors import hamilton
+from .plotter import plot_trajectories
 
 
 def progress_bar(size:int, progress:float) -> str:
     """Draws a progress bar showing percentage complete with a filling bar."""
     p = round(progress*size)
-    return f"{progress*100:03.1f}" + '% [' + '/'*p + (size - p)*'-' + ']'
+    return f" {progress*100:03.1f}" + '% [' + '/'*p + (size - p)*'-' + ']'
 
 
 def load_inputs(input_path:str) -> tuple[dict, dict]:
@@ -35,7 +33,8 @@ def load_inputs(input_path:str) -> tuple[dict, dict]:
         if b.get('type') == 0:
             b.update(planets.get(b.get('planet')))
             q_az = np.r_[np.cos(b.get('az') / 2), np.sin(b.get('az') / 2)*np.array([0, 0, 1], float)]
-            b.update({'q':hamilton(np.array(b.get('q_pci')), q_az)})
+            b.update({'q_pci':np.array(b['q_pci'])})
+            b.update({'q':hamilton(b['q_pci'], q_az)})
 
         # pack state array (process frame translation here too)
         state = np.r_[b.get('x'),
@@ -57,14 +56,14 @@ def simulate(input_path:str) -> None:
 
     runtime, bodies = load_inputs(input_path)
     state_offset = 14
-    internals_offset = 11
+    perturbs_offset = 11
 
     # initialise system state array
     system_state = np.zeros((len(bodies)*state_offset), float)
-    internals = np.zeros((len(bodies)*internals_offset), float)
+    perturbs = np.zeros((len(bodies)*perturbs_offset), float)
     for n,b in enumerate(bodies.values()):
         system_state[n*state_offset:(n + 1)*state_offset] = b.get('state')
-        internals[n*internals_offset:(n + 1)*internals_offset] = b.get('internals')
+        perturbs[n*perturbs_offset:(n + 1)*perturbs_offset] = b.get('internals')
 
     t_saved = 0.0
     for i, t in enumerate(runtime['t']):
@@ -72,7 +71,7 @@ def simulate(input_path:str) -> None:
         print(progress_bar(20, t / runtime['tf']) + " (orbit)", end='\r', flush=True)
 
         # update system state
-        system_state = rk4(system_state, internals, runtime['dt'])
+        system_state = rk4(system_state, perturbs, runtime['dt'])
 
         if np.isnan(system_state).any():
             print("state contains NaN")
@@ -85,31 +84,26 @@ def simulate(input_path:str) -> None:
             t_saved = t
 
         for n, b in enumerate(bodies.values()):
-
             body_state = system_state[n*state_offset:(n + 1)*state_offset]
             if save:
                 b['state'] = np.vstack((b['state'], body_state))
 
-            # calculate body internals
+            # update internal loads, etc
 
-            # pack internals array
-
-    # Convert to desired reference frame
-    # root_path = bodies.get(runtime.get('root'))['state']
-
-    # plot all paths relative to root frame
-
-    pv.set_plot_theme('dark')
-    pl = pv.Plotter()
-    pl.set_background('black')
-    # pl.add_mesh(pv.Sphere(radius=bodies['earth']['r']), color='blue', show_edges=False)
-    for b in bodies.values():
-        line = pv.MultipleLines(b['state'][:, :3])
-        line['v_mag'] = norm(b['state'][:, 3:6], axis=1)
-        pl.add_mesh(line.tube(radius=100e3), scalars='v_mag', cmap='viridis')
 
     print("")
-    pl.show()
+
+    for body in bodies.values():
+        body['x'] = body['state'][:, :3]
+        body['v'] = body['state'][:, 3:6]
+        body['q'] = body['state'][:, 6:10]
+        body['omega'] = body['state'][:, 10:13]
+        body['m'] = body['state'][:, 13]
+
+        body.pop("state")
+
+    results = {'runtime':runtime, 'bodies':bodies}
+    plot_trajectories(results)
 
 
-simulate(join(getcwd(), "input.yaml"))
+# simulate(join(getcwd(), "input.yaml"))

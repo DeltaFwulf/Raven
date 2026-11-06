@@ -169,3 +169,31 @@ def map_inertia_tensor(frame:Frame, m:float, x:np.ndarray, i_in:np.ndarray, **kw
         i_out += m*(relational_matrix(r, r) - 2*relational_matrix(r, c))
 
     return i_out
+
+
+def nhamilton(qa:np.ndarray, qb:np.ndarray, invert:bool=False) -> np.ndarray:
+    """Chains two sets of quaternions together, qb qa, to obtain a combined rotation.
+    
+    If invert is True, applied qb's inverse to qa."""
+    k_inv = -1 if invert else 1
+
+    ndot = np.sum(qa[:, 1:]*k_inv*qb[:, 1:], axis=1)
+    return np.r_[qa[:, 0]*qb[:, 0] - ndot, qa[:, 0]*k_inv*qb[:, 1:] + qa[:, 1:]*qb[:, 0] + np.cross(qa[:, 1:], k_inv*qb[:, 1:], axis=1)]
+
+
+def ntransform(vecs:np.ndarray, q:np.ndarray, origin:np.ndarray, invert:bool=False) -> np.ndarray:
+    """Applies frame transformation, row-wise to a set of vectors.
+    
+    xParent = rotate_quaternion(xLoc, self.q)
+        return xParent if not incTranslation else xParent + self.origin
+
+    Transforms are given as an nx7 array: [q0, q1, q2, q3, x0, x1, x2]
+    """
+
+    if invert:
+        vecs -= origin
+        t = np.cross(2*-q[:, 1:], vecs, axis=1)
+        return vecs + q[:, 0].reshape(-1, 1)*t + np.cross(-q[:, 1:], t, axis=1)
+
+    t = np.cross(2*q[:, 1:], vecs, axis=1)
+    return vecs + q[:, 0]*t + np.cross(q[:, 1:], t, axis=1) + origin

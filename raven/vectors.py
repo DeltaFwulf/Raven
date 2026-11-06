@@ -155,3 +155,13 @@ def v_rotation(x:np.ndarray, omega:np.ndarray) -> np.ndarray:
     """
 
     return np.cross(x, omega)
+
+
+def cross(a:np.ndarray, b:np.ndarray) -> np.ndarray:
+    """Pure python cross product, with lower overhead than np.cross, maybe?"""
+
+    i = a[1]*b[2] - a[2]*b[1]
+    j = a[2]*b[0] - a[0]*b[2]
+    k = a[0]*b[1] - a[1]*b[0]
+
+    return np.array([i, j, k], float)
