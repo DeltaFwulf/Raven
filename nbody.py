@@ -1,12 +1,16 @@
 """Orbit determination and simulation code."""
 
+from os import getcwd
 from os.path import join
 import numpy as np
 import yaml
 
-from .motion import rk4
-from .vectors import hamilton
-from .plotter import plot_trajectories
+from raven.motion import rk45
+from raven.vectors import hamilton
+from raven.plotter import plot_trajectories
+
+
+# TODO: re-think dynamic storage, removing for now
 
 
 def progress_bar(size:int, progress:float) -> str:
@@ -22,7 +26,7 @@ def load_inputs(input_path:str) -> tuple[dict, dict]:
         data = yaml.load(f, Loader=yaml.SafeLoader)
 
     runtime = data.get('runtime')
-    runtime.update({'t':np.arange(0.0, runtime['tf'], runtime['dt'])})
+    # runtime.update({'t':np.arange(0.0, runtime['tf'], runtime['dt'])})
 
     bodies = data.get('bodies') # should preserve order, as newer than python 3.7
     with open(join('raven', 'planets.yaml'), 'r', encoding='utf-8') as f:
@@ -65,28 +69,33 @@ def simulate(input_path:str) -> None:
         system_state[n*state_offset:(n + 1)*state_offset] = b.get('state')
         perturbs[n*perturbs_offset:(n + 1)*perturbs_offset] = b.get('internals')
 
-    t_saved = 0.0
-    for i, t in enumerate(runtime['t']):
+    h = runtime['dt']
+    t = [0.0,]
 
-        print(progress_bar(20, t / runtime['tf']) + " (orbit)", end='\r', flush=True)
+    while(t[-1] < runtime['tf']):
+
+        print(progress_bar(20, t[-1] / runtime['tf']) + f" (h = {h:0.3f} s)", end='\r', flush=True)
 
         # update system state
-        system_state = rk4(system_state, perturbs, runtime['dt'])
+        # system_state = rk4(system_state, perturbs, runtime['dt'])
+        system_state, h, h_new = rk45(system_state,
+                               perturbs,
+                               h,
+                               runtime['atol'],
+                               runtime['rtol'],
+                               runtime['tf'] - t[-1])
+
+        t.append(t[-1] + h)
+        h = h_new
 
         if np.isnan(system_state).any():
             print("state contains NaN")
-            break
+            return
 
         # update body state arrays
-        save = False
-        if t - t_saved >= runtime['dt_store']:
-            save = True
-            t_saved = t
-
         for n, b in enumerate(bodies.values()):
             body_state = system_state[n*state_offset:(n + 1)*state_offset]
-            if save:
-                b['state'] = np.vstack((b['state'], body_state))
+            b['state'] = np.vstack((b['state'], body_state))
 
             # update internal loads, etc
 
@@ -102,8 +111,10 @@ def simulate(input_path:str) -> None:
 
         body.pop("state")
 
+    runtime.update({'t':t})
+
     results = {'runtime':runtime, 'bodies':bodies}
     plot_trajectories(results)
 
 
-# simulate(join(getcwd(), "input.yaml"))
+simulate(join(getcwd(), "input.yaml"))

@@ -3,7 +3,7 @@
 import pyvista as pv
 import numpy as np
 
-from .reference_frame import ntransform
+from .vectors import ntransform
 
 # def animate(results:dict) -> None:
 #     """Plots the system through time."""
@@ -49,7 +49,7 @@ def plot_trajectories(results:dict) -> None:
         if b is root:
             # TODO: get a shape def for non-planets
             shape = pv.Sphere(radius=b['r'])
-            pl.add_mesh(shape, color='blue')
+            pl.add_mesh(shape, color=root['colour'])
             continue
 
         if root is not None:

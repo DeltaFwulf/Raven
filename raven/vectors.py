@@ -3,6 +3,7 @@
 from math import pi, cos, sin, atan2, isnan
 import numpy as np
 from numpy.linalg import norm
+import numba
 
 
 
@@ -95,7 +96,6 @@ def angle_signed(a:np.ndarray, b:np.ndarray, normal:np.ndarray) -> float:
     return atan2(np.dot(np.cross(a, b), normal), np.dot(a, b))
 
 
-# XXX: Can we not use a simpler formula, like just from dot product?
 def angle_unsigned(a:np.ndarray, b:np.ndarray) -> float:
     """Returns the magnitude of the angle between two vectors, but cannot give the sign (direction) of the angle."""
     if norm(a) == 0 or norm(b) == 0:
@@ -106,18 +106,14 @@ def angle_unsigned(a:np.ndarray, b:np.ndarray) -> float:
 
 def project_vector(a:np.ndarray, b:np.ndarray, normal:bool) -> np.ndarray:
     """Projects vector A along vector B, returns either 'parallel' or 'normal' component of vector A to vector B."""
-    unit_b = unit(b)
-    parallel = np.dot(a, unit_b)*unit_b
+    parallel = np.dot(a, b)*b / norm(b)**2
 
-    if normal:
-        return a - parallel
-
-    return parallel
+    return (a - parallel) if normal else parallel
 
 
 def hamilton(qa:np.ndarray, qb:np.ndarray) -> np.ndarray:
-    """Returns the inner product of two quaternions (similar to dot-product but with orthogonal vectors)"""
-    return np.r_[qa[0]*qb[0] - np.dot(qa[1:],qb[1:]), qa[0]*qb[1:] + qa[1:]*qb[0] + np.cross(qa[1:], qb[1:])]
+    """Multiply two quaternions together, aka the Hamilton Product."""
+    return np.r_[qa[0]*qb[0] - np.dot(qa[1:],qb[1:]), qa[0]*qb[1:] + qa[1:]*qb[0] + cross(qa[1:], qb[1:])]
 
 
 def rotate_quaternion(vec:np.ndarray, q:np.ndarray) -> np.ndarray:
@@ -126,8 +122,36 @@ def rotate_quaternion(vec:np.ndarray, q:np.ndarray) -> np.ndarray:
     Source of equation: 
     https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles"""
 
-    t = np.cross(2*q[1:], vec)
-    return vec + q[0]*t + np.cross(q[1:], t)
+    t = cross(2*q[1:], vec)
+    return vec + q[0]*t + cross(q[1:], t)
+
+
+def nhamilton(qa:np.ndarray, qb:np.ndarray, invert:bool=False) -> np.ndarray:
+    """Chains two sets of quaternions together, qb qa, to obtain a combined rotation.
+    
+    If invert is True, applied qb's inverse to qa."""
+
+    k_inv = -1 if invert else 1
+
+    ndot = np.sum(qa[:, 1:]*k_inv*qb[:, 1:], axis=1)
+    return np.r_[qa[:, 0]*qb[:, 0] - ndot, qa[:, 0]*k_inv*qb[:, 1:] + qa[:, 1:]*qb[:, 0] + np.cross(qa[:, 1:], k_inv*qb[:, 1:], axis=1)]
+
+
+def ntransform(vecs:np.ndarray, q:np.ndarray, origin:np.ndarray, invert:bool=False) -> np.ndarray:
+    """Applies frame transformation, row-wise to a set of vectors.
+    
+    xParent = rotate_quaternion(xLoc, self.q)
+        return xParent if not incTranslation else xParent + self.origin
+
+    Transforms are given as an nx7 array: [q0, q1, q2, q3, x0, x1, x2]"""
+
+    if invert:
+        vecs -= origin
+        t = np.cross(2*-q[:, 1:], vecs, axis=1)
+        return vecs + q[:, 0].reshape(-1, 1)*t + np.cross(-q[:, 1:], t, axis=1)
+
+    t = np.cross(2*q[:, 1:], vecs, axis=1)
+    return vecs + q[:, 0]*t + np.cross(q[:, 1:], t, axis=1) + origin
 
 
 def rotate_axis_angle(vec:np.ndarray, axis:np.ndarray, ang:float) -> np.ndarray:
@@ -137,26 +161,7 @@ def rotate_axis_angle(vec:np.ndarray, axis:np.ndarray, ang:float) -> np.ndarray:
     return rotate_quaternion(vec, q)
 
 
-# XXX: This isn't really necessary
-def unit(vec:np.array) -> np.array:
-    """Returns a unit vector pointed in the same direction as the original vector""" 
-    if norm(vec) == 0:
-        raise ValueError
-
-    return vec / norm(vec)
-
-
-# XXX: This isn't really necessary
-def v_rotation(x:np.ndarray, omega:np.ndarray) -> np.ndarray:
-    """Gives the velocity of a point within a rotating reference frame.
-    
-    x is defined relative to the frame's origin, in parent coordinates.
-    omega is likewise defined about the origin, in parent coordinates.
-    """
-
-    return np.cross(x, omega)
-
-
+@numba.jit(nopython=True)
 def cross(a:np.ndarray, b:np.ndarray) -> np.ndarray:
     """Pure python cross product, with lower overhead than np.cross, maybe?"""
 
@@ -164,4 +169,4 @@ def cross(a:np.ndarray, b:np.ndarray) -> np.ndarray:
     j = a[2]*b[0] - a[0]*b[2]
     k = a[0]*b[1] - a[1]*b[0]
 
-    return np.array([i, j, k], float)
+    return np.array([i, j, k])
