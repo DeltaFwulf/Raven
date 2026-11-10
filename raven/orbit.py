@@ -14,10 +14,8 @@ def elements2state(elements:list, mu:float) -> tuple[np.ndarray, np.ndarray]:
     arg_pe = np.deg2rad(elements[4])
     t_anom = np.deg2rad(elements[5])
 
-    # calculate basis vectors
     x = np.array([1.0, 0.0, 0.0])
     z = np.array([0.0, 0.0, 1.0])
-
     n = rotate_axis_angle(x, z, long_asc)
     h = rotate_axis_angle(z, n, inc)
     e_unit = rotate_axis_angle(n, h, arg_pe)
@@ -27,9 +25,5 @@ def elements2state(elements:list, mu:float) -> tuple[np.ndarray, np.ndarray]:
     r_mag = p / (1 + e_mag*np.cos(t_anom))
     r = r_mag*(np.cos(t_anom)*e_unit + np.sin(t_anom)*q_unit)
     v = np.sqrt(mu / p)*((e_mag + np.cos(t_anom))*q_unit -np.sin(t_anom)*e_unit)
-
-    # r = r_mag * rotate_axis_angle(e_unit, h_unit, params['true_anomaly'])
-    # calculate v
-    # v = cross(params['h'], params['eccentricity'] + r / r_mag) / params['p']
 
     return r, v

@@ -3,7 +3,7 @@
 import pyvista as pv
 import numpy as np
 
-from .vectors import ntransform, cross
+from .vectors import ntransform
 
 
 def plot_trajectories(results:dict) -> None:
@@ -16,11 +16,6 @@ def plot_trajectories(results:dict) -> None:
     root_origin = root_frame[0]
     root_orientation = root_frame[1]
     root = bodies.get(root_origin)
-
-    # pos = np.array([1e7, 1e7, 1e7])
-    # x_cam = -pos / np.linalg.norm(pos)
-    # y_cam = cross(np.array([0,0,1]), x_cam)
-    # z_cam = cross(x_cam, y_cam / np.linalg.norm(y_cam))
 
     pv.set_plot_theme('dark')
     pl = pv.Plotter()
