@@ -10,7 +10,7 @@ from raven.motion import rk45
 from raven.vectors import hamilton, transform
 from raven.plotter import plot_trajectories
 
-
+# TODO: enforce a maximum timestep, with option of Inf or None, etc.
 
 def progress_bar(size:int, progress:float) -> str:
     """Draws a progress bar showing percentage complete with a filling bar."""
@@ -105,7 +105,7 @@ def parse_inputs(input_path:str) -> tuple[dict, dict] | None:
 
     return runtime, bodies
 
-
+# TODO: stop the simulation if any collision occurs (prevents objects passing near singularities)
 def simulate(input_path:str) -> None:
     """Simulate trajectory around a planet using RK4 solver."""
 
@@ -128,9 +128,8 @@ def simulate(input_path:str) -> None:
     h = runtime['dt']
     t = [0.0,]
 
-    while(t[-1] < runtime['tf']):
-
-        print(progress_bar(20, t[-1] / runtime['tf']) + f" (h = {h:0.1f} s)", end='\r', flush=True)
+    while t[-1] < runtime['tf']:
+        print(progress_bar(20, t[-1] / runtime['tf']) + f" (h = {h:0.1f} s)     ", end='\r', flush=True)
 
         system_state, h, h_new = rk45(system_state,
                                perturbs,
@@ -152,8 +151,7 @@ def simulate(input_path:str) -> None:
 
             # update internal loads, etc
 
-
-    print("")
+    print("\nSimulation complete, plotting...")
 
     for body in bodies.values():
         body['x'] = body['state'][:, :3]

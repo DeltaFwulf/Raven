@@ -1,0 +1,45 @@
+# Demo run input file
+
+runtime:
+  tf: 2.2e+6
+  dt: 10.0
+  root_frame: 'earth/inertial' # results are presented in this frame
+  atol: 1.0e-6
+  rtol: 1.0e-12
+
+bodies:
+
+  earth:
+    type: 0
+    planet: 'earth'
+    parent: 'universal'
+    rv: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    q: [0.0, 0.0, 0.0, 1.0] # orientation relative to inertial frame
+
+  moon:
+    type: 0
+    planet: 'luna'
+    parent: 'earth/inertial'
+    orbit: [362.6e+6, 0.0549, 5.145, 90.0, 0.0, 110.2] # set like this so inclination is right
+    # rv: [382.7e+6, 40.2e+6, 0.0, -106.8, 1016.0, 0.0]
+    q: [0.0, 0.0, 0.0, 1.0]
+
+  rocket:
+    type: 1
+    parent: 'earth/inertial'
+    # rv: [0.0, -6.5e+6, 0.0, 10984.0, 0.0, 0.0]
+    orbit: [6.5e+6, 0.9716, 5.145, 90.0, 0.0, 0.0]
+    q: [0.0, 1.0, 0.0, 0.0]
+    omega: [0.0, 0.0, 0.0]
+    m: 1000.0
+    I: [1000.0, 1000.0, 1000.0]
+
+  # lunar_orbiter:
+  #   type: 1
+  #   parent: 'moon/inertial'
+  #   # rv: [4.0e+6, 0.0, 0.0, 0.0, 1000.0, 0.0]
+  #   orbit: [3.0e+6, 0.0, 90.0, 0.0, 0.0, 0.0, 10.0] # relative to parent PCI, ignores frame specifier
+  #   q: [0.0, 1.0, 0.0, 0.0]
+  #   omega: [0.0, 0.0, 0.0]
+  #   m: 1000.0
+  #   I: [100.0, 100.0, 100.0]
