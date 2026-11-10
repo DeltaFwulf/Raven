@@ -7,7 +7,6 @@ earth:
   omega: [0.0, 0.0, 7.292115024e-5] # Expressed within body frame (PCI, PCPF)
   q_pci: [0.979153239, 0.203122953, 0.0, 0.0] # Expressed in universal frame
   atmosphere: 'coesa76'
-  orbital_parameters: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0] # w.r.t. parent body, in universal frame
   colour: 'blue'
 
 luna:
@@ -17,5 +16,4 @@ luna:
   omega: [0.0, 0.0, 2.668987036e-6]
   q_pci: [0.0, 0.0, 0.0, 1.0]
   atmosphere: 'none'
-  orbital_parameters: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
   colour: 'grey'

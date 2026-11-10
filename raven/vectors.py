@@ -137,12 +137,23 @@ def nhamilton(qa:np.ndarray, qb:np.ndarray, invert:bool=False) -> np.ndarray:
     return np.r_[qa[:, 0]*qb[:, 0] - ndot, qa[:, 0]*k_inv*qb[:, 1:] + qa[:, 1:]*qb[:, 0] + np.cross(qa[:, 1:], k_inv*qb[:, 1:], axis=1)]
 
 
+def transform(vec:np.ndarray, q:np.ndarray, origin:np.ndarray, invert:bool=False) -> np.ndarray:
+    """Applies frame transformation, to a 1D vector.
+    
+    Transforms are given as an 1x7 array: [q0, q1, q2, q3, x0, x1, x2]"""
+
+    if invert:
+        vec -= origin
+        t = cross(2*-q[1:], vec)
+        return vec + q[0]*t + cross(-q[1:], t)
+
+    t = cross(2*q[1:], vec)
+    return vec + q[0]*t + cross(q[1:], t) + origin
+
+
 def ntransform(vecs:np.ndarray, q:np.ndarray, origin:np.ndarray, invert:bool=False) -> np.ndarray:
     """Applies frame transformation, row-wise to a set of vectors.
     
-    xParent = rotate_quaternion(xLoc, self.q)
-        return xParent if not incTranslation else xParent + self.origin
-
     Transforms are given as an nx7 array: [q0, q1, q2, q3, x0, x1, x2]"""
 
     if invert:
