@@ -1,7 +1,7 @@
 # Demo run input file
 
 runtime:
-  tf: 1.0e+5
+  tf: 1.0e+6
   dt: 10.0
   root_frame: 'earth/inertial' # results are presented in this frame
   atol: 1.0e-6
