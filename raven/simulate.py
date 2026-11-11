@@ -8,7 +8,6 @@ from .orbit import elements2state
 from .motion import rk45
 from .vectors import hamilton, transform, coords2cartesian, cross
 
-# TODO: enforce a maximum timestep, with option of Inf or None, etc.
 
 def progress_bar(size:int, progress:float) -> str:
     """Draws a progress bar showing percentage complete with a filling bar."""
@@ -132,6 +131,7 @@ def simulate(input_path:str) -> dict | None:
         perturbs[n*perturbs_offset:(n + 1)*perturbs_offset] = b.get('internals')
 
     h = runtime['dt']
+    h_max = np.inf if not runtime.get('hmax') else runtime['hmax']
     t = [0.0,]
 
     while t[-1] < runtime['tf']:
@@ -142,7 +142,7 @@ def simulate(input_path:str) -> dict | None:
                                h,
                                runtime['atol'],
                                runtime['rtol'],
-                               runtime['tf'] - t[-1])
+                               min(h_max, runtime['tf'] - t[-1]))
 
         t.append(t[-1] + h)
         h = h_new
