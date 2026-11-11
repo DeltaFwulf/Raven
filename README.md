@@ -11,13 +11,15 @@ $\uparrow$ _A lunar free return trajectory simulated with Raven._
 
 <br>
 
- **Key Features**
- - _Modular spacecraft, accepts .stl meshes for component for CAD integration._
- - _Extended Barrowman aerodynamics model._
+ **Planned Features**
+ - Modular spacecraft, accepts .stl meshes for component for CAD integration.
+ - Programmable modules for dynamic vehicle behaviours (nozzle gimbal, fin actuation, reaction wheels etc).
+ - Extended Barrowman aerodynamics model.
  - n-body gravity model with Runge-Kutta-Fehlberg solver.
- - _Emulation of control systems for active guidance simulation, orbital launch optimisation, etc._
- - _HIL via serial port_
- - _hdf5 result files for parsing in other analysis software._
+ - Ascent guidance and trajectory optimisation.
+ - Mission planner to reach target trajectories.
+ - HIL via serial port, connection to ground station via TCP.
+
 <br>
 
 <br>
