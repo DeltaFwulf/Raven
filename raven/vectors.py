@@ -181,3 +181,36 @@ def cross(a:np.ndarray, b:np.ndarray) -> np.ndarray:
     k = a[0]*b[1] - a[1]*b[0]
 
     return np.array([i, j, k])
+
+
+@numba.jit(nopython=True)
+def quaternion2rotation_matrix(q:np.ndarray) -> np.ndarray:
+    """Returns a 3x3 rotation matrix from an attitude quaternion."""
+
+    r = np.zeros((3, 3), float)
+    r[0, 0] = 1 - 2*(q[2]**2 + q[3]**2)
+    r[0, 1] = 2*(q[1]*q[2] - q[3]*q[0])
+    r[0, 2] = 2*(q[1]*q[3] + q[2]*q[0])
+    r[1, 0] = 2*(q[1]*q[2] + q[3]*q[0])
+    r[1, 1] = 1 - 2*(q[1]**2 + q[3]**2)
+    r[1, 2] = 2*(q[2]*q[3] - q[1]*q[0])
+    r[2, 0] = 2*(q[1]*q[3] - q[2]*q[0])
+    r[2, 1] = 2*(q[2]*q[3] + q[1]*q[0])
+    r[2, 2] = 1 - 2*(q[1]**2 + q[2]**2)
+
+    return r
+
+
+# @numba.jit(nopython=True)
+def relative_quaternion(a:np.ndarray, b:np.ndarray) -> np.ndarray:
+    """Calculates the attitude quaternion that rotates a to b.
+
+    a and b are assumed to have equal magnitude."""
+
+    a /= norm(a)
+    b /= norm(b)
+
+    ang = np.arccos(np.dot(a, b))
+    axis = cross(a, b)
+
+    return np.r_[np.cos(ang / 2), np.sin(ang / 2)*axis]

@@ -45,7 +45,7 @@ def parse_inputs(input_path:str) -> tuple[dict, dict] | None:
 
             x_parent = np.zeros(3, float)
             v_parent = np.zeros(3, float)
-            q_parent = np.array([0.0, 1.0, 0.0, 0.0], float)
+            q_parent = np.array([1.0, 0.0, 0.0, 0.0], float)
 
             if parent[0].lower() != 'universal':
                 p_body = bodies[parent[0]]
@@ -98,7 +98,7 @@ def parse_inputs(input_path:str) -> tuple[dict, dict] | None:
             state[10:13] = b['omega']
             state[13] = b['m']
 
-            body.update({'state':state})
+            body.update({'type':b['type'], 'state':state})
             internals = np.r_[np.zeros(6), b['I'], 0, b['type']]
             body.update({'internals':internals})
             bodies.update({k:body})
