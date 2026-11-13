@@ -83,8 +83,12 @@ def animate(results:dict, freq:int=30, show_omega:bool=False) -> None:
 
 
 # TODO: use a slider to scrub through time, plot all bodies at their current positions at ends of lines
-def plot_trajectories(results:dict) -> None:
+def plot_trajectories(results:dict, tf:float=None) -> None:
     """Plots all trajectories w.r.t. the root frame."""
+
+    # number of rows to include
+    nmax = len(results['runtime']['t'])
+    n = np.max(np.argwhere(results['runtime']['t'] <= tf)) if tf is not None else nmax
 
     runtime = results['runtime']
     bodies = results['bodies']
@@ -114,8 +118,8 @@ def plot_trajectories(results:dict) -> None:
             pts = ntransform(b['x'], q_root, root['x'], invert=True)
             v = ntransform(b['v'], q_root, root['v'], invert=True)
         else:
-            pts = b['x']
-            v = b['v']
+            pts = b['x'][:n + 1, :]
+            v = b['v'][:n + 1, :]
 
         line = pv.MultipleLines(points=pts)
         line['v_mag'] = np.linalg.norm(v, axis=1)
@@ -123,3 +127,8 @@ def plot_trajectories(results:dict) -> None:
 
     pl.camera_position = cpos
     pl.show()
+
+
+def plot_trajectory_slider(results:dict) -> None:
+    """Plots the trajectory up to the time defined by a user, via a slider widget."""
+    pass

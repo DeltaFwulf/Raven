@@ -23,7 +23,9 @@ def parse_inputs(input_path:str) -> tuple[dict, dict] | None:
 
     runtime = data.get('runtime')
 
-    # TODO: check root frame
+    if runtime['root_frame'] != 'universal' and runtime['root_frame'] not in data['bodies'].keys():
+        print(f"Could not set {runtime['root_frame']} as root frame.")
+        return None
 
     b_def = data.get('bodies') # should preserve order, as newer than python 3.7
     with open(join('raven', 'planets.yaml'), 'r', encoding='utf-8') as f:
@@ -37,7 +39,7 @@ def parse_inputs(input_path:str) -> tuple[dict, dict] | None:
             parent = b.get('parent').split('/')
             if parent[0].lower() != 'universal' and parent[0].lower() not in b_def.keys():
                 print(f"Body {k} is orphaned (no body named {parent[0]}).")
-                return
+                return None
 
             # skip bodies whose parents have not yet been initialised
             if parent[0].lower() != 'universal' and bodies.get(parent[0]) is None:
