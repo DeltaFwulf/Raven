@@ -6,7 +6,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from raven.vectors import cartesian2spherical, spherical2cartesian, cartesian2coords, coords2cartesian, spherical2coords, coords2spherical, getAngleSigned, getAngleUnsigned, projectVector, grassmann, qRotate, unit
+from raven.vectors import cartesian2spherical, spherical2cartesian, cartesian2coords, coords2cartesian, spherical2coords, coords2spherical, getAngleSigned, getAngleUnsigned, projectVector, hamilton, qRotate
 
 
 
@@ -306,7 +306,7 @@ class test_vector_util(unittest.TestCase):
 
         qExp = np.r_[cos(halfAng), sin(halfAng)*axis]
 
-        assert_allclose(grassmann(qa, qb), qExp, atol=1e-9)
+        assert_allclose(hamilton(qa, qb), qExp, atol=1e-9)
 
     
     def test_qRotate(self):
@@ -323,18 +323,6 @@ class test_vector_util(unittest.TestCase):
         q = np.r_[cos(pi / 2), sin(pi / 2)*np.array([1, 0, 0], float)]
 
         assert_allclose(qRotate(vec, q), np.zeros(3, float), atol=1e-9)
-
-
-    def test_unit(self):
-
-        vec = np.array([-1, 2, 2], float)
-        assert_allclose(unit(vec), (1 / 3)*vec, atol=1e-9)
-
-
-    def test_unit_nullvec(self):
-
-        with self.assertRaises(ValueError):
-            unit(np.zeros(3, float))
 
 
 

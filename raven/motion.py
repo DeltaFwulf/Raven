@@ -25,15 +25,14 @@ class Pert(Enum):
     T = 3
     I = 6
     MDOT = 9
-    C = 10
 
 
 # differentiate the state vector
-def diff_state(h:float, x:np.ndarray, p:np.ndarray) -> np.ndarray:
+def diff_state(h:float, x:np.ndarray, perts:np.ndarray, props:list[dict]) -> np.ndarray:
     """Differentiates the state array."""
 
     state_len = 14
-    pert_len = 11
+    pert_len = 10
     n = round(x.size / state_len)
 
     dx = np.zeros_like(x, float)
@@ -41,7 +40,7 @@ def diff_state(h:float, x:np.ndarray, p:np.ndarray) -> np.ndarray:
 
         sa = i*state_len
         pa = i*pert_len
-        ma = x[sa + State.M.value] + p[pa + Pert.MDOT.value]*h
+        ma = x[sa + State.M.value] + perts[pa + Pert.MDOT.value]*h
 
         # velocity
         dx[sa + State.XDOT.value:sa + State.XDOT.value + 3] = x[sa + State.V.value:sa + State.V.value + 3]
@@ -51,49 +50,55 @@ def diff_state(h:float, x:np.ndarray, p:np.ndarray) -> np.ndarray:
         omega = x[sa + State.W.value:sa + State.W.value + 3]
         dx[sa + State.Q.value:sa+ State.Q.value + 4] += 0.5*hamilton(q, np.r_[0, omega])
 
-        I = np.diag(p[pa + Pert.I.value:pa + Pert.I.value + 3])
-        torque = p[pa + Pert.T.value:pa + Pert.T.value + 3]
+        I = np.diag(perts[pa + Pert.I.value:pa + Pert.I.value + 3])
+        torque = perts[pa + Pert.T.value:pa + Pert.T.value + 3]
         dx[sa + State.W.value:sa + State.W.value + 3] += np.matmul(np.linalg.inv(I), torque - cross(omega, np.matmul(I, omega)))
 
-        # uncoupled loads
-        force = rotate_quaternion(p[pa + Pert.F.value:pa + Pert.F.value + 3], q*np.array([1, -1, -1, -1])) # get into universal frame
+        # uncoupled perturbations
+        # XXX: see if can remove extra transformation in conjunction with aero calcs
+        force = rotate_quaternion(perts[pa + Pert.F.value:pa + Pert.F.value + 3], q*np.array([1, -1, -1, -1])) # get into universal frame
         dx[sa + State.A.value:sa + State.A.value + 3] = force / ma
+        dx[sa + State.M.value] = perts[pa + Pert.MDOT.value]
 
-        # change in mass
-        dx[sa + State.M.value] = p[pa + Pert.MDOT.value]
-
-        # coupled effects
+        # coupled perturbations
         for j in range(n):
             pb = j*pert_len
-            if i == j or p[j*pert_len + Pert.C.value] == 1:
+            if i == j or props[j]['type'] == 1:
                 continue
 
             sb = j*state_len
-            mb = x[sb + State.M.value] + p[pb + Pert.MDOT.value]*h
+            mb = x[sb + State.M.value] + perts[pb + Pert.MDOT.value]*h
 
             # gravitational acceleration
             s = x[sa + State.X.value:sa + State.X.value + 3] - x[sb + State.X.value:sb + State.X.value + 3]
             dx[sa + State.A.value:sa + State.A.value + 3] -= 6.67408e-11*mb*s / norm(s)**3
 
             # aerodynamics
-            # if ca == 1 and cb['atmosphere'] is not None:
-            #     pass
+            if props[i]['type'] == 1 and props[j]['type'] == 1 and props[j]['atmosphere'] is not None:                
+                z = s - props[j]['r']
+                air = props[j]['atmosphere'](z)
+                
+                
+
+                # get relative velocity in universal frame, map to body frame
+
+                # apply aerodynamic loads, transform from the body frame
 
     return dx
 
 
-def rk4(x0:np.ndarray, perts:np.ndarray, h:float) -> np.ndarray:
+def rk4(x0:np.ndarray, perts:np.ndarray, props:list[dict], h:float) -> np.ndarray:
     """Solves for new system state using RK4."""
 
-    k1 = diff_state(0.0, x0, perts)
-    k2 = diff_state(h / 2, x0 + k1*0.5*h, perts)
-    k3 = diff_state(h / 2, x0 + k2*0.5*h, perts)
-    k4 = diff_state(h, x0 + k3*h, perts)
+    k1 = diff_state(0.0, x0, perts, props)
+    k2 = diff_state(h / 2, x0 + k1*0.5*h, perts, props)
+    k3 = diff_state(h / 2, x0 + k2*0.5*h, perts, props)
+    k4 = diff_state(h, x0 + k3*h, perts, props)
 
     return x0 + h*(k1 + 2*(k2 + k3) + k4) / 6
 
 
-def rk45(x0:np.ndarray, perts:np.ndarray, h_in:float, atol:float, rtol:float, hmax:float) -> tuple[np.ndarray, float]:
+def rk45(x0:np.ndarray, perts:np.ndarray, props:list[dict], h_in:float, atol:float, rtol:float, hmax:float) -> tuple[np.ndarray, float]:
     """RK4 solver with adaptive timestep control."""
 
     delta = 2
@@ -104,12 +109,12 @@ def rk45(x0:np.ndarray, perts:np.ndarray, h_in:float, atol:float, rtol:float, hm
 
         h = h_new
         # compute internal stages
-        k1 = diff_state(0.0, x0, perts)
-        k2 = diff_state(h / 4, x0 + 0.25*h*k1, perts)
-        k3 = diff_state(3*h / 8, x0 + h*(3*k1 / 32 + 9*k2 / 32), perts)
-        k4 = diff_state(h*12 / 13, x0 + (h / 2197)*(1932*k1 - 7200*k2 + 7296*k3), perts)
-        k5 = diff_state(h, x0 + h*(439*k1 / 216 - 8*k2 + 3680*k3 / 513 - 845*k4 / 4104), perts)
-        k6 = diff_state(h / 2, x0 + h*(-8*k1 / 27 + 2*k2 - 3544*k3 / 2565 + 1859*k4 / 4104 - 11*k5 / 40), perts)
+        k1 = diff_state(0.0, x0, perts, props)
+        k2 = diff_state(h / 4, x0 + 0.25*h*k1, perts, props)
+        k3 = diff_state(3*h / 8, x0 + h*(3*k1 / 32 + 9*k2 / 32), perts, props)
+        k4 = diff_state(h*12 / 13, x0 + (h / 2197)*(1932*k1 - 7200*k2 + 7296*k3), perts, props)
+        k5 = diff_state(h, x0 + h*(439*k1 / 216 - 8*k2 + 3680*k3 / 513 - 845*k4 / 4104), perts, props)
+        k6 = diff_state(h / 2, x0 + h*(-8*k1 / 27 + 2*k2 - 3544*k3 / 2565 + 1859*k4 / 4104 - 11*k5 / 40), perts, props)
 
         # compute 4th and 5th order estimates
         x4 = h*((25 / 216)*k1 + (1408 / 2565)*k3 + (2197/4104)*k4 - 0.2*k5)

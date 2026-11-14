@@ -4,10 +4,12 @@ from os.path import join
 import numpy as np
 import yaml
 
+from . import atmosphere
 from .orbit import elements2state
 from .motion import rk45
 from .vectors import hamilton, transform, coords2cartesian, cross
 
+# TODO: unify state and pert length parameters via one set of constants
 
 def progress_bar(size:int, progress:float) -> str:
     """Draws a progress bar showing percentage complete with a filling bar."""
@@ -62,8 +64,6 @@ def parse_inputs(input_path:str) -> tuple[dict, dict] | None:
 
             body = {}
 
-            # TODO: parse rocket definition here
-
             xb = np.zeros(3, float)
             vb = np.zeros(3, float)
 
@@ -100,10 +100,18 @@ def parse_inputs(input_path:str) -> tuple[dict, dict] | None:
 
             state[10:13] = b['omega']
             state[13] = b['m']
+            body.update({'state':state})
 
-            body.update({'type':b['type'], 'state':state})
-            internals = np.r_[np.zeros(6), b['I'], 0, b['type']]
-            body.update({'internals':internals})
+            # properties dict
+            props = {'type':b['type']}
+            if props['type'] == 0:
+                atmo_model = getattr(atmosphere, b['atmosphere'], None)
+                props.update({'r':b['r'], 'atmosphere':atmo_model})
+
+            body.update({'properties':props})
+
+            # perturbation array
+            body.update({'perturbations':np.r_[np.zeros(6), b['I'], 0]})
             bodies.update({k:body})
             loaded.append(k)
 
@@ -124,14 +132,16 @@ def simulate(input_path:str) -> dict | None:
         return None
 
     state_offset = 14
-    perturbs_offset = 11
+    perturbs_offset = 10
 
     # initialise system state array
     system_state = np.zeros((len(bodies)*state_offset), float)
     perturbs = np.zeros((len(bodies)*perturbs_offset), float)
+    properties = []
     for n,b in enumerate(bodies.values()):
         system_state[n*state_offset:(n + 1)*state_offset] = b.get('state')
-        perturbs[n*perturbs_offset:(n + 1)*perturbs_offset] = b.get('internals')
+        perturbs[n*perturbs_offset:(n + 1)*perturbs_offset] = b.get('perturbations')
+        properties.append(b.get('properties'))
 
     h = runtime['dt']
     h_max = np.inf if not runtime.get('hmax') else runtime['hmax']
@@ -141,11 +151,12 @@ def simulate(input_path:str) -> dict | None:
         print(progress_bar(20, t[-1] / runtime['tf']) + f" (h = {h:0.1f} s)     ", end='\r', flush=True)
 
         system_state, h, h_new = rk45(system_state,
-                               perturbs,
-                               h,
-                               runtime['atol'],
-                               runtime['rtol'],
-                               min(h_max, runtime['tf'] - t[-1]))
+                                      perturbs,
+                                      properties,
+                                      h,
+                                      runtime['atol'],
+                                      runtime['rtol'],
+                                      min(h_max, runtime['tf'] - t[-1]))
 
         t.append(t[-1] + h)
         h = h_new
@@ -168,6 +179,8 @@ def simulate(input_path:str) -> dict | None:
         body['m'] = body['state'][:, 13]
 
         body.pop("state")
+        if body['properties'].get('atmosphere'):
+            body['properties'].pop("atmosphere")
 
     runtime.update({'t':t})
     return {'runtime':runtime, 'bodies':bodies}

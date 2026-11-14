@@ -2,3 +2,6 @@
 .vs
 *.prof
 inputs
+profiles
+.vs
+.vscode

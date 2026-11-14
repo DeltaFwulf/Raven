@@ -41,9 +41,6 @@ def coesa_low(z_km:float) -> np.ndarray:
     return state
 
 
-# TODO: profile and move to equations if faster
-# TODO: test effect of pre compilation
-
 def coesa_high(z_km:float) -> np.ndarray:
     """Calculate atmospheric properties for Earth between 86 and 1000 km."""
 
@@ -94,7 +91,6 @@ def coesa_high(z_km:float) -> np.ndarray:
     state[2] = exp(sum(kd[4 - i]*z_km**i for i in range(0, 5)))
 
     return state
-
 
 
 def coesa76(z:float) -> np.ndarray:
