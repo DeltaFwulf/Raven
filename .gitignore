@@ -5,3 +5,5 @@ inputs
 profiles
 .vs
 .vscode
+.pytest_cache
+plot_atmosphere.py
