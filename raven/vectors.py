@@ -201,7 +201,6 @@ def quaternion2rotation_matrix(q:np.ndarray) -> np.ndarray:
     return r
 
 
-# @numba.jit(nopython=True)
 def relative_quaternion(a:np.ndarray, b:np.ndarray) -> np.ndarray:
     """Calculates the attitude quaternion that rotates a to b.
 
