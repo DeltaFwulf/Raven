@@ -107,6 +107,8 @@ def parse_inputs(input_path:str) -> tuple[dict, dict] | None:
             if props['type'] == 0:
                 atmo_model = getattr(atmosphere, b['atmosphere'], None)
                 props.update({'r':b['r'], 'atmosphere':atmo_model})
+            elif props['type'] == 1:
+                props.update({'cda':b['cda']})
 
             body.update({'properties':props})
 

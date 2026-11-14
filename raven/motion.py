@@ -56,9 +56,8 @@ def diff_state(h:float, x:np.ndarray, perts:np.ndarray, props:list[dict]) -> np.
 
         # uncoupled perturbations
         # XXX: see if can remove extra transformation in conjunction with aero calcs
-        force = rotate_quaternion(perts[pa + Pert.F.value:pa + Pert.F.value + 3], q*np.array([1, -1, -1, -1])) # get into universal frame
-        dx[sa + State.A.value:sa + State.A.value + 3] = force / ma
         dx[sa + State.M.value] = perts[pa + Pert.MDOT.value]
+        force = rotate_quaternion(perts[pa + Pert.F.value:pa + Pert.F.value + 3], q*np.array([1, -1, -1, -1])) # get into universal frame
 
         # coupled perturbations
         for j in range(n):
@@ -71,18 +70,26 @@ def diff_state(h:float, x:np.ndarray, perts:np.ndarray, props:list[dict]) -> np.
 
             # gravitational acceleration
             s = x[sa + State.X.value:sa + State.X.value + 3] - x[sb + State.X.value:sb + State.X.value + 3]
-            dx[sa + State.A.value:sa + State.A.value + 3] -= 6.67408e-11*mb*s / norm(s)**3
+            s_mag = norm(s)
+            dx[sa + State.A.value:sa + State.A.value + 3] -= 6.67408e-11*mb*s / s_mag**3
 
             # aerodynamics
-            if props[i]['type'] == 1 and props[j]['type'] == 1 and props[j]['atmosphere'] is not None:                
-                z = s - props[j]['r']
+            if props[i]['type'] == 1 and props[j]['type'] == 0 and props[j]['atmosphere'] is not None:                
+                z = s_mag - props[j]['r']
                 air = props[j]['atmosphere'](z)
-                
-                
 
-                # get relative velocity in universal frame, map to body frame
+                # freestream velocity in universal frame
+                omega_parent = rotate_quaternion(x[sb + State.W.value:sb + State.W.value + 3],
+                                                 x[sb + State.Q.value:sb + State.Q.value + 3])
 
-                # apply aerodynamic loads, transform from the body frame
+                v_rel = x[sb + State.V.value:sb + State.V.value + 3] +\
+                        cross(omega_parent, s) -\
+                        x[sa + State.V.value:sa + State.V.value + 3]
+
+                # TODO: better aero properties definition
+                force += 0.5*air[2]*v_rel*norm(v_rel)*props[i]['cda']
+
+        dx[sa + State.A.value:sa + State.A.value + 3] += force / ma
 
     return dx
 

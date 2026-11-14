@@ -9,7 +9,7 @@ from raven.plotter import plot_trajectories #animate
 def main():
     """Runs a simulation and plots results."""
 
-    results = simulate(join(getcwd(), "inputs", "free_return.yaml"))
+    results = simulate(join(getcwd(), "inputs", "drag.yaml"))
 
     if results is None:
         print("Simulation failed.")

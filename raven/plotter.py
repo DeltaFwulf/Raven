@@ -123,7 +123,7 @@ def plot_trajectories(results:dict, tf:float=None) -> None:
 
         line = pv.MultipleLines(points=pts)
         line['v_mag'] = np.linalg.norm(v, axis=1)
-        pl.add_mesh(line.tube(radius=5e4), scalars='v_mag', cmap='viridis')
+        pl.add_mesh(line.tube(radius=5e3), scalars='v_mag', cmap='viridis')
 
     pl.camera_position = cpos
     pl.show()
