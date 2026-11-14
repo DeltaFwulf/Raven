@@ -16,7 +16,6 @@ def calc_state_coesa() -> None:
     for i, z in enumerate(alts):
         props[i, :] = coesa76(z)
 
-
     # plot results
     fig, axs = plt.subplots(3, 1)
 

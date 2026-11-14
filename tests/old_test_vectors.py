@@ -6,7 +6,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from raven.vectorUtil import cartesian2spherical, spherical2cartesian, cartesian2coords, coords2cartesian, spherical2coords, coords2spherical, getAngleSigned, getAngleUnsigned, projectVector, grassmann, qRotate, unit
+from raven.vectors import cartesian2spherical, spherical2cartesian, cartesian2coords, coords2cartesian, spherical2coords, coords2spherical, getAngleSigned, getAngleUnsigned, projectVector, grassmann, qRotate, unit
 
 
 
