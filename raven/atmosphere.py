@@ -4,8 +4,6 @@ from math import exp, sqrt
 import numpy as np
 
 
-# FIXME: fix reference radius for earth to 6356.766 km
-# TODO: implement coordinate-wise reference atmospheres up to 90 km
 
 def coesa_low(z_km:float) -> np.ndarray:
     """Calculate atmospheric properties for Earth below 86 km."""
