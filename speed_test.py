@@ -14,11 +14,10 @@ from raven.simulate import simulate
 def raven_noplot():
     """Runs a simulation and plots results."""
 
-    results = simulate(join(getcwd(), "input.yaml"))
+    results = simulate(join(getcwd(), "inputs", "input.yaml"))
 
     if results is None:
         print("Simulation failed.")
-        return
 
 dt = datetime.now(timezone.utc)
 FILENAME = f"raven_profile_{dt.strftime("%F_%H%M%S")}.prof"

@@ -23,7 +23,8 @@ def parse_inputs(input_path:str) -> tuple[dict, dict] | None:
 
     runtime = data.get('runtime')
 
-    if runtime['root_frame'] != 'universal' and runtime['root_frame'] not in data['bodies'].keys():
+    root_frame = runtime['root_frame'].split('/')
+    if root_frame[0] != 'universal' and root_frame[0] not in data['bodies'].keys():
         print(f"Could not set {runtime['root_frame']} as root frame.")
         return None
 
