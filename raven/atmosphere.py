@@ -2,8 +2,6 @@
 
 from math import exp, sqrt
 import numpy as np
-import numba
-
 
 
 def coesa_low(z_km:float) -> np.ndarray:

@@ -6,32 +6,6 @@ from numpy.linalg import norm
 import numba
 
 
-
-def cartesian2spherical(vector:np.ndarray) -> tuple[float, float, float]:
-    """Converts a cartesian vector to spherical coordinates (r, inc, az) following ISO convention"""
-    r = norm(vector)
-
-    inc = atan2(norm(vector[0:-1]), vector[2])
-    if isnan(inc):
-        inc = 0
-
-    az = atan2(vector[1], vector[0])
-    if isnan(az):
-        az = 0
-
-    return r, inc, az
-
-
-def spherical2cartesian(inc:float, az:float, r:float) -> np.ndarray:
-    """Returns the cartesian vector given spherical coordinates"""
-
-    if inc%(2*pi) > pi:
-        inc = 2*pi - inc%(2*pi)
-        az += pi
-
-    return r*np.r_[sin(inc)*cos(az), sin(inc)*sin(az), cos(inc)]
-
-
 def cartesian2coords(vector:np.ndarray) -> tuple['float', 'float']:
     """ Calculates the latitude and longitude on a spherical body given a cartesian vector"""
     lat = pi / 2 - atan2(norm(vector[0:-1]), vector[2])
@@ -54,32 +28,6 @@ def coords2cartesian(lat:float, long:float, r:float) -> np.ndarray:
     return np.array([x, y, z], float)
 
 
-def coords2spherical(lat, long) -> tuple[float, float]:
-    """Converts latitude and longitude into spherical inclination and azimuth"""
-
-    inc = pi / 2 - lat
-    az = long
-
-    if inc % (2*pi) > pi:
-        inc = 2*pi - inc % (2*pi)
-        az += pi
-
-    return inc, az % (2*pi)
-
-
-def spherical2coords(inc:float, az:float) -> tuple[float, float]:
-    """Returns latitude and longitude (East) given inclination and azimuth"""
-
-    if inc % (2*pi) > pi:
-        inc = 2*pi - inc % (2*pi)
-        az += pi
-
-    if az % (2*pi) > pi:
-        az -= 2*pi
-
-    return pi / 2 - inc, az
-
-
 def angle_signed(a:np.ndarray, b:np.ndarray, normal:np.ndarray) -> float:
     """Gets the angle from vecA to vecB in the correct direction, given that they both lie on a known plane."""
 
@@ -96,24 +44,11 @@ def angle_signed(a:np.ndarray, b:np.ndarray, normal:np.ndarray) -> float:
     return atan2(np.dot(np.cross(a, b), normal), np.dot(a, b))
 
 
-def angle_unsigned(a:np.ndarray, b:np.ndarray) -> float:
-    """Returns the magnitude of the angle between two vectors, but cannot give the sign (direction) of the angle."""
-    if norm(a) == 0 or norm(b) == 0:
-        raise ValueError
-
-    return atan2(norm(np.cross(a, b)), np.dot(a, b))
-
-
 def project_vector(a:np.ndarray, b:np.ndarray, normal:bool) -> np.ndarray:
     """Projects vector A along vector B, returns either 'parallel' or 'normal' component of vector A to vector B."""
     parallel = np.dot(a, b)*b / norm(b)**2
 
     return (a - parallel) if normal else parallel
-
-
-def hamilton(qa:np.ndarray, qb:np.ndarray) -> np.ndarray:
-    """Multiply two quaternions together, aka the Hamilton Product."""
-    return np.r_[qa[0]*qb[0] - np.dot(qa[1:],qb[1:]), qa[0]*qb[1:] + qa[1:]*qb[0] + cross(qa[1:], qb[1:])]
 
 
 def rotate_quaternion(vec:np.ndarray, q:np.ndarray) -> np.ndarray:
@@ -124,6 +59,11 @@ def rotate_quaternion(vec:np.ndarray, q:np.ndarray) -> np.ndarray:
 
     t = cross(2*q[1:], vec)
     return vec + q[0]*t + cross(q[1:], t)
+
+
+def hamilton(qa:np.ndarray, qb:np.ndarray) -> np.ndarray:
+    """Multiply two quaternions together, aka the Hamilton Product."""
+    return np.r_[qa[0]*qb[0] - np.dot(qa[1:],qb[1:]), qa[0]*qb[1:] + qa[1:]*qb[0] + cross(qa[1:], qb[1:])]
 
 
 def nhamilton(qa:np.ndarray, qb:np.ndarray, invert:bool=False) -> np.ndarray:

@@ -129,6 +129,9 @@ def plot_trajectories(results:dict, tf:float=None) -> None:
     pl.show()
 
 
+# TODO: add a slider for time (or step) to scrub through simulation
+# TODO: add body shapes in correct positions at ends of trajectory lines
+# TODO: add a slider for line tube thickness
 def plot_trajectory_slider(results:dict) -> None:
     """Plots the trajectory up to the time defined by a user, via a slider widget."""
     pass
