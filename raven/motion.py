@@ -55,7 +55,6 @@ def diff_state(h:float, x:np.ndarray, perts:np.ndarray, props:list[dict]) -> np.
         dx[sa + State.W.value:sa + State.W.value + 3] += np.matmul(np.linalg.inv(I), torque - cross(omega, np.matmul(I, omega)))
 
         # uncoupled perturbations
-        # XXX: see if can remove extra transformation in conjunction with aero calcs
         dx[sa + State.M.value] = perts[pa + Pert.MDOT.value]
         force = rotate_quaternion(perts[pa + Pert.F.value:pa + Pert.F.value + 3], q*np.array([1, -1, -1, -1])) # get into universal frame
 
@@ -94,26 +93,14 @@ def diff_state(h:float, x:np.ndarray, perts:np.ndarray, props:list[dict]) -> np.
     return dx
 
 
-def rk4(x0:np.ndarray, perts:np.ndarray, props:list[dict], h:float) -> np.ndarray:
-    """Solves for new system state using RK4."""
-
-    k1 = diff_state(0.0, x0, perts, props)
-    k2 = diff_state(h / 2, x0 + k1*0.5*h, perts, props)
-    k3 = diff_state(h / 2, x0 + k2*0.5*h, perts, props)
-    k4 = diff_state(h, x0 + k3*h, perts, props)
-
-    return x0 + h*(k1 + 2*(k2 + k3) + k4) / 6
-
-
-def rk45(x0:np.ndarray, perts:np.ndarray, props:list[dict], h_in:float, atol:float, rtol:float, hmax:float) -> tuple[np.ndarray, float]:
+# TODO: write unit tests
+def rk45(x0:np.ndarray, perts:np.ndarray, props:list[dict], h_in:float, atol:float, rtol:float, hmax:float) -> tuple[np.ndarray, float, float]:
     """RK4 solver with adaptive timestep control."""
 
     delta = 2
     h_new = copy(h_in)
 
-    converged = False
-    while not converged:
-
+    while delta > 1:
         h = h_new
         # compute internal stages
         k1 = diff_state(0.0, x0, perts, props)
@@ -132,24 +119,5 @@ def rk45(x0:np.ndarray, perts:np.ndarray, props:list[dict], h_in:float, atol:flo
         delta = np.linalg.norm((x5 - x4) / (tol*x0.size))
         r =min(5, delta**(-0.2))
         h_new = min(hmax, h*r)
-        if delta <= 1:
-            converged = True
 
     return x0 + x5, h, h_new
-
-
-# def symplectic_4th_order(x:np.ndarray, v:np.ndarray, h:float, x_planet:np.ndarray, mu:float) -> None:
-#     """Updates vehicle orbital position using a 4th-order symplectic integrator.
-        
-#     - Atmosphere is ignored here, use for long term orbital simulation."""
-
-#     k = 2**(1/3)
-#     c = 0.5 / (2 - k)*np.array([1, 1 - k, 1 - k, 1])
-#     d = 1 / (2 - k)*np.array([1, -k, 1, 0])
-
-#     for i in range(4):
-#         a = -mu*(x - x_planet) / norm(x - x_planet)**3
-#         v += h*c[i]*a
-#         x += h*d[i]*v
-
-#     return x, v

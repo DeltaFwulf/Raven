@@ -2,6 +2,7 @@
 
 from math import exp, sqrt
 import numpy as np
+import numba
 
 
 
@@ -87,6 +88,7 @@ def coesa_high(z_km:float) -> np.ndarray:
         kp = np.array([2.813255e-11, -1.120689e-07, 1.695568e-04, -0.1188941, 14.56718])
         kd = np.array([-3.701195e-12, -8.608611e-09, 5.118829e-05, -0.06600998, -6.137674])
 
+    # FIXME: don't use a comprehension here while testing numba
     state[1] = exp(sum(kp[4 - i]*z_km**i for i in range(0, 5)))
     state[2] = exp(sum(kd[4 - i]*z_km**i for i in range(0, 5)))
 

@@ -9,7 +9,6 @@ from .orbit import elements2state
 from .motion import rk45
 from .vectors import hamilton, transform, coords2cartesian, cross
 
-# TODO: unify state and pert length parameters via one set of constants
 
 def progress_bar(size:int, progress:float) -> str:
     """Draws a progress bar showing percentage complete with a filling bar."""
