@@ -1,31 +1,39 @@
 """Utility functions for 3D vectors."""
 
-from math import pi, cos, sin, atan2, isnan
+from math import pi, cos, sin, atan2, copysign, acos
 import numpy as np
 from numpy.linalg import norm
 import numba
 
 
-def cartesian2coords(vector:np.ndarray) -> tuple['float', 'float']:
-    """ Calculates the latitude and longitude on a spherical body given a cartesian vector"""
-    lat = pi / 2 - atan2(norm(vector[0:-1]), vector[2])
-    if isnan(lat):
-        lat = pi / 2
+def cartesian2coords(x:np.ndarray) -> np.ndarray:
+    """Returns ENU coordinates given a cartesian vector.
+    
+    input: [x, y, z] cartesian vector
 
-    long = atan2(vector[1], vector[0])
-    if isnan(long):
-        long = 0
+    - prime meridian lies on the xz plane, +x direction
+    - north pole parallel with +z
 
-    return lat, long
+    returns: [east(rad), north(rad), up(m)]
+    """
+
+    r = norm(x)
+    if r == 0:
+        return np.zeros(3)
+
+    lat = 0.5*pi - acos(x[2] / r)
+    lon = (copysign(1.0, x[1])*acos(x[0] / norm(x[:2]))) % (2*pi)
+
+    return np.r_[lon, lat, r]
 
 
-def coords2cartesian(lat:float, long:float, r:float) -> np.ndarray:
+def coords2cartesian(lat:float, lon:float, r:float) -> np.ndarray:
     """Returns a cartesian vector given latitude, longitude, and radius"""
-    x = r*cos(lat)*cos(long)
-    y = r*cos(lat)*sin(long)
-    z = r*sin(lat)
 
-    return np.array([x, y, z], float)
+    if r < 0 or abs(lat) > pi or not 0 <= lon <= 2*pi:
+        raise ValueError
+
+    return r*np.r_[cos(lat)*cos(lon), cos(lat)*sin(lon), sin(lat)]
 
 
 def angle_signed(a:np.ndarray, b:np.ndarray, normal:np.ndarray) -> float:
