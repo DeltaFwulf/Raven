@@ -1,2 +1,10 @@
+*.prof
+*.pyc
+
 .venv
 .vs
+.vscode
+.pytest_cache
+**/__pycache__/
+profiles/
+inputs

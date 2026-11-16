@@ -1,44 +1,32 @@
 # Raven Flight Simulator
 
- A fully three-dimensional flight simulation and mission planner, based upon the principle of modular vehicle definition.
+A spaceflight simulation suite, with plans to include launch ascent guidance and optimisation, mission planning, and digital twin capability. I'm making this as the tool I want to simulate anything from an L1 model rocket to an interplanetary mission with landing. This is a very slow burn project, and is likely not as user friendly or polished enough for general use (help is very much appreciated!) but it can at least serve as a repository of simulation example code if anyone wants to take a look through.
 
- **Key Features**
- - Modular spacecraft construction with hierarchy
- - Full 6DOF motion simulation
- - Extended Barrowman aerodynamics model
- - n-body gravity model
- - Plotting functions for trajectory
- - Emulation of control systems for active guidance simulation, orbital launch optimisation, etc.
- - Flight save and TOML files for quick analysis of previous simulations
+I plan to develop this simulation with a modular rocket definition, so parts can be added, adjusted, etc. This may be useful i.e. to investigate how important certain tolerances are (like nozzle or fin alignment on small rockets), or optimising stage proportions for multistage rockets (at a first-pass level, of course). Modules will have their own state and can, for example, emulate a microcontroller or connect via serial port and provide HIL capability for a flight computer. I plan to use this in my own amateur rocketry hobby, and think that it'd be super cool to validate my code before flight with my own sims.
 
+<img width="1017" height="761" alt="free_return" src="https://github.com/user-attachments/assets/d581dc08-abe3-431b-8f33-19c39ad91569" />
 
-## Rocket Definition
+$\uparrow$ _A lunar free return trajectory simulated with Raven._
+<br>
 
-**Stages**
-Stages are the next step down from 'rockets'. These are generally to be made as a collection of components, including a propulsion system, some form of control, and structure. Stages may be dropped throughout flight i.e. when propellant is expended, and their unpowered trajectory tracked until they collide with the ground or time runs out.
+<br>
 
-**Modules**
-Modules are generally made up from a collection of primitives. The purpose of components is to provide functionality within stages. Modules are to be defined as parametric classes with methods. For example, the 'solid rocket motor' module can provide a thrust vector which can be oriented wrt to the module frame by accepting control inputs at each timestep. The 'fixed-fin' object may be simpler, building itself to a desired contour and providing aerodynamic information to be used within barrowman (or other aerodynamic force function) calculations.
+ **Planned Features**
+ - Modular spacecraft, accepts .stl meshes for component for CAD integration.
+ - Programmable modules for dynamic vehicle behaviours (nozzle gimbal, fin actuation, reaction wheels etc).
+ - Extended Barrowman aerodynamics model.
+ - n-body gravity model with Runge-Kutta-Fehlberg solver.
+ - Ascent guidance and trajectory optimisation.
+ - Mission planner to reach target trajectories.
+ - HIL via serial port, connection to ground station via TCP.
 
-**Primitives**
-The rocket is, at the lowest level, composed of primitives. These primitives obey rigid body physics. The primitive is defined by its shape definition and material to give its inertial behaviour.
+<br>
 
+<br>
 
-## Reference Frames
-The Universal frame is the parent to all frames, therefore with trivial rotation and translation. All frames are right handed.
+**Dependencies**
+- numpy
+- pyvista
+- pyyaml
 
-**Rockets**
-- Root Frame (root_frame): tied to the nose of the rocket, with +x pointed away from the spicy end. Expressed wrt to the universal frame.
-- CoM Frame (com_frame): aligned with the root frame, but with origin at the rocket's time-dependent centre of mass. Expressed wrt to the root frame.
-- Stages all have their own root and com frames, as do modules and primitives. These have the same heirarchy i.e. roots are expressed wrt to direct parent frame, and com are expressed wrt to their peer root frame.
-
-**Planets**
-- Planet-Centered Rotating (PCR): moves such that objects stationary to the surface of the planet are stationary in the frame. z aligned to axis of rotation, x aligned to both equator and prime meridian, y normal to both.
-- Planet-Centered Non-Rotating (PCNR): Origin at planet barycentre, z aligned to axis of rotation, x aligned to vernal equinox direction (also +x in universal frame), and y normal to both.
-Both planet frames are expressed wrt the universal frame.
-
-
-
-
-
-
+I will try my best to add my growing list of notes to the wiki, to explain my thought process during development. If you have any questions (for some reason), please send me an email or add an issue.
