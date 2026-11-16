@@ -4,7 +4,7 @@ from os import getcwd
 from os.path import join
 
 from raven.simulate import simulate
-from raven.plotter import plot_trajectories #animate
+from raven.plotter import scrub_trajectory
 
 def main():
     """Runs a simulation and plots results."""
@@ -16,7 +16,7 @@ def main():
         return
 
     print("Simulation complete, plotting...")
-    plot_trajectories(results)
+    scrub_trajectory(results)
     # animate(results, freq=30, show_omega=True)
 
 

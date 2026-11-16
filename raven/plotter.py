@@ -82,13 +82,11 @@ def animate(results:dict, freq:int=30, show_omega:bool=False) -> None:
     pl.show()
 
 
-# TODO: use a slider to scrub through time, plot all bodies at their current positions at ends of lines
-def plot_trajectories(results:dict, tf:float=None) -> None:
-    """Plots all trajectories w.r.t. the root frame."""
-
-    # number of rows to include
-    nmax = len(results['runtime']['t'])
-    n = np.max(np.argwhere(results['runtime']['t'] <= tf)) if tf is not None else nmax
+# TODO: draw rockets as a blown up version of its defined shape
+# TODO: add a slider for line tube thickness
+# TODO: time slider should show time bounds rather than progress
+def scrub_trajectory(results:dict) -> None:
+    """Plots the trajectory up to the time defined by a user, via a slider widget."""
 
     runtime = results['runtime']
     bodies = results['bodies']
@@ -96,42 +94,39 @@ def plot_trajectories(results:dict, tf:float=None) -> None:
     root_frame = runtime['root_frame'].split('/')
     root_origin = root_frame[0]
     root_orientation = root_frame[1]
-    root = bodies.get(root_origin)
+    root_body = bodies.get(root_origin)
 
     pv.set_plot_theme('dark')
     pl = pv.Plotter()
-    pl.add_axes(interactive=True)
 
-    cpos = pv.CameraPosition(position=(-38170000, 4602000, 21650000),
-                             focal_point=(0.0, 0.0, 0.0),
-                             viewup=(0.23, 0.072, 0.97),)
+    def scrub(progress:float) -> None:
+        """Scrubs through results timeline, plots state at given fraction of total time."""
 
-    for b in bodies.values():
+        n = max(2, round(len(runtime['t'])*progress / 100.0))
 
-        if b is root:
-            shape = pv.Sphere(radius=b['r'])
-            pl.add_mesh(shape, color=root['colour'])
-            continue
+        for k, b in bodies.items():
 
-        if root is not None:
-            q_root = root['q'] if root_orientation == 'fixed' else np.tile(root['q_pci'], (np.shape(root['q'])[0], 1))
-            pts = ntransform(b['x'], q_root, root['x'], invert=True)
-            v = ntransform(b['v'], q_root, root['v'], invert=True)
-        else:
-            pts = b['x'][:n + 1, :]
-            v = b['v'][:n + 1, :]
+            # Draw trajectories of all non-root bodies up to current step
+            if root_body is not None:
+                q_root = root_body['q'][:n, :] if root_orientation == 'fixed' else np.tile(root_body['q_pci'], (n, 1))
+                pts = ntransform(b['x'][:n, :], q_root, root_body['x'][:n, :], invert=True)
+                v = ntransform(b['v'][:n, :], q_root, root_body['v'][:n, :], invert=True)
+            else:
+                pts = b['x'][:n, :]
+                v = b['v'][:n, :]
 
-        line = pv.MultipleLines(points=pts)
-        line['v_mag'] = np.linalg.norm(v, axis=1)
-        pl.add_mesh(line.tube(radius=5e3), scalars='v_mag', cmap='viridis')
+            # Give bodies a shape
+            if b['properties']['type'] == 0:
+                shape = pv.Sphere(radius=b['r'], center=pts[-1, :])
+                pl.add_mesh(shape, color=b['colour'], name=k + "_shape")
 
-    pl.camera_position = cpos
+            if b is root_body:
+                continue
+
+            line = pv.MultipleLines(points=pts)
+            line['v_mag'] = np.linalg.norm(v, axis=1)
+            pl.add_mesh(line.tube(radius=2e4), scalars='v_mag', cmap='viridis', name=k + "_line")
+
+
+    pl.add_slider_widget(scrub, [0, 100], title="Progress (%)")
     pl.show()
-
-
-# TODO: add a slider for time (or step) to scrub through simulation
-# TODO: add body shapes in correct positions at ends of trajectory lines
-# TODO: add a slider for line tube thickness
-def plot_trajectory_slider(results:dict) -> None:
-    """Plots the trajectory up to the time defined by a user, via a slider widget."""
-    pass
