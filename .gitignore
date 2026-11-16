@@ -1,9 +1,10 @@
-.venv
-.vs
 *.prof
-inputs
-profiles
+*.pyc
+
+.venv
 .vs
 .vscode
 .pytest_cache
-plot_atmosphere.py
+**/__pycache__/
+profiles/
+inputs
