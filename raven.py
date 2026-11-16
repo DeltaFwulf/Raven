@@ -3,21 +3,32 @@
 from os import getcwd
 from os.path import join
 
+from raven.inputs import parse_inputs
 from raven.simulate import simulate
-from raven.plotter import scrub_trajectory
+from raven import plotter
 
-def main():
+
+
+def main(name:str) -> int:
     """Runs a simulation and plots results."""
 
-    results = simulate(join(getcwd(), "inputs", "drag.yaml"))
+    try:
+        runtime, bodies = parse_inputs(join(getcwd(), "inputs", name + ".yaml"))
+    except TypeError:
+        print("Inputs could not be parsed.")
+        return 1
+
+    results = simulate(runtime, bodies)
 
     if results is None:
         print("Simulation failed.")
-        return
+        return 2
 
     print("Simulation complete, plotting...")
-    scrub_trajectory(results)
-    # animate(results, freq=30, show_omega=True)
+    plot_fn = getattr(plotter, runtime['plotter']['name'], plotter.scrub_trajectory)
+    plot_args = {} if not runtime['plotter'].get('args') else runtime['plotter']['args']
+    plot_fn(results, **plot_args)
+    return 0
 
 
-main()
+main("free_return")

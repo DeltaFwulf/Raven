@@ -8,13 +8,16 @@ from .vectors import transform, ntransform, quaternion2rotation_matrix, hamilton
 
 
 # FIXME: calculate the best camera position based on root body
-def animate(results:dict, freq:int=30, show_omega:bool=False) -> None:
+def animate(results:dict, **kwargs) -> None:
     """Animates results from a given frame of reference.
     
     freq specifies the frames per second"""
 
     pv.set_plot_theme('dark')
     pl = pv.Plotter()
+
+    freq = 30 if not kwargs.get('freq') else kwargs['freq']
+    show_omega = False if not kwargs.get('show_omega') else kwargs['show_omega']
 
     # get root frame x, q arrays
     root = results['runtime']['root_frame'].split('/')
@@ -39,7 +42,7 @@ def animate(results:dict, freq:int=30, show_omega:bool=False) -> None:
     omegas = {}
     for k, b in results['bodies'].items():
         # create actors to manipulate
-        if b['type'] == 0:
+        if b['properties']['type'] == 0:
             # create a sphere of correct radius, colour
             mesh = pv.Sphere(radius=b['r'])
             colour = b['colour']
@@ -85,7 +88,7 @@ def animate(results:dict, freq:int=30, show_omega:bool=False) -> None:
 # TODO: draw rockets as a blown up version of its defined shape
 # TODO: add a slider for line tube thickness
 # TODO: time slider should show time bounds rather than progress
-def scrub_trajectory(results:dict) -> None:
+def scrub_trajectory(results:dict, **kwargs) -> None:
     """Plots the trajectory up to the time defined by a user, via a slider widget."""
 
     runtime = results['runtime']
