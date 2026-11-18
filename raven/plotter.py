@@ -4,7 +4,7 @@ from copy import copy
 import pyvista as pv
 import numpy as np
 
-from .vectors import transform, ntransform, quaternion2rotation_matrix, hamilton, relative_quaternion
+from .vectors import ntransform, quaternion2rotation_matrix, hamilton, relative_quaternion
 
 
 # FIXME: calculate the best camera position based on root body
@@ -65,7 +65,7 @@ def animate(results:dict, **kwargs) -> None:
         for k, b in results['bodies'].items():
 
             # put x, q into correct reference frame
-            x = transform(b['x'][step, :], q_root[step, :], x_root[step, :], invert=True)
+            x = ntransform(b['x'][step, :], q_root[step, :], x_root[step, :], invert=True)
             q = hamilton(q_root[step, :]*np.array([1, -1, -1, -1], float), b['q'][step, :])
 
             pl.camera.clipping_range = (1, 1e12)

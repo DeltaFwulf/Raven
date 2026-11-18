@@ -5,7 +5,7 @@ import numpy as np
 import yaml
 
 from .orbit import elements2state
-from .vectors import coords2cartesian, cross, transform, hamilton
+from .vectors import coords2cartesian, cross, ntransform, hamilton
 from . import atmosphere
 
 def parse_inputs(input_path:str) -> tuple[dict, dict] | None:
@@ -60,8 +60,8 @@ def parse_inputs(input_path:str) -> tuple[dict, dict] | None:
 
             state = np.zeros(14, float)
             if b.get('rv'):
-                xb = b['rv'][0:3]
-                vb = b['rv'][3:6]
+                xb = np.array(b['rv'][0:3])
+                vb = np.array(b['rv'][3:6])
 
             elif b.get('orbit'):
                 xb, vb = elements2state(b['orbit'], p_body['m']*6.67408e-11)
@@ -77,8 +77,8 @@ def parse_inputs(input_path:str) -> tuple[dict, dict] | None:
                 n = cross(x_unit, e)
                 vb = cross(p_body['state'][10:13], xb) + n*b['coords'][3] + e*b['coords'][4] + x_unit*b['coords'][5]
 
-            state[0:3] = transform(xb, q_parent, x_parent)
-            state[3:6] = transform(vb, q_parent, v_parent)
+            state[0:3] = ntransform(xb, q_parent, x_parent)
+            state[3:6] = ntransform(vb, q_parent, v_parent)
 
             if b['type'] == 0:
                 b.update(planets[b['planet']])

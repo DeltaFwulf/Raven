@@ -8,7 +8,7 @@ import numpy as np
 # import os
 # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from raven.vectors import cartesian2coords, coords2cartesian
+from raven.vectors import cartesian2coords, coords2cartesian, ntransform
 
 
 class TestCoordinateTransforms(unittest.TestCase):
@@ -89,6 +89,41 @@ class TestCoordinateTransforms(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             coords2cartesian(lat=0.0, lon=0.0, r=-1.0)
+
+
+class TestNTransform(unittest.TestCase):
+    """Test the ntransform function."""
+
+    def test_n_by_3(self):
+        """Should return correct nx3 vector."""
+
+        vecs = np.array([[1, 1, 1], [-1, -1, -1]])
+        q = np.array([[0.923879532511286756, 0, 0.382683432365089772, 0], [0.965925826289068287, 0.258819045102520762, 0, 0]])
+        origin = np.array([[2, 2, 2], [3, 3, 3]])
+        expected = np.array([[3.41421356237309505, 3, 2], [2, 2.63397459621556135, 1.63397459621556135]])
+        np.testing.assert_allclose(ntransform(vecs, q, origin), expected)
+
+
+    def test_invert(self):
+        """Invert flag should invert transformation."""
+
+        vecs = np.array([[3.41421356237309505, 3, 2], [2, 2.63397459621556135, 1.63397459621556135]])
+        q = np.array([[0.923879532511286756, 0, 0.382683432365089772, 0], [0.965925826289068287, 0.258819045102520762, 0, 0]])
+        origin = np.array([[2, 2, 2], [3, 3, 3]])
+        expected = np.array([[1, 1, 1], [-1, -1, -1]])
+
+        np.testing.assert_allclose(ntransform(vecs, q, origin, invert=True), expected)
+
+
+    def test_single(self):
+        """Should successfully transform a 1d array."""
+
+        vec = np.array([1, 0, 0])
+        q = np.array([0.707106781186547524, 0.0, 0.0, 0.707106781186547524])
+        origin = np.zeros(3)
+        expected = np.array([0, 1, 0])
+
+        np.testing.assert_allclose(ntransform(vec, q, origin)[0], expected, atol=1e-12)
 
 
 if __name__ == '__main__':
