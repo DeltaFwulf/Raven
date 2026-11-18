@@ -86,36 +86,43 @@ def animate(results:dict, **kwargs) -> None:
 
 
 # TODO: draw rockets as a blown up version of its defined shape
-# TODO: add a slider for line tube thickness
-# TODO: time slider should show time bounds rather than progress
-def scrub_trajectory(results:dict, **kwargs) -> None:
-    """Plots the trajectory up to the time defined by a user, via a slider widget."""
+# TODO: dynamic root body input
 
-    runtime = results['runtime']
-    bodies = results['bodies']
+# Store parameters within the plotter class, call it with new parameters
+class TrajectoryPlotter:
+    """Draws trajectory and holds parameter state."""
 
-    root_frame = runtime['root_frame'].split('/')
-    root_body = bodies.get(root_frame[0])
-    
-    if root_body is None and runtime['root_frame'] != 'universal':
-        raise ValueError("Invalid root frame given.")
+    def __init__(self, results:dict):
+        self.params = {'progress':1.0, 'thickness':2e4} # plot parameters, adjustable
+        self.runtime = results['runtime']
+        self.bodies = results['bodies']
 
-    root_orientation = root_frame[-1]
-    pv.set_plot_theme('dark')
-    pl = pv.Plotter()
+        root_frame = self.runtime['root_frame'].split('/')
+        self.root_body = self.bodies.get(root_frame[0])
+        if self.root_body is None and self.runtime['root_frame'] != 'universal':
+            raise ValueError("Invalid root frame given.")
 
-    def scrub(progress:float) -> None:
+        self.root_orientation = root_frame[-1]
+        self.n_max = len(self.runtime['t'])
+
+
+    def __call__(self, param, value, plotter:pv.Plotter):
+        self.params[param] = value
+        self.update(plotter)
+
+
+    def update(self, pl:pv.Plotter):
         """Scrubs through results timeline, plots state at given fraction of total time."""
 
-        n = max(2, round(len(runtime['t'])*progress / 100.0))
+        n = max(2, round(self.n_max*self.params['progress'] / 100.0))
 
-        for k, b in bodies.items():
+        for k, b in self.bodies.items():
 
             # Draw trajectories of all non-root bodies up to current step
-            if root_body is not None:
-                q_root = root_body['q'][:n, :] if root_orientation == 'fixed' else np.tile(root_body['q_pci'], (n, 1))
-                pts = ntransform(b['x'][:n, :], q_root, root_body['x'][:n, :], invert=True)
-                v = ntransform(b['v'][:n, :], q_root, root_body['v'][:n, :], invert=True)
+            if self.root_body is not None:
+                q_root = self.root_body['q'][:n, :] if self.root_orientation == 'fixed' else np.tile(self.root_body['q_pci'], (n, 1))
+                pts = ntransform(b['x'][:n, :], q_root, self.root_body['x'][:n, :], invert=True)
+                v = ntransform(b['v'][:n, :], q_root, self.root_body['v'][:n, :], invert=True)
             else:
                 pts = b['x'][:n, :]
                 v = b['v'][:n, :]
@@ -125,13 +132,37 @@ def scrub_trajectory(results:dict, **kwargs) -> None:
                 shape = pv.Sphere(radius=b['r'], center=pts[-1, :])
                 pl.add_mesh(shape, color=b['colour'], name=k + "_shape")
 
-            if b is root_body:
+            if b is self.root_body:
                 continue
 
             line = pv.MultipleLines(points=pts)
             line['v_mag'] = np.linalg.norm(v, axis=1)
-            pl.add_mesh(line.tube(radius=2e4), scalars='v_mag', cmap='viridis', name=k + "_line")
+            pl.add_mesh(line.tube(radius=self.params['thickness']), scalars='v_mag', cmap='viridis', name=k + "_line")
 
 
-    pl.add_slider_widget(scrub, [0, 100], title="Progress (%)")
+
+def plot_trajectories(results:dict, **kwargs) -> None:
+    """Plots trajectories with dynamic line thickness and progress slider."""
+
+    scrubber = TrajectoryPlotter(results)
+
+    pv.set_plot_theme('dark')
+    pl = pv.Plotter()
+
+    pl.add_slider_widget(callback=lambda value:scrubber('progress', value, pl),
+                         rng=[0, 100],
+                         value=100,
+                         title='Progress (%)',
+                         pointa=(0.05, 0.1),
+                         pointb=(0.25, 0.1),
+                         style='modern')
+
+    pl.add_slider_widget(callback=lambda value: scrubber('thickness', value, pl),
+                         rng=[1e3, 1e6],
+                         value=20e3,
+                         title='Line thickness (m)',
+                         pointa=(0.05 ,0.25),
+                         pointb=(0.25, 0.25),
+                         style='modern')
+
     pl.show()
