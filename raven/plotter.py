@@ -95,10 +95,12 @@ def scrub_trajectory(results:dict, **kwargs) -> None:
     bodies = results['bodies']
 
     root_frame = runtime['root_frame'].split('/')
-    root_origin = root_frame[0]
-    root_orientation = root_frame[1]
-    root_body = bodies.get(root_origin)
+    root_body = bodies.get(root_frame[0])
+    
+    if root_body is None and runtime['root_frame'] != 'universal':
+        raise ValueError("Invalid root frame given.")
 
+    root_orientation = root_frame[-1]
     pv.set_plot_theme('dark')
     pl = pv.Plotter()
 

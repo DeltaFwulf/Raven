@@ -105,7 +105,7 @@ def ntransform(vecs:np.ndarray, q:np.ndarray, origin:np.ndarray, invert:bool=Fal
     Transforms are given as an nx7 array: [q0, q1, q2, q3, x0, x1, x2]"""
 
     if invert:
-        vecs -= origin
+        vecs = vecs - origin
         t = np.cross(2*-q[:, 1:], vecs, axis=1)
         return vecs + q[:, 0].reshape(-1, 1)*t + np.cross(-q[:, 1:], t, axis=1)
 
